@@ -1,0 +1,59 @@
+{% extends 'base.html.twig' %}
+{% block title %}Modifier mon ressenti{% endblock %}
+
+{% block breadcrumb %}
+    <a href="{{ path('app_athlete_show', {id: athlete.id}) }}" class="hover:text-white">{{ athlete.fullName }}</a>
+    <span class="mx-2 text-gray-600">/</span>
+    <span class="text-white font-medium">Modifier mon ressenti</span>
+{% endblock %}
+
+{% block body %}
+<div class="max-w-2xl mx-auto space-y-5">
+
+    <div class="bg-gray-900 border border-gray-800 rounded-xl overflow-hidden">
+        <div class="h-1.5" style="background: {{ athleteSession.session.colorBg }}"></div>
+        <div class="p-5">
+            <h2 class="text-lg font-bold text-white">{{ athleteSession.session.title }}</h2>
+            <p class="text-sm text-gray-400 mt-1">{{ athleteSession.session.date|date('d/m/Y') }}</p>
+        </div>
+    </div>
+
+    <div class="bg-gray-900 border border-gray-800 rounded-xl p-6">
+        <h3 class="font-semibold text-white mb-5">Modifier le ressenti</h3>
+        {{ form_start(form, {attr: {class: 'space-y-5'}}) }}
+        <div x-data="{ val: {{ athleteSession.difficulty ?? 5 }} }" class="space-y-1.5">
+            <label class="block text-sm font-medium text-gray-300">
+                Difficulté ressentie — <span class="text-indigo-400 font-bold" x-text="val + '/10'"></span>
+            </label>
+            <div class="flex items-center gap-4">
+                <input type="range" min="0" max="10" step="1" x-model="val"
+                       name="{{ form.difficulty.vars.full_name }}"
+                       id="{{ form.difficulty.vars.id }}"
+                       class="w-full h-2 rounded-lg appearance-none cursor-pointer bg-gray-700
+                              [&::-webkit-slider-thumb]:appearance-none [&::-webkit-slider-thumb]:w-5
+                              [&::-webkit-slider-thumb]:h-5 [&::-webkit-slider-thumb]:rounded-full
+                              [&::-webkit-slider-thumb]:bg-indigo-500 [&::-webkit-slider-thumb]:cursor-pointer">
+                <div class="flex gap-0.5 shrink-0">
+                    <template x-for="i in 11" :key="i-1">
+                        <div class="w-5 h-5 rounded flex items-center justify-center text-xs font-bold transition-colors"
+                             :class="(i-1) <= val ? 'bg-indigo-600 text-white' : 'bg-gray-800 text-gray-600'"
+                             x-text="i-1"></div>
+                    </template>
+                </div>
+            </div>
+            {% do form.difficulty.setRendered() %}
+        </div>
+        {{ form_row(form.comment) }}
+        <div class="flex gap-3 pt-2">
+            <button type="submit" class="bg-indigo-600 hover:bg-indigo-500 text-white px-5 py-2.5 rounded-lg text-sm font-medium transition-colors">
+                Enregistrer
+            </button>
+            <a href="{{ path('app_athlete_show', {id: athlete.id}) }}"
+               class="bg-gray-800 hover:bg-gray-700 text-gray-300 px-5 py-2.5 rounded-lg text-sm font-medium transition-colors">
+                Annuler
+            </a>
+        </div>
+        {{ form_end(form) }}
+    </div>
+</div>
+{% endblock %}

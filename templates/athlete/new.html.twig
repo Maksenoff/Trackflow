@@ -1,0 +1,223 @@
+{% extends 'base.html.twig' %}
+{% block title %}Nouvel athlète{% endblock %}
+
+{% block breadcrumb %}
+    <a href="{{ path('app_dashboard') }}" class="hover:text-white">Tableau de bord</a>
+    <span class="mx-2 text-gray-600">/</span>
+    <a href="{{ path('app_athlete_index') }}" class="hover:text-white">Athlètes</a>
+    <span class="mx-2 text-gray-600">/</span>
+    <span class="text-white font-medium">Nouvel athlète</span>
+{% endblock %}
+
+{% block body %}
+{# Pass Symfony-generated field IDs to JS so we can target them reliably #}
+<div id="js-form-ids"
+    data-ffa-url="{{ form.ffaProfileUrl.vars.id }}"
+    data-first-name="{{ form.firstName.vars.id }}"
+    data-last-name="{{ form.lastName.vars.id }}"
+    data-birth-date="{{ form.birthDate.vars.id }}"
+    data-gender="{{ form.gender.vars.id }}"
+    data-discipline="{{ form.discipline.vars.id }}"
+    style="display:none"></div>
+
+<div class="max-w-2xl mx-auto" x-data="newAthlete()" x-init="init()">
+
+    <div class="mb-6">
+        <h1 class="text-2xl font-bold text-white">Nouvel athlète</h1>
+        <p class="text-gray-400 mt-1">Ajoutez un athlète à votre suivi</p>
+    </div>
+
+    {# Step 1 — Choose mode #}
+    <div x-show="step === 'choose'" x-transition class="grid grid-cols-2 gap-4">
+        <button @click="step = 'licence'"
+                class="bg-gray-900 border border-gray-800 hover:border-indigo-500 rounded-xl p-6 text-left transition-colors group">
+            <div class="w-10 h-10 rounded-lg bg-indigo-600/20 flex items-center justify-center mb-4 group-hover:bg-indigo-600/30 transition-colors">
+                <svg class="w-5 h-5 text-indigo-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 6H5a2 2 0 00-2 2v9a2 2 0 002 2h14a2 2 0 002-2V8a2 2 0 00-2-2h-5m-4 0V5a2 2 0 114 0v1m-4 0a2 2 0 104 0"/>
+                </svg>
+            </div>
+            <h3 class="text-white font-semibold mb-1">Avec profil athle.fr</h3>
+            <p class="text-sm text-gray-400">Collez l'URL du profil athle.fr pour préremplir le profil et synchroniser les résultats.</p>
+        </button>
+
+        <button @click="step = 'form'"
+                class="bg-gray-900 border border-gray-800 hover:border-gray-600 rounded-xl p-6 text-left transition-colors group">
+            <div class="w-10 h-10 rounded-lg bg-gray-800 flex items-center justify-center mb-4 group-hover:bg-gray-700 transition-colors">
+                <svg class="w-5 h-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"/>
+                </svg>
+            </div>
+            <h3 class="text-white font-semibold mb-1">Manuellement</h3>
+            <p class="text-sm text-gray-400">Remplissez les informations vous-même.</p>
+        </button>
+    </div>
+
+    {# Step 2 — URL lookup #}
+    <div x-show="step === 'licence'" x-transition class="bg-gray-900 border border-gray-800 rounded-xl p-6">
+        <div class="flex items-center gap-3 mb-5">
+            <button @click="step = 'choose'" class="text-gray-500 hover:text-white transition-colors">
+                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"/>
+                </svg>
+            </button>
+            <h2 class="text-white font-semibold">Recherche via athle.fr</h2>
+        </div>
+
+        <p class="text-sm text-gray-400 mb-4">
+            Allez sur <strong class="text-gray-300">athle.fr</strong> ou <strong class="text-gray-300">bases.athle.fr</strong>, cherchez l'athlète, puis copiez l'URL de sa page de profil ou de résultats.
+        </p>
+
+        <div class="flex gap-3">
+            <input type="text"
+                   x-model="urlInput"
+                   @keydown.enter="lookupUrl()"
+                   placeholder="https://www.athle.fr/athlete/… ou https://bases.athle.fr/…"
+                   class="flex-1 bg-gray-800 border border-gray-700 rounded-lg px-4 py-2.5 text-white text-sm focus:outline-none focus:border-indigo-500 transition-colors">
+            <button @click="lookupUrl()"
+                    :disabled="lookupLoading || !urlInput.trim()"
+                    class="flex items-center gap-2 bg-indigo-600 hover:bg-indigo-500 disabled:opacity-50 disabled:cursor-not-allowed text-white px-4 py-2.5 rounded-lg text-sm font-medium transition-colors">
+                <svg x-show="lookupLoading" class="w-4 h-4 animate-spin" fill="none" viewBox="0 0 24 24">
+                    <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"/>
+                    <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8z"/>
+                </svg>
+                <span x-text="lookupLoading ? 'Chargement…' : 'Importer'"></span>
+            </button>
+        </div>
+
+        <p x-show="lookupError" x-text="lookupError"
+           class="mt-3 text-sm text-red-400 bg-red-900/20 border border-red-900/50 rounded-lg px-4 py-2.5"></p>
+    </div>
+
+    {# Step 3 — Form #}
+    <div x-show="step === 'form'" class="bg-gray-900 border border-gray-800 rounded-xl p-6">
+        <div class="flex items-center gap-3 mb-5">
+            <button @click="step = 'choose'" class="text-gray-500 hover:text-white transition-colors">
+                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"/>
+                </svg>
+            </button>
+            <h2 class="text-white font-semibold">Informations de l'athlète</h2>
+            <span x-show="prefilled" class="flex items-center gap-1 text-xs bg-green-900/40 text-green-400 border border-green-900/50 px-2 py-0.5 rounded-full">
+                <svg class="w-3 h-3" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd"/></svg>
+                Prérempli via athle.fr
+            </span>
+            <span x-show="syncReady" class="flex items-center gap-1 text-xs bg-indigo-900/40 text-indigo-400 border border-indigo-900/50 px-2 py-0.5 rounded-full">
+                <svg class="w-3 h-3" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M4 2a1 1 0 011 1v2.101a7.002 7.002 0 0111.601 2.566 1 1 0 11-1.885.666A5.002 5.002 0 005.999 7H9a1 1 0 010 2H4a1 1 0 01-1-1V3a1 1 0 011-1zm.008 9.057a1 1 0 011.276.61A5.002 5.002 0 0014.001 13H11a1 1 0 110-2h5a1 1 0 011 1v5a1 1 0 11-2 0v-2.101a7.002 7.002 0 01-11.601-2.566 1 1 0 01.61-1.276z" clip-rule="evenodd"/></svg>
+                Sync résultats activée
+            </span>
+        </div>
+
+        {{ form_start(form, {attr: {class: 'space-y-5', enctype: 'multipart/form-data'}}) }}
+
+        {{ form_row(form.ffaProfileUrl) }}
+
+        <div class="grid grid-cols-2 gap-4">
+            <div>{{ form_row(form.firstName) }}</div>
+            <div>{{ form_row(form.lastName) }}</div>
+        </div>
+        <div class="grid grid-cols-2 gap-4">
+            <div>{{ form_row(form.birthDate) }}</div>
+            <div>{{ form_row(form.gender) }}</div>
+        </div>
+        {{ form_row(form.discipline) }}
+        {{ form_row(form.notes) }}
+        {{ form_row(form.photoFile) }}
+
+        <div class="flex gap-3 pt-2">
+            <button type="submit" class="bg-indigo-600 hover:bg-indigo-500 text-white px-5 py-2.5 rounded-lg text-sm font-medium transition-colors">
+                Créer l'athlète
+            </button>
+            <a href="{{ path('app_athlete_index') }}" class="bg-gray-800 hover:bg-gray-700 text-gray-300 px-5 py-2.5 rounded-lg text-sm font-medium transition-colors">
+                Annuler
+            </a>
+        </div>
+        {{ form_end(form) }}
+    </div>
+
+</div>
+
+<script>
+(function () {
+    // Read Symfony's actual generated IDs from the data attributes
+    var ids = document.getElementById('js-form-ids').dataset;
+
+    function newAthlete() {
+        return {
+            step: 'choose',
+            urlInput: '',
+            lookupLoading: false,
+            lookupError: '',
+            prefilled: false,
+            syncReady: false,
+
+            init() {
+                {% if form.vars.submitted %}
+                this.step = 'form';
+                {% endif %}
+            },
+
+            lookupUrl() {
+                var url = this.urlInput.trim();
+                if (!url) return;
+
+                this.lookupLoading = true;
+                this.lookupError   = '';
+
+                var fd = new FormData();
+                fd.append('url', url);
+
+                fetch('{{ path('app_athlete_lookup_ffa') }}', {
+                    method: 'POST',
+                    headers: { 'X-Requested-With': 'XMLHttpRequest' },
+                    body: fd,
+                })
+                .then(r => r.json())
+                .then(data => {
+                    this.lookupLoading = false;
+
+                    if (data.error && !data.firstName && !data.lastName) {
+                        this.lookupError = data.error;
+                        return;
+                    }
+
+                    // Show form first, then fill after DOM settles
+                    this.prefilled  = !!data.firstName;
+                    this.syncReady  = !!data.basesUrl;
+                    this.step       = 'form';
+
+                    this.$nextTick(() => this.prefill(data));
+                })
+                .catch(err => {
+                    this.lookupLoading = false;
+                    this.lookupError   = 'Erreur réseau (' + err.message + ')';
+                });
+            },
+
+            prefill(data) {
+                var profileUrl = data.basesUrl || this.urlInput.trim();
+
+                var fields = {
+                    [ids.ffaUrl]:    profileUrl,
+                    [ids.firstName]: data.firstName  || '',
+                    [ids.lastName]:  data.lastName   || '',
+                    [ids.birthDate]: data.birthDate  || '',
+                    [ids.gender]:    data.gender     || '',
+                    [ids.discipline]:data.discipline || '',
+                };
+
+                Object.entries(fields).forEach(([id, val]) => {
+                    if (!val) return;
+                    var el = document.getElementById(id);
+                    if (!el) { console.warn('[FFA prefill] element not found:', id); return; }
+                    el.value = val;
+                    el.dispatchEvent(new Event('change', { bubbles: true }));
+                    el.dispatchEvent(new Event('input',  { bubbles: true }));
+                });
+            },
+        };
+    }
+
+    window.newAthlete = newAthlete;
+}());
+</script>
+{% endblock %}

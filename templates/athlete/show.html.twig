@@ -1,0 +1,1252 @@
+{% extends 'base.html.twig' %}
+
+{% block title %}{{ athlete.fullName }}{% endblock %}
+
+{% block breadcrumb %}
+    <a href="{{ path('app_dashboard') }}" class="hover:text-white transition-colors">Tableau de bord</a>
+    <span class="mx-2 text-gray-600">/</span>
+    <a href="{{ path('app_athlete_index') }}" class="hover:text-white transition-colors">Athlètes</a>
+    <span class="mx-2 text-gray-600">/</span>
+    <span class="text-white font-medium">{{ athlete.fullName }}</span>
+{% endblock %}
+
+{% block body %}
+<div class="space-y-6" x-data="{ activeTab: 'performances' }">
+
+    {# Athlete header #}
+    <div class="bg-gray-900 border border-gray-800 rounded-xl p-6">
+        <div class="flex items-start justify-between">
+            <div class="flex items-center gap-5">
+                <div class="w-20 h-20 rounded-xl bg-indigo-600/20 flex items-center justify-center text-indigo-300 font-bold text-2xl overflow-hidden shrink-0">
+                    {% if athlete.photo %}
+                        <img src="/uploads/athletes/{{ athlete.photo }}" alt="{{ athlete.fullName }}" class="w-full h-full object-cover">
+                    {% else %}
+                        {{ athlete.firstName|slice(0,1) }}{{ athlete.lastName|slice(0,1) }}
+                    {% endif %}
+                </div>
+                <div>
+                    <h1 class="text-2xl font-bold text-white">{{ athlete.fullName }}</h1>
+                    <p class="text-indigo-400 font-medium mt-0.5">{{ athlete.discipline }}</p>
+                    <div class="flex items-center gap-4 mt-2 text-sm text-gray-400">
+                        {% if athlete.age %}
+                            <span>{{ athlete.age }} ans</span>
+                        {% endif %}
+                        {% if athlete.gender %}
+                            <span>{{ athlete.gender == 'M' ? 'Homme' : (athlete.gender == 'F' ? 'Femme' : 'Autre') }}</span>
+                        {% endif %}
+                        <span>Suivi depuis {{ athlete.createdAt|date('F Y') }}</span>
+                    </div>
+                </div>
+            </div>
+            <div class="flex gap-2">
+                <a href="{{ path('app_athlete_edit', {id: athlete.id}) }}"
+                   class="flex items-center gap-2 bg-gray-800 hover:bg-gray-700 text-gray-300 px-3 py-2 rounded-lg text-sm transition-colors">
+                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"/>
+                    </svg>
+                    Modifier
+                </a>
+                <form action="{{ path('app_athlete_delete', {id: athlete.id}) }}" method="post"
+                      x-data onsubmit="return confirm('Supprimer cet athlète et toutes ses données ?')">
+                    <input type="hidden" name="_token" value="{{ csrf_token('delete' ~ athlete.id) }}">
+                    <button type="submit" class="flex items-center gap-2 bg-gray-800 hover:bg-red-900/50 hover:text-red-400 text-gray-300 px-3 py-2 rounded-lg text-sm transition-colors">
+                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/>
+                        </svg>
+                        Supprimer
+                    </button>
+                </form>
+            </div>
+        </div>
+
+        {% if athlete.notes %}
+            <div class="mt-4 pt-4 border-t border-gray-800 text-sm text-gray-400">
+                {{ athlete.notes }}
+            </div>
+        {% endif %}
+
+        {% if athlete.ffaProfileUrl %}
+        <div class="mt-4 pt-4 border-t border-gray-800 flex items-center gap-3 text-sm">
+            <span class="text-gray-500">Profil athle.fr :</span>
+            <a href="{{ athlete.ffaProfileUrl }}" target="_blank" class="text-indigo-400 hover:text-indigo-300 truncate max-w-xs transition-colors">bases.athle.fr</a>
+            <span id="ffa-sync-badge" class="flex items-center gap-1.5 text-gray-500">
+                <svg id="ffa-spin" class="w-3.5 h-3.5 animate-spin hidden" fill="none" viewBox="0 0 24 24">
+                    <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"/>
+                    <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8z"/>
+                </svg>
+                <span id="ffa-sync-text">Synchronisation…</span>
+            </span>
+        </div>
+        {% endif %}
+
+        {# Quick stats #}
+        <div class="grid grid-cols-4 gap-4 mt-5 pt-5 border-t border-gray-800">
+            <div>
+                <p class="text-2xl font-bold text-white">{{ athlete.athleteSessions|length }}</p>
+                <p class="text-sm text-gray-400">Séances</p>
+            </div>
+            <div>
+                <p class="text-2xl font-bold text-white">{{ athlete.performances|length }}</p>
+                <p class="text-sm text-gray-400">Performances</p>
+            </div>
+            <div>
+                <p class="text-2xl font-bold text-white">{{ athlete.goals|filter(g => g.status == 'achieved')|length }}</p>
+                <p class="text-sm text-gray-400">Objectifs atteints</p>
+            </div>
+            <div>
+                <p class="text-2xl font-bold text-white">{{ athlete.goals|filter(g => g.status == 'in_progress')|length }}</p>
+                <p class="text-sm text-gray-400">En cours</p>
+            </div>
+        </div>
+    </div>
+
+    {# Tabs #}
+    <div class="flex gap-1 bg-gray-900 border border-gray-800 rounded-xl p-1">
+        <button @click="activeTab = 'performances'"
+                :class="activeTab === 'performances' ? 'bg-gray-700 text-white' : 'text-gray-400 hover:text-white'"
+                class="flex-1 py-2 px-4 rounded-lg text-sm font-medium transition-colors">
+            Performances
+        </button>
+        <button @click="activeTab = 'sessions'"
+                :class="activeTab === 'sessions' ? 'bg-gray-700 text-white' : 'text-gray-400 hover:text-white'"
+                class="flex-1 py-2 px-4 rounded-lg text-sm font-medium transition-colors">
+            Séances
+        </button>
+        <button @click="activeTab = 'goals'"
+                :class="activeTab === 'goals' ? 'bg-gray-700 text-white' : 'text-gray-400 hover:text-white'"
+                class="flex-1 py-2 px-4 rounded-lg text-sm font-medium transition-colors">
+            Objectifs
+        </button>
+        <button @click="activeTab = 'videos'; $nextTick(() => videoApp.load())"
+                :class="activeTab === 'videos' ? 'bg-gray-700 text-white' : 'text-gray-400 hover:text-white'"
+                class="flex-1 py-2 px-4 rounded-lg text-sm font-medium transition-colors">
+            Vidéos
+        </button>
+    </div>
+
+    {# Performances tab #}
+    <div x-show="activeTab === 'performances'" x-transition
+         x-data="perfTab({{ performancesJson|json_encode }})"
+         x-init="init()">
+
+        {# Header #}
+        <div class="flex items-center justify-between mb-4">
+            <div class="flex items-center gap-3">
+                <h2 class="text-lg font-semibold text-white">Performances</h2>
+                <span class="text-xs bg-gray-800 text-gray-400 px-2 py-0.5 rounded-full" x-text="filtered.length + ' résultat' + (filtered.length > 1 ? 's' : '')"></span>
+            </div>
+            <div class="flex items-center gap-2">
+                {% if athlete.ffaProfileUrl %}
+                <button id="manual-sync-btn"
+                        onclick="triggerSync()"
+                        class="flex items-center gap-1.5 bg-gray-800 hover:bg-gray-700 text-gray-300 px-3 py-2 rounded-lg text-sm transition-colors">
+                    <svg id="sync-icon" class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/>
+                    </svg>
+                    <span id="sync-label">Sync athle.fr</span>
+                </button>
+                {% endif %}
+                <a href="{{ path('app_performance_new', {athleteId: athlete.id}) }}"
+                   class="flex items-center gap-2 bg-indigo-600 hover:bg-indigo-500 text-white px-3 py-2 rounded-lg text-sm font-medium transition-colors">
+                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/>
+                    </svg>
+                    Ajouter
+                </a>
+            </div>
+        </div>
+
+        <template x-if="allPerfs.length === 0">
+            <div class="bg-gray-900 border border-gray-800 rounded-xl p-10 text-center text-gray-500">
+                Aucune performance enregistrée.
+            </div>
+        </template>
+
+        <template x-if="allPerfs.length > 0">
+            <div class="space-y-4">
+
+                {# Season tabs #}
+                <div class="flex flex-wrap gap-2">
+                    <button @click="activeSeason = ''; activePage = 0"
+                            :class="activeSeason === '' ? 'bg-indigo-600 text-white' : 'bg-gray-800 text-gray-400 hover:text-white'"
+                            class="px-3 py-1.5 rounded-lg text-sm font-medium transition-colors">
+                        Toutes
+                        <span class="ml-1 text-xs opacity-70" x-text="'(' + allPerfs.length + ')'"></span>
+                    </button>
+                    <template x-for="[s, count] in seasons" :key="s">
+                        <button @click="activeSeason = s; activePage = 0; activeDisc = ''; activeCat = ''"
+                                :class="activeSeason === s ? 'bg-indigo-600 text-white' : 'bg-gray-800 text-gray-400 hover:text-white'"
+                                class="px-3 py-1.5 rounded-lg text-sm font-medium transition-colors">
+                            <span x-text="s.replace('-20', '-')"></span>
+                            <span class="ml-1 text-xs opacity-70" x-text="'(' + count + ')'"></span>
+                        </button>
+                    </template>
+                </div>
+
+                {# Discipline + category filters #}
+                <div class="flex flex-wrap gap-2 items-center">
+                    <span class="text-xs text-gray-500 mr-1">Discipline :</span>
+                    <button @click="activeDisc = ''; activePage = 0"
+                            :class="activeDisc === '' ? 'bg-gray-700 text-white' : 'bg-gray-800/50 text-gray-500 hover:text-white'"
+                            class="px-2.5 py-1 rounded-md text-xs font-medium transition-colors">Toutes</button>
+                    <template x-for="d in disciplines" :key="d">
+                        <button @click="activeDisc = (activeDisc === d ? '' : d); activePage = 0"
+                                :class="activeDisc === d ? 'bg-gray-700 text-white' : 'bg-gray-800/50 text-gray-500 hover:text-white'"
+                                class="px-2.5 py-1 rounded-md text-xs font-medium transition-colors"
+                                x-text="d"></button>
+                    </template>
+
+                    <template x-if="categories.length > 1">
+                        <div class="flex flex-wrap gap-2 items-center ml-3">
+                            <span class="text-xs text-gray-500 mr-1">Catégorie :</span>
+                            <button @click="activeCat = ''; activePage = 0"
+                                    :class="activeCat === '' ? 'bg-gray-700 text-white' : 'bg-gray-800/50 text-gray-500 hover:text-white'"
+                                    class="px-2.5 py-1 rounded-md text-xs font-medium transition-colors">Toutes</button>
+                            <template x-for="c in categories" :key="c">
+                                <button @click="activeCat = (activeCat === c ? '' : c); activePage = 0"
+                                        :class="activeCat === c ? 'bg-gray-700 text-white' : 'bg-gray-800/50 text-gray-500 hover:text-white'"
+                                        class="px-2.5 py-1 rounded-md text-xs font-medium transition-colors"
+                                        x-text="c"></button>
+                            </template>
+                        </div>
+                    </template>
+                </div>
+
+                {# Results table #}
+                <div class="bg-gray-900 border border-gray-800 rounded-xl overflow-hidden">
+                    <table class="w-full text-sm">
+                        <thead>
+                            <tr class="border-b border-gray-800 text-xs text-gray-500 uppercase tracking-wide">
+                                <th class="text-left px-4 py-3 font-medium">Date</th>
+                                <th class="text-left px-4 py-3 font-medium">Discipline</th>
+                                <th class="text-left px-4 py-3 font-medium">Performance</th>
+                                <th class="text-left px-4 py-3 font-medium hidden sm:table-cell">Saison</th>
+                                <th class="text-left px-4 py-3 font-medium hidden md:table-cell">Catégorie</th>
+                                <th class="px-4 py-3"></th>
+                            </tr>
+                        </thead>
+                        <tbody class="divide-y divide-gray-800/60">
+                            <template x-for="p in paginated" :key="p.id">
+                                <tr class="hover:bg-gray-800/30 transition-colors group">
+                                    <td class="px-4 py-3 text-gray-400 whitespace-nowrap" x-text="p.dateFormatted"></td>
+                                    <td class="px-4 py-3">
+                                        <span class="text-gray-300 font-medium" x-text="p.discipline"></span>
+                                    </td>
+                                    <td class="px-4 py-3">
+                                        <div class="flex items-center gap-2">
+                                            <template x-if="p.isPersonalBest">
+                                                <span title="Record personnel">⭐</span>
+                                            </template>
+                                            <span :class="p.isPersonalBest ? 'text-yellow-300 font-bold' : 'text-white font-medium'"
+                                                  x-text="p.formattedValue"></span>
+                                            <template x-if="p.isCompetition && !p.isPersonalBest">
+                                                <span class="text-xs bg-blue-900/40 text-blue-400 px-1.5 py-0.5 rounded font-medium">Compét</span>
+                                            </template>
+                                        </div>
+                                        <p x-show="p.notes" x-text="p.notes" class="text-xs text-gray-500 mt-0.5"></p>
+                                    </td>
+                                    <td class="px-4 py-3 hidden sm:table-cell">
+                                        <span class="text-xs text-gray-500" x-text="p.season.replace('-20', '-')"></span>
+                                    </td>
+                                    <td class="px-4 py-3 hidden md:table-cell">
+                                        <span x-show="p.category" x-text="p.category"
+                                              class="text-xs bg-gray-800 text-gray-400 px-2 py-0.5 rounded-full"></span>
+                                    </td>
+                                    <td class="px-4 py-3">
+                                        <div class="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                                            <a :href="p.editUrl" class="text-gray-500 hover:text-indigo-400 p-1 rounded transition-colors">
+                                                <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"/></svg>
+                                            </a>
+                                            <button @click="deletePerf(p)"
+                                                    class="text-gray-500 hover:text-red-400 p-1 rounded transition-colors">
+                                                <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
+                                            </button>
+                                        </div>
+                                    </td>
+                                </tr>
+                            </template>
+                            <tr x-show="filtered.length === 0">
+                                <td colspan="6" class="px-4 py-10 text-center text-gray-500">Aucun résultat pour ces filtres.</td>
+                            </tr>
+                        </tbody>
+                    </table>
+
+                    {# Pagination #}
+                    <div x-show="totalPages > 1" class="flex items-center justify-between px-4 py-3 border-t border-gray-800">
+                        <span class="text-xs text-gray-500"
+                              x-text="(activePage * pageSize + 1) + '–' + Math.min((activePage + 1) * pageSize, filtered.length) + ' sur ' + filtered.length"></span>
+                        <div class="flex gap-1">
+                            <button @click="activePage--" :disabled="activePage === 0"
+                                    class="px-2.5 py-1 rounded text-xs bg-gray-800 text-gray-400 disabled:opacity-30 hover:text-white transition-colors">←</button>
+                            <template x-for="i in totalPages" :key="i">
+                                <button @click="activePage = i - 1"
+                                        :class="activePage === i - 1 ? 'bg-indigo-600 text-white' : 'bg-gray-800 text-gray-400 hover:text-white'"
+                                        class="px-2.5 py-1 rounded text-xs transition-colors"
+                                        x-text="i"></button>
+                            </template>
+                            <button @click="activePage++" :disabled="activePage >= totalPages - 1"
+                                    class="px-2.5 py-1 rounded text-xs bg-gray-800 text-gray-400 disabled:opacity-30 hover:text-white transition-colors">→</button>
+                        </div>
+                    </div>
+                </div>
+
+                {# Charts per discipline (collapsible) #}
+                {% if performancesByDiscipline is not empty %}
+                <div x-data="{ chartsOpen: false }">
+                    <button @click="chartsOpen = !chartsOpen"
+                            class="flex items-center gap-2 text-sm text-gray-400 hover:text-white transition-colors">
+                        <svg :class="chartsOpen ? 'rotate-90' : ''" class="w-4 h-4 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/>
+                        </svg>
+                        Graphiques de progression
+                    </button>
+                    <div x-show="chartsOpen" x-transition class="mt-3 space-y-4">
+                        {% for discipline, perfs in performancesByDiscipline %}
+                            {% if perfs|length > 1 %}
+                            <div class="bg-gray-900 border border-gray-800 rounded-xl p-4">
+                                <p class="text-sm font-medium text-gray-300 mb-3">{{ discipline }}</p>
+                                <canvas id="chart-{{ loop.index }}" height="70"
+                                        data-labels="{{ chartData[discipline].labels|json_encode }}"
+                                        data-values="{{ chartData[discipline].values|json_encode }}"
+                                        data-unit="{{ chartData[discipline].unit }}"
+                                        data-higher-is-better="{{ chartData[discipline].higherIsBetter ? 'true' : 'false' }}"
+                                        class="performance-chart">
+                                </canvas>
+                            </div>
+                            {% endif %}
+                        {% endfor %}
+                    </div>
+                </div>
+                {% endif %}
+
+            </div>
+        </template>
+    </div>
+
+    {# Sessions tab #}
+    <div x-show="activeTab === 'sessions'" x-transition>
+        <div class="space-y-6">
+
+            {# Séances à enregistrer #}
+            {% if unloggedSessions is not empty %}
+                <div>
+                    <div class="flex items-center gap-2 mb-3">
+                        <h2 class="text-base font-semibold text-white">Séances passées à enregistrer</h2>
+                        <span class="text-xs bg-indigo-600/20 text-indigo-400 border border-indigo-600/30 px-2 py-0.5 rounded-full">
+                            {{ unloggedSessions|length }}
+                        </span>
+                    </div>
+                    <div class="space-y-2">
+                        {% for session in unloggedSessions %}
+                            <div class="bg-gray-900 border border-gray-800 rounded-xl overflow-hidden hover:border-indigo-600/40 transition-colors">
+                                <div class="h-0.5" style="background: {{ session.colorBg }}"></div>
+                                <div class="flex items-center justify-between px-4 py-3">
+                                    <div class="flex items-center gap-4">
+                                        <div class="text-center w-10 shrink-0">
+                                            <p class="text-base font-bold text-white leading-none">{{ session.date|date('d') }}</p>
+                                            <p class="text-xs text-gray-500 uppercase">{{ session.date|date('M') }}</p>
+                                        </div>
+                                        <div>
+                                            <p class="text-sm font-medium text-white">{{ session.title }}</p>
+                                            <div class="flex items-center gap-2 mt-0.5">
+                                                <span class="text-xs px-1.5 py-0.5 rounded font-medium"
+                                                      style="background: {{ session.colorBg }}22; color: {{ session.colorBg }}">
+                                                    {{ session.typeLabel }}
+                                                </span>
+                                                {% if session.durationMinutes %}
+                                                    <span class="text-xs text-gray-500">{{ session.durationMinutes }} min</span>
+                                                {% endif %}
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <a href="{{ path('app_athlete_session_log', {athleteId: athlete.id, sessionId: session.id}) }}"
+                                       class="flex items-center gap-1.5 bg-indigo-600 hover:bg-indigo-500 text-white px-3 py-1.5 rounded-lg text-xs font-medium transition-colors shrink-0">
+                                        <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"/>
+                                        </svg>
+                                        Enregistrer mon ressenti
+                                    </a>
+                                </div>
+                            </div>
+                        {% endfor %}
+                    </div>
+                </div>
+            {% endif %}
+
+            {# Séances déjà enregistrées #}
+            <div>
+                <h2 class="text-base font-semibold text-white mb-3">Historique des séances</h2>
+                {% if loggedSessions is empty %}
+                    <div class="bg-gray-900 border border-gray-800 rounded-xl p-10 text-center text-gray-500 text-sm">
+                        Aucune séance enregistrée pour l'instant.
+                    </div>
+                {% else %}
+                    <div class="space-y-2">
+                        {% for as in loggedSessions %}
+                            {% set s = as.session %}
+                            <div class="bg-gray-900 border border-gray-800 rounded-xl overflow-hidden">
+                                <div class="h-0.5" style="background: {{ s.colorBg }}"></div>
+                                <div class="px-4 py-3">
+                                    <div class="flex items-start justify-between gap-4">
+                                        <div class="flex items-start gap-4 flex-1 min-w-0">
+                                            <div class="text-center w-10 shrink-0 pt-0.5">
+                                                <p class="text-base font-bold text-white leading-none">{{ s.date|date('d') }}</p>
+                                                <p class="text-xs text-gray-500 uppercase">{{ s.date|date('M') }}</p>
+                                            </div>
+                                            <div class="flex-1 min-w-0">
+                                                <p class="text-sm font-medium text-white">{{ s.title }}</p>
+                                                <div class="flex items-center gap-2 mt-0.5 flex-wrap">
+                                                    <span class="text-xs px-1.5 py-0.5 rounded font-medium"
+                                                          style="background: {{ s.colorBg }}22; color: {{ s.colorBg }}">
+                                                        {{ s.typeLabel }}
+                                                    </span>
+                                                    {% if as.difficulty is not null %}
+                                                        <span class="flex items-center gap-1 text-xs text-gray-400">
+                                                            Difficulté :
+                                                            <span class="font-bold
+                                                                {% if as.difficulty <= 3 %}text-emerald-400
+                                                                {% elseif as.difficulty <= 6 %}text-yellow-400
+                                                                {% else %}text-red-400{% endif %}">
+                                                                {{ as.difficulty }}/10
+                                                            </span>
+                                                        </span>
+                                                    {% endif %}
+                                                </div>
+                                                {% if as.comment %}
+                                                    <p class="text-xs text-gray-400 mt-1.5 italic leading-relaxed">"{{ as.comment }}"</p>
+                                                {% endif %}
+                                            </div>
+                                        </div>
+                                        <div class="flex gap-1 shrink-0">
+                                            <a href="{{ path('app_athlete_session_edit', {athleteId: athlete.id, id: as.id}) }}"
+                                               class="text-gray-500 hover:text-indigo-400 p-1.5 rounded hover:bg-gray-800 transition-colors">
+                                                <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"/>
+                                                </svg>
+                                            </a>
+                                            <form action="{{ path('app_athlete_session_delete', {athleteId: athlete.id, id: as.id}) }}" method="post" class="inline">
+                                                <input type="hidden" name="_token" value="{{ csrf_token('delete-as' ~ as.id) }}">
+                                                <button type="submit" onclick="return confirm('Supprimer ce ressenti ?')"
+                                                        class="text-gray-500 hover:text-red-400 p-1.5 rounded hover:bg-gray-800 transition-colors">
+                                                    <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
+                                                    </svg>
+                                                </button>
+                                            </form>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        {% endfor %}
+                    </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+
+    {# Goals tab #}
+    <div x-show="activeTab === 'goals'" x-transition>
+        <div class="flex items-center justify-between mb-4">
+            <h2 class="text-lg font-semibold text-white">Objectifs</h2>
+            <a href="{{ path('app_goal_new', {athleteId: athlete.id}) }}"
+               class="flex items-center gap-2 bg-indigo-600 hover:bg-indigo-500 text-white px-3 py-2 rounded-lg text-sm font-medium transition-colors">
+                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/>
+                </svg>
+                Ajouter
+            </a>
+        </div>
+
+        {% if athlete.goals is empty %}
+            <div id="goals-empty" class="bg-gray-900 border border-gray-800 rounded-xl p-10 text-center text-gray-500">
+                Aucun objectif défini.
+            </div>
+        {% else %}
+            <div id="goals-list" class="space-y-3">
+                {% for goal in athlete.goals %}
+                    <div id="goal-{{ goal.id }}"
+                         class="bg-gray-900 border rounded-xl px-5 py-4 transition-all
+                        {% if goal.isAchieved %}border-emerald-800/50
+                        {% elseif goal.isOverdue %}border-red-800/50
+                        {% else %}border-gray-800{% endif %}">
+                        <div class="flex items-start justify-between gap-4">
+                            <div class="flex items-start gap-3">
+                                <button type="button"
+                                        onclick="goalToggle({{ goal.id }}, '{{ path('app_goal_toggle', {athleteId: athlete.id, id: goal.id}) }}', '{{ csrf_token('toggle-goal' ~ goal.id) }}')"
+                                        class="mt-0.5 w-5 h-5 rounded-full border-2 flex items-center justify-center transition-colors shrink-0
+                                        {% if goal.isAchieved %}border-emerald-500 bg-emerald-500{% else %}border-gray-600 hover:border-emerald-500{% endif %}">
+                                    {% if goal.isAchieved %}
+                                        <svg class="w-3 h-3 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M5 13l4 4L19 7"/>
+                                        </svg>
+                                    {% endif %}
+                                </button>
+                                <div>
+                                    <p class="font-medium {% if goal.isAchieved %}text-emerald-400 line-through{% else %}text-white{% endif %}">
+                                        {{ goal.title }}
+                                    </p>
+                                    <div class="flex items-center gap-3 mt-1 text-xs text-gray-400">
+                                        {% if goal.discipline %}
+                                            <span>{{ goal.discipline }}</span>
+                                        {% endif %}
+                                        {% if goal.targetValue %}
+                                            <span>Cible : {{ goal.targetValue }} {{ goal.unit }}</span>
+                                        {% endif %}
+                                        {% if goal.deadline %}
+                                            <span class="{% if goal.isOverdue and not goal.isAchieved %}text-red-400{% endif %}">
+                                                Échéance : {{ goal.deadline|date('d/m/Y') }}
+                                            </span>
+                                        {% endif %}
+                                    </div>
+                                    {% if goal.notes %}
+                                        <p class="text-xs text-gray-500 mt-1">{{ goal.notes }}</p>
+                                    {% endif %}
+                                </div>
+                            </div>
+                            <div class="flex items-center gap-2 shrink-0">
+                                <span class="goal-status-badge text-xs px-2 py-0.5 rounded-full font-medium
+                                    {% if goal.isAchieved %}bg-emerald-900/50 text-emerald-400
+                                    {% elseif goal.isOverdue %}bg-red-900/50 text-red-400
+                                    {% else %}bg-blue-900/50 text-blue-400{% endif %}">
+                                    {% if goal.isAchieved %}Atteint
+                                    {% elseif goal.isOverdue %}En retard
+                                    {% else %}En cours{% endif %}
+                                </span>
+                                <a href="{{ path('app_goal_edit', {athleteId: athlete.id, id: goal.id}) }}"
+                                   class="text-gray-500 hover:text-indigo-400 transition-colors">
+                                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"/>
+                                    </svg>
+                                </a>
+                                <button type="button"
+                                        onclick="goalDelete({{ goal.id }}, '{{ path('app_goal_delete', {athleteId: athlete.id, id: goal.id}) }}', '{{ csrf_token('delete-goal' ~ goal.id) }}')"
+                                        class="text-gray-500 hover:text-red-400 transition-colors">
+                                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
+                                    </svg>
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                {% endfor %}
+            </div>
+        {% endif %}
+    </div>
+
+<script>
+function goalToggle(id, url, token) {
+    fetch(url, {
+        method: 'POST',
+        headers: {'Content-Type': 'application/x-www-form-urlencoded', 'X-Requested-With': 'XMLHttpRequest'},
+        body: '_token=' + encodeURIComponent(token)
+    })
+    .then(r => r.json())
+    .then(data => {
+        var el = document.getElementById('goal-' + id);
+        if (!el) return;
+        var btn = el.querySelector('button[onclick^="goalToggle"]');
+        var title = el.querySelector('p.font-medium');
+        var badge = el.querySelector('.goal-status-badge');
+
+        if (data.achieved) {
+            el.className = el.className.replace(/border-\S+/g, '').trim() + ' border-emerald-800/50';
+            btn.className = btn.className.replace(/border-\S+|bg-\S+/g, '').trim() + ' border-emerald-500 bg-emerald-500';
+            btn.innerHTML = '<svg class="w-3 h-3 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M5 13l4 4L19 7"/></svg>';
+            title.className = title.className.replace('text-white', 'text-emerald-400') + ' line-through';
+            badge.className = badge.className.replace(/bg-\S+|text-\S+400/g, '').trim() + ' bg-emerald-900/50 text-emerald-400';
+            badge.textContent = 'Atteint';
+        } else {
+            el.className = el.className.replace(/border-\S+/g, '').trim() + ' border-gray-800';
+            btn.className = btn.className.replace(/border-\S+|bg-\S+/g, '').trim() + ' border-gray-600 hover:border-emerald-500';
+            btn.innerHTML = '';
+            title.className = title.className.replace('text-emerald-400', 'text-white').replace(' line-through', '');
+            badge.className = badge.className.replace(/bg-\S+|text-\S+400/g, '').trim() + ' bg-blue-900/50 text-blue-400';
+            badge.textContent = 'En cours';
+        }
+    })
+    .catch(() => location.reload());
+}
+
+function goalDelete(id, url, token) {
+    if (!confirm('Supprimer cet objectif ?')) return;
+    fetch(url, {
+        method: 'POST',
+        headers: {'Content-Type': 'application/x-www-form-urlencoded', 'X-Requested-With': 'XMLHttpRequest'},
+        body: '_token=' + encodeURIComponent(token)
+    })
+    .then(r => r.json())
+    .then(() => {
+        var el = document.getElementById('goal-' + id);
+        if (el) el.remove();
+        var list = document.getElementById('goals-list');
+        if (list && list.children.length === 0) {
+            list.outerHTML = '<div class="bg-gray-900 border border-gray-800 rounded-xl p-10 text-center text-gray-500">Aucun objectif défini.</div>';
+        }
+    })
+    .catch(() => location.reload());
+}
+</script>
+
+    {# Videos tab #}
+    <div x-show="activeTab === 'videos'" x-transition id="videos-tab">
+
+        {# Upload — compact collapsible #}
+        <div class="bg-gray-900 border border-gray-800 rounded-xl overflow-hidden mb-4" x-data="{ uploadOpen: false }">
+
+            {# Toggle header #}
+            <button type="button" @click="uploadOpen = !uploadOpen"
+                    class="w-full flex items-center gap-3 px-4 py-3 hover:bg-gray-800/60 transition-colors">
+                <div class="w-7 h-7 rounded-lg bg-indigo-600/20 flex items-center justify-center shrink-0">
+                    <svg class="w-3.5 h-3.5 text-indigo-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M12 4v16m8-8H4"/>
+                    </svg>
+                </div>
+                <span class="text-sm font-medium text-white">Ajouter une vidéo</span>
+                <svg :class="uploadOpen ? 'rotate-180' : ''" class="w-4 h-4 text-gray-500 transition-transform ml-auto" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/>
+                </svg>
+            </button>
+
+            {# Collapsible form #}
+            <div x-show="uploadOpen" x-transition class="border-t border-gray-800">
+                <form id="video-upload-form" class="p-4 space-y-3">
+
+                    {# File picker row #}
+                    <div id="video-dropzone"
+                         class="flex items-center gap-3 bg-gray-800/60 border border-dashed border-gray-600 hover:border-indigo-500 hover:bg-indigo-500/5 rounded-lg px-3 py-2.5 cursor-pointer transition-all group"
+                         onclick="document.getElementById('video-file-input').click()">
+                        <svg class="w-4 h-4 text-gray-500 group-hover:text-indigo-400 shrink-0 transition-colors" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 10l4.553-2.069A1 1 0 0121 8.87v6.26a1 1 0 01-1.447.894L15 14M5 18h8a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z"/>
+                        </svg>
+                        <span id="video-file-label" class="text-xs text-gray-400 group-hover:text-gray-200 transition-colors flex-1">Choisir un fichier — MP4, MOV, AVI… max 500 Mo</span>
+                        <input type="file" name="video" id="video-file-input" accept="video/*" required class="hidden">
+                    </div>
+
+                    {# Preview selected file #}
+                    <div id="video-file-preview" class="hidden items-center gap-2.5 bg-indigo-600/10 border border-indigo-600/30 rounded-lg px-3 py-2">
+                        <svg class="w-4 h-4 text-indigo-400 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 10l4.553-2.069A1 1 0 0121 8.87v6.26a1 1 0 01-1.447.894L15 14M5 18h8a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z"/>
+                        </svg>
+                        <div class="flex-1 min-w-0">
+                            <p id="vdz-filename" class="text-xs font-medium text-white truncate"></p>
+                            <p id="vdz-filesize" class="text-xs text-indigo-300/70"></p>
+                        </div>
+                        <button type="button" onclick="videoClearFile()" class="text-gray-500 hover:text-red-400 transition-colors shrink-0">
+                            <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
+                        </button>
+                    </div>
+
+                    {# Title + category #}
+                    <div class="grid grid-cols-2 gap-2">
+                        <input type="text" name="title" required placeholder="Titre de la vidéo *"
+                               class="w-full bg-gray-800 border border-gray-700 rounded-lg px-3 py-2 text-xs text-white placeholder-gray-500 focus:outline-none focus:border-indigo-500">
+                        <select name="discipline"
+                                class="w-full bg-gray-800 border border-gray-700 rounded-lg px-3 py-2 text-xs text-white focus:outline-none focus:border-indigo-500">
+                            <option value="">— Catégorie —</option>
+                            {% for label, value in constant('App\\Entity\\Performance::DISCIPLINES') %}
+                                <option value="{{ value }}">{{ label }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+
+                    {# Submit #}
+                    <div class="flex justify-end">
+                        <button type="submit" id="video-submit-btn"
+                                class="flex items-center gap-1.5 bg-indigo-600 hover:bg-indigo-500 text-white px-3 py-2 rounded-lg text-xs font-medium transition-colors disabled:opacity-50 disabled:cursor-not-allowed">
+                            <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12"/>
+                            </svg>
+                            Envoyer
+                        </button>
+                    </div>
+
+                    {# Progress #}
+                    <div id="video-progress-wrap" class="hidden">
+                        <div class="flex items-center justify-between text-xs text-gray-400 mb-1">
+                            <span>Envoi en cours…</span>
+                            <span id="video-progress-pct"></span>
+                        </div>
+                        <div class="w-full bg-gray-800 rounded-full h-1 overflow-hidden">
+                            <div id="video-progress-bar" class="h-1 rounded-full bg-indigo-500" style="width:0%;transition:width 0.2s ease"></div>
+                        </div>
+                    </div>
+
+                    <div id="video-upload-error" class="hidden text-xs text-red-400 bg-red-900/20 border border-red-800/40 rounded-lg px-3 py-2"></div>
+
+                </form>
+            </div>
+        </div>
+
+        {# Videos list #}
+        <div id="videos-container">
+            <div id="videos-loading" class="text-center py-10 text-gray-500 text-sm">Chargement…</div>
+        </div>
+
+    </div>
+
+</div>
+
+<script>
+(function () {
+    var athleteId = {{ athlete.id }};
+    var uploadUrl = '{{ path('app_athlete_video_upload', {athleteId: athlete.id}) }}';
+    var listUrl   = '{{ path('app_athlete_videos', {athleteId: athlete.id}) }}';
+
+    var loaded = false;
+
+    window.videoApp = {
+        load: function () {
+            if (loaded) return;
+            loaded = true;
+            fetch(listUrl, {headers: {'X-Requested-With': 'XMLHttpRequest'}})
+                .then(r => r.json())
+                .then(data => renderVideos(data.videos))
+                .catch(() => { document.getElementById('videos-loading').textContent = 'Erreur de chargement.'; });
+        }
+    };
+
+    function renderVideos(videos) {
+        var container = document.getElementById('videos-container');
+        container.innerHTML = '';
+        if (!videos.length) {
+            container.innerHTML = '<div class="bg-gray-900 border border-gray-800 rounded-xl p-10 text-center text-gray-500 text-sm">Aucune vidéo pour l\'instant.</div>';
+            return;
+        }
+
+        // Group by discipline preserving insertion order
+        var groups = {}, order = [];
+        videos.forEach(function (v) {
+            var key = v.discipline || '';
+            if (!groups[key]) { groups[key] = []; order.push(key); }
+            groups[key].push(v);
+        });
+
+        var wrap = document.createElement('div');
+        wrap.className = 'space-y-3';
+
+        order.forEach(function (disc, idx) {
+            var label   = disc || 'Sans catégorie';
+            var catVids = groups[disc];
+            var isOpen  = idx === 0;
+
+            var acc = document.createElement('div');
+            acc.className = 'bg-gray-900 border border-gray-800 rounded-xl overflow-hidden';
+
+            // ── Header ──
+            var header = document.createElement('button');
+            header.type = 'button';
+            header.style.cssText = 'width:100%;display:flex;align-items:center;justify-content:space-between;padding:20px 24px;background:none;border:none;cursor:pointer;transition:background 0.15s';
+            header.onmouseenter = function(){ this.style.background='rgba(255,255,255,0.04)'; };
+            header.onmouseleave = function(){ this.style.background='none'; };
+            header.innerHTML =
+                '<div style="display:flex;align-items:center;gap:12px">'
+                + '<span style="font-weight:600;color:white;font-size:15px">' + escHtml(label) + '</span>'
+                + '<span style="font-size:11px;background:#1f2937;color:#9ca3af;padding:3px 10px;border-radius:999px">' + catVids.length + '</span>'
+                + '</div>'
+                + '<svg class="cat-arrow" style="width:18px;height:18px;color:#6b7280;transition:transform 0.2s;transform:rotate(' + (isOpen ? '180' : '0') + 'deg);flex-shrink:0" fill="none" stroke="currentColor" viewBox="0 0 24 24">'
+                + '<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/></svg>';
+
+            // ── Body ──
+            var body = document.createElement('div');
+            body.className = 'border-t border-gray-800';
+            if (!isOpen) body.style.display = 'none';
+
+            // Search bar
+            var searchWrap = document.createElement('div');
+            searchWrap.style.cssText = 'padding:14px 24px;border-bottom:1px solid rgba(255,255,255,0.06)';
+            var searchInput = document.createElement('input');
+            searchInput.type = 'text';
+            searchInput.placeholder = 'Rechercher dans ' + label + '…';
+            searchInput.style.cssText = 'width:100%;background:#1f2937;border:1px solid #374151;border-radius:8px;padding:10px 14px;font-size:13px;color:white;outline:none;box-sizing:border-box';
+            searchInput.onfocus   = function(){ this.style.borderColor='#6366f1'; };
+            searchInput.onblur    = function(){ this.style.borderColor='#374151'; };
+            searchWrap.appendChild(searchInput);
+
+            // Video grid
+            var grid = document.createElement('div');
+            grid.className = 'p-4 grid grid-cols-3 gap-2 sm:grid-cols-4';
+
+            catVids.forEach(function (v) { grid.appendChild(createVideoCard(v)); });
+
+            searchInput.addEventListener('input', function () {
+                var q = this.value.toLowerCase().trim();
+                grid.querySelectorAll('.video-card').forEach(function (c) {
+                    c.style.display = (!q || c.dataset.title.toLowerCase().includes(q)) ? '' : 'none';
+                });
+            });
+
+            header.addEventListener('click', function () {
+                isOpen = !isOpen;
+                body.style.display = isOpen ? '' : 'none';
+                header.querySelector('.cat-arrow').style.transform = isOpen ? 'rotate(180deg)' : 'rotate(0deg)';
+            });
+
+            body.appendChild(searchWrap);
+            body.appendChild(grid);
+            acc.appendChild(header);
+            acc.appendChild(body);
+            wrap.appendChild(acc);
+        });
+
+        container.appendChild(wrap);
+    }
+
+    function fmtTime(s) {
+        if (isNaN(s)) return '0:00';
+        var m = Math.floor(s / 60), sec = Math.floor(s % 60);
+        return m + ':' + (sec < 10 ? '0' : '') + sec;
+    }
+
+    function createVideoCard(v) {
+        var card = document.createElement('div');
+        card.className = 'video-card bg-gray-800/50 border border-gray-700/60 rounded-xl overflow-hidden';
+        card.id = 'vcard-' + v.id;
+        card.dataset.title = v.title;
+
+        // ── Video wrapper (overflow-hidden clips the controls inside) ──
+        var wrapper = document.createElement('div');
+        wrapper.className = 'relative bg-black overflow-hidden';
+        wrapper.style.aspectRatio = '16/9';
+
+        var video = document.createElement('video');
+        video.src = v.url;
+        video.preload = 'metadata';
+        video.className = 'w-full h-full object-contain cursor-pointer block';
+
+        // ── Controls overlay (absolute, covers whole video area, flex-col justify-end) ──
+        var ctrl = document.createElement('div');
+        ctrl.style.cssText = 'position:absolute;inset:0;display:flex;flex-direction:column;justify-content:flex-end;opacity:0;transition:opacity 0.15s;background:linear-gradient(to top,rgba(0,0,0,0.88) 0%,rgba(0,0,0,0.25) 55%,transparent 100%)';
+
+        var ctrlInner = document.createElement('div');
+        ctrlInner.style.cssText = 'padding:0 8px 6px';
+
+        // Scrubber — native range input, styled via accent-color
+        var scrubber = document.createElement('input');
+        scrubber.type = 'range';
+        scrubber.min = '0'; scrubber.max = '1000'; scrubber.value = '0';
+        scrubber.style.cssText = 'display:block;width:100%;height:4px;margin-bottom:6px;cursor:pointer;accent-color:#6366f1;border-radius:9999px;outline:none;-webkit-appearance:none;appearance:none;background:rgba(255,255,255,0.25)';
+
+        // Controls row
+        var row = document.createElement('div');
+        row.style.cssText = 'display:flex;align-items:center;gap:6px';
+
+        // Play/pause
+        var playBtn = document.createElement('button');
+        playBtn.type = 'button';
+        playBtn.style.cssText = 'color:white;background:none;border:none;padding:2px;cursor:pointer;flex-shrink:0;display:flex;align-items:center';
+        playBtn.innerHTML = '<svg class="play-icon" width="16" height="16" fill="currentColor" viewBox="0 0 24 24"><path d="M8 5v14l11-7z"/></svg>'
+            + '<svg class="pause-icon" width="16" height="16" fill="currentColor" viewBox="0 0 24 24" style="display:none"><path d="M6 19h4V5H6v14zm8-14v14h4V5h-4z"/></svg>';
+
+        // Time
+        var timeEl = document.createElement('span');
+        timeEl.style.cssText = 'font-size:11px;color:#d1d5db;font-variant-numeric:tabular-nums;white-space:nowrap;flex-shrink:0';
+        timeEl.textContent = '0:00';
+
+        var spacer = document.createElement('span');
+        spacer.style.flex = '1';
+
+        // Speed — cycling button (0.25 → 0.5 → 1 → 1.25 → 1.5 → 2 → loop)
+        // Speed <select>
+        var speedBtn = document.createElement('select');
+        speedBtn.style.cssText = 'font-size:11px;font-weight:600;color:white;background:rgba(20,20,30,0.85);border:1px solid rgba(255,255,255,0.2);border-radius:4px;padding:2px 4px;cursor:pointer;flex-shrink:0;outline:none';
+        [0.25, 0.5, 1, 1.25, 1.5, 2].forEach(function (s) {
+            var opt = document.createElement('option');
+            opt.value = s; opt.textContent = s + '×'; if (s === 1) opt.selected = true;
+            speedBtn.appendChild(opt);
+        });
+
+        // Fullscreen
+        var fsBtn = document.createElement('button');
+        fsBtn.type = 'button';
+        fsBtn.style.cssText = 'color:white;background:none;border:none;padding:2px;cursor:pointer;flex-shrink:0;display:flex;align-items:center';
+        fsBtn.innerHTML = '<svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M4 8V4m0 0h4M4 4l5 5m11-1V4m0 0h-4m4 0l-5 5M4 16v4m0 0h4m-4 0l5-5m11 5l-5-5m5 5v-4m0 4h-4"/></svg>';
+
+        row.appendChild(playBtn);
+        row.appendChild(timeEl);
+        row.appendChild(spacer);
+        row.appendChild(speedBtn);
+        row.appendChild(fsBtn);
+        ctrlInner.appendChild(scrubber);
+        ctrlInner.appendChild(row);
+        ctrl.appendChild(ctrlInner);
+        wrapper.appendChild(video);
+        wrapper.appendChild(ctrl);
+
+        // Hover
+        wrapper.addEventListener('mouseenter', function () { ctrl.style.opacity = '1'; });
+        wrapper.addEventListener('mouseleave', function () { ctrl.style.opacity = '0'; });
+
+        // Play / pause — clic sur toute la zone vidéo (ctrl couvre la vidéo)
+        function togglePlay() { video.paused ? video.play() : video.pause(); }
+        // ctrl intercepts all clicks on the video area; buttons stop propagation
+        ctrl.addEventListener('click', function () { togglePlay(); });
+        playBtn.addEventListener('click', function (e) { e.stopPropagation(); togglePlay(); });
+        video.addEventListener('play',  function () { playBtn.querySelector('.play-icon').style.display  = 'none';  playBtn.querySelector('.pause-icon').style.display = ''; });
+        video.addEventListener('pause', function () { playBtn.querySelector('.play-icon').style.display  = '';      playBtn.querySelector('.pause-icon').style.display = 'none'; });
+
+        // Scrubber sync
+        video.addEventListener('loadedmetadata', function () {
+            timeEl.textContent = '0:00 / ' + fmtTime(video.duration);
+        });
+        video.addEventListener('timeupdate', function () {
+            if (video.duration > 0) {
+                scrubber.value = Math.round(video.currentTime / video.duration * 1000);
+                timeEl.textContent = fmtTime(video.currentTime) + ' / ' + fmtTime(video.duration);
+            }
+        });
+        scrubber.addEventListener('mousedown', function (e) { e.stopPropagation(); });
+        scrubber.addEventListener('input', function (e) {
+            e.stopPropagation();
+            if (video.duration > 0) video.currentTime = (this.value / 1000) * video.duration;
+        });
+
+        // Speed select
+        speedBtn.addEventListener('change', function (e) {
+            e.stopPropagation();
+            video.playbackRate = parseFloat(this.value);
+        });
+        speedBtn.addEventListener('click', function (e) { e.stopPropagation(); });
+
+        // Fullscreen
+        fsBtn.addEventListener('click', function (e) {
+            e.stopPropagation();
+            var el = wrapper;
+            (el.requestFullscreen || el.webkitRequestFullscreen || el.mozRequestFullScreen || function(){}).call(el);
+        });
+
+        // ── Info row ──
+        var info = document.createElement('div');
+        info.style.cssText = 'padding:8px 10px;display:flex;align-items:flex-start;justify-content:space-between;gap:8px';
+
+        var infoText = document.createElement('div');
+        infoText.style.cssText = 'min-width:0;flex:1';
+        infoText.innerHTML = '<p style="font-size:11px;font-weight:600;color:white;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">' + escHtml(v.title) + '</p>'
+            + '<p style="font-size:10px;color:#6b7280;margin-top:2px">' + v.createdAt + '</p>';
+
+        var delBtn = document.createElement('button');
+        delBtn.type = 'button';
+        delBtn.style.cssText = 'color:#6b7280;background:none;border:none;cursor:pointer;padding:2px;flex-shrink:0;margin-top:1px';
+        delBtn.innerHTML = '<svg width="13" height="13" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/></svg>';
+        delBtn.addEventListener('mouseover', function () { this.style.color = '#f87171'; });
+        delBtn.addEventListener('mouseout',  function () { this.style.color = '#6b7280'; });
+        delBtn.addEventListener('click', function () {
+            if (!confirm('Supprimer cette vidéo ?')) return;
+            fetch('/athletes/' + athleteId + '/videos/' + v.id + '/delete', {
+                method: 'POST',
+                headers: {'Content-Type': 'application/x-www-form-urlencoded', 'X-Requested-With': 'XMLHttpRequest'},
+                body: '_token=' + encodeURIComponent(v.csrfToken || '')
+            }).then(r => r.json()).then(function (d) {
+                if (d.success) {
+                    card.remove();
+                    if (!document.querySelector('[id^="vcard-"]')) renderVideos([]);
+                }
+            }).catch(function () { location.reload(); });
+        });
+
+        info.appendChild(infoText);
+        info.appendChild(delBtn);
+        card.appendChild(wrapper);
+        card.appendChild(info);
+        return card;
+    }
+
+    function escHtml(str) {
+        return String(str).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+    }
+
+    // ── File selection & drag-drop ──
+    var dropzone = document.getElementById('video-dropzone');
+    var fileInput = document.getElementById('video-file-input');
+
+    fileInput.addEventListener('change', function () {
+        if (this.files[0]) showFilePreview(this.files[0]);
+    });
+
+    var MAX_SIZE = 500 * 1024 * 1024; // 500 Mo
+
+    function showFilePreview(file) {
+        var err = document.getElementById('video-upload-error');
+        if (file.size > MAX_SIZE) {
+            err.textContent = 'Fichier trop lourd : ' + formatBytes(file.size) + ' — maximum 500 Mo.';
+            err.classList.remove('hidden');
+            fileInput.value = '';
+            return;
+        }
+        err.classList.add('hidden');
+        dropzone.classList.add('hidden');
+        var preview = document.getElementById('video-file-preview');
+        preview.classList.remove('hidden');
+        preview.classList.add('flex');
+        document.getElementById('vdz-filename').textContent = file.name;
+        document.getElementById('vdz-filesize').textContent = formatBytes(file.size);
+    }
+
+    window.videoClearFile = function () {
+        fileInput.value = '';
+        document.getElementById('video-file-preview').classList.add('hidden');
+        document.getElementById('video-file-preview').classList.remove('flex');
+        dropzone.classList.remove('hidden');
+        document.getElementById('video-file-label').textContent = 'Choisir un fichier — MP4, MOV, AVI… max 500 Mo';
+    };
+
+    function formatBytes(bytes) {
+        if (bytes < 1024 * 1024) return (bytes / 1024).toFixed(1) + ' Ko';
+        return (bytes / (1024 * 1024)).toFixed(1) + ' Mo';
+    }
+
+    // Drag & drop onto dropzone
+    ['dragenter', 'dragover'].forEach(function (evt) {
+        dropzone.addEventListener(evt, function (e) {
+            e.preventDefault();
+            dropzone.classList.add('border-indigo-500', 'bg-indigo-500/10');
+        });
+    });
+    ['dragleave', 'drop'].forEach(function (evt) {
+        dropzone.addEventListener(evt, function (e) {
+            e.preventDefault();
+            dropzone.classList.remove('border-indigo-500', 'bg-indigo-500/10');
+        });
+    });
+    dropzone.addEventListener('drop', function (e) {
+        e.preventDefault();
+        var file = e.dataTransfer.files[0];
+        if (!file) return;
+        var dt = new DataTransfer();
+        dt.items.add(file);
+        fileInput.files = dt.files;
+        showFilePreview(file);
+    });
+
+    // ── Upload submit ──
+    document.getElementById('video-upload-form').addEventListener('submit', function (e) {
+        e.preventDefault();
+        if (!fileInput.files[0]) return;
+        var form = this;
+        var btn  = document.getElementById('video-submit-btn');
+        var err  = document.getElementById('video-upload-error');
+        var progressWrap = document.getElementById('video-progress-wrap');
+        var progressBar  = document.getElementById('video-progress-bar');
+        var progressPct  = document.getElementById('video-progress-pct');
+
+        err.classList.add('hidden');
+        btn.disabled = true;
+        progressWrap.classList.remove('hidden');
+        progressBar.style.width = '0%';
+
+        var fd = new FormData(form);
+        var xhr = new XMLHttpRequest();
+        var animRunning = true;
+        var fakePct = 5;
+        var lastTs = null;
+
+        progressBar.style.width = '5%';
+        progressPct.textContent = '5%';
+
+        // rAF animation — runs every frame (~16ms), immune to fast server responses
+        function animStep(ts) {
+            if (!animRunning) return;
+            if (!lastTs) lastTs = ts;
+            var delta = ts - lastTs;
+            lastTs = ts;
+            if (fakePct < 88) {
+                fakePct += delta * 0.04; // ~4% per 100ms
+                if (fakePct > 88) fakePct = 88;
+                progressBar.style.width = fakePct.toFixed(1) + '%';
+                progressPct.textContent = Math.round(fakePct) + '%';
+            }
+            requestAnimationFrame(animStep);
+        }
+        requestAnimationFrame(animStep);
+        var fakeTimer = { cancel: function() { animRunning = false; } };
+
+        function finishUpload(success, errorMsg) {
+            fakeTimer.cancel();
+            btn.disabled = false;
+
+            if (!success) {
+                progressWrap.classList.add('hidden');
+                progressBar.style.width = '0%';
+                err.textContent = errorMsg;
+                err.classList.remove('hidden');
+                return;
+            }
+
+            // Animate to 100% then hide
+            progressBar.style.width = '100%';
+            progressPct.textContent = '100%';
+            setTimeout(function () {
+                progressWrap.classList.add('hidden');
+                progressBar.style.width = '0%';
+            }, 500);
+
+            form.reset();
+            videoClearFile();
+            fetch(listUrl, {headers: {'X-Requested-With': 'XMLHttpRequest'}})
+                .then(r => r.json())
+                .then(d => { loaded = true; renderVideos(d.videos); });
+        }
+
+        xhr.addEventListener('load', function () {
+            console.log('[VIDEO UPLOAD] status:', xhr.status, 'response:', xhr.responseText.substring(0, 500));
+            var data;
+            try { data = JSON.parse(xhr.responseText); } catch (ex) {
+                // Extraire le message d'erreur Symfony depuis le HTML
+                var match = xhr.responseText.match(/<title[^>]*>([^<]+)<\/title>/i)
+                         || xhr.responseText.match(/class="exception-message[^"]*">([^<]+)</i);
+                var msg = match ? match[1].trim() : ('Erreur serveur ' + xhr.status + ' — voir console F12');
+                finishUpload(false, msg);
+                return;
+            }
+            if (xhr.status >= 400) {
+                finishUpload(false, data.error || 'Erreur serveur (' + xhr.status + ').');
+                return;
+            }
+            finishUpload(true);
+        });
+
+        xhr.addEventListener('error', function () {
+            finishUpload(false, 'Erreur réseau lors de l\'upload.');
+        });
+
+        xhr.open('POST', uploadUrl);
+        xhr.setRequestHeader('X-Requested-With', 'XMLHttpRequest');
+        xhr.send(fd);
+    });
+}());
+
+{% if athlete.ffaProfileUrl %}
+(function () {
+    var syncUrl  = '{{ path('app_athlete_sync_ffa', {id: athlete.id}) }}';
+    var badge    = document.getElementById('ffa-sync-badge');
+    var spin     = document.getElementById('ffa-spin');
+    var syncText = document.getElementById('ffa-sync-text');
+
+    function setSyncStatus(text, color) {
+        syncText.textContent = text;
+        badge.style.color = color || '';
+        spin.classList.add('hidden');
+    }
+
+    // Show spinner
+    spin.classList.remove('hidden');
+
+    fetch(syncUrl, {
+        method: 'POST',
+        headers: { 'X-Requested-With': 'XMLHttpRequest' }
+    })
+    .then(function(r) { return r.json(); })
+    .then(function(data) {
+        if (data.error) {
+            setSyncStatus('Sync FFA : ' + data.error, '#9ca3af');
+        } else if (data.cached) {
+            setSyncStatus('Synchronisé à ' + data.lastSync, '#6b7280');
+        } else if (data.imported > 0) {
+            setSyncStatus(data.imported + ' résultat(s) importé(s) depuis athle.fr', '#34d399');
+            // Reload page to show new performances
+            setTimeout(function() { location.reload(); }, 1500);
+        } else {
+            setSyncStatus('Déjà à jour · ' + data.lastSync, '#6b7280');
+        }
+    })
+    .catch(function() {
+        setSyncStatus('Sync FFA indisponible', '#6b7280');
+    });
+}());
+{% endif %}
+
+// ── Performances tab Alpine component ──────────────────────────────────────
+function perfTab(data) {
+    return {
+        allPerfs:    data,
+        activeSeason: '',
+        activeDisc:   '',
+        activeCat:    '',
+        activePage:   0,
+        pageSize:     50,
+
+        init() {
+            // Default to latest season
+            if (this.seasons.length) {
+                this.activeSeason = this.seasons[0][0];
+            }
+        },
+
+        get seasons() {
+            const counts = {};
+            this.allPerfs.forEach(p => { counts[p.season] = (counts[p.season] || 0) + 1; });
+            return Object.entries(counts).sort((a, b) => b[0].localeCompare(a[0]));
+        },
+
+        get disciplines() {
+            const src = this.activeSeason ? this.allPerfs.filter(p => p.season === this.activeSeason) : this.allPerfs;
+            return [...new Set(src.map(p => p.discipline))].sort();
+        },
+
+        get categories() {
+            const src = this.activeSeason ? this.allPerfs.filter(p => p.season === this.activeSeason) : this.allPerfs;
+            const cats = [...new Set(src.map(p => p.category).filter(Boolean))];
+            const order = ['Poussin','Benjamin','Minime','Cadet','Junior','Espoir','Senior','Master'];
+            return cats.sort((a, b) => order.indexOf(a) - order.indexOf(b));
+        },
+
+        get filtered() {
+            return this.allPerfs.filter(p => {
+                if (this.activeSeason && p.season !== this.activeSeason) return false;
+                if (this.activeDisc   && p.discipline !== this.activeDisc) return false;
+                if (this.activeCat    && p.category   !== this.activeCat)  return false;
+                return true;
+            });
+        },
+
+        get totalPages() {
+            return Math.ceil(this.filtered.length / this.pageSize);
+        },
+
+        get paginated() {
+            const start = this.activePage * this.pageSize;
+            return this.filtered.slice(start, start + this.pageSize);
+        },
+
+        deletePerf(p) {
+            if (!confirm('Supprimer cette performance ?')) return;
+            const fd = new FormData();
+            fd.append('_token', p.csrfToken);
+            fetch(p.deleteUrl, { method: 'POST', body: fd })
+                .then(r => r.ok ? (this.allPerfs = this.allPerfs.filter(x => x.id !== p.id)) : alert('Erreur suppression'));
+        },
+    };
+}
+
+// ── Manual sync button ──────────────────────────────────────────────────────
+function triggerSync() {
+    var btn   = document.getElementById('manual-sync-btn');
+    var icon  = document.getElementById('sync-icon');
+    var label = document.getElementById('sync-label');
+    if (!btn) return;
+    btn.disabled = true;
+    icon.classList.add('animate-spin');
+    label.textContent = 'Synchronisation…';
+
+    fetch('{{ path('app_athlete_sync_ffa', {id: athlete.id}) }}', {
+        method: 'POST',
+        headers: { 'X-Requested-With': 'XMLHttpRequest' }
+    })
+    .then(r => r.json())
+    .then(data => {
+        icon.classList.remove('animate-spin');
+        btn.disabled = false;
+        if (data.error) {
+            label.textContent = data.error;
+        } else if (data.cached) {
+            label.textContent = 'À jour · ' + data.lastSync;
+        } else if (data.imported > 0) {
+            label.textContent = data.imported + ' résultat(s) importé(s) !';
+            setTimeout(() => location.reload(), 1200);
+        } else {
+            label.textContent = 'Déjà à jour';
+        }
+    })
+    .catch(() => { icon.classList.remove('animate-spin'); btn.disabled = false; label.textContent = 'Erreur réseau'; });
+}
+</script>
+{% endblock %}

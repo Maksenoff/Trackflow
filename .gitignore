@@ -1,0 +1,25 @@
+###> symfony ###
+/.env.local
+/.env.local.php
+/.env.*.local
+/config/secrets/prod/prod.decrypt.private.php
+/public/bundles/
+/var/cache/
+/var/log/
+/var/tailwind/
+###< symfony ###
+
+###> composer ###
+/vendor/
+###< composer ###
+
+###> node ###
+/node_modules/
+/npm-debug.log
+/yarn-error.log
+###< node ###
+
+###> assets ###
+/public/assets/
+/assets/vendor/
+###< assets ###

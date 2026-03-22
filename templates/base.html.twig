@@ -1,0 +1,106 @@
+<!DOCTYPE html>
+<html lang="fr" class="h-full">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}TrackFlow{% endblock %} — TrackFlow</title>
+    {% block stylesheets %}{% endblock %}
+    {% block javascripts %}
+        {% block importmap %}{{ importmap('app') }}{% endblock %}
+    {% endblock %}
+</head>
+<body class="h-full bg-gray-950 text-gray-100 font-sans overflow-x-hidden">
+
+<div class="flex h-full min-h-screen">
+    {# Sidebar #}
+    <aside class="w-64 bg-gray-900 border-r border-gray-800 flex flex-col shrink-0 fixed h-full z-10">
+        <div class="p-6 border-b border-gray-800">
+            <a href="{{ path('app_dashboard') }}" class="flex items-center gap-3">
+                <div class="w-9 h-9 bg-indigo-600 rounded-lg flex items-center justify-center">
+                    <svg class="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"/>
+                    </svg>
+                </div>
+                <span class="text-lg font-bold text-white tracking-tight">TrackFlow</span>
+            </a>
+        </div>
+
+        <nav class="flex-1 p-4 space-y-1">
+            <a href="{{ path('app_dashboard') }}"
+               class="flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-colors
+               {% if app.current_route == 'app_dashboard' %}bg-indigo-600 text-white{% else %}text-gray-400 hover:text-white hover:bg-gray-800{% endif %}">
+                <svg class="w-4 h-4 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6"/>
+                </svg>
+                Tableau de bord
+            </a>
+            <a href="{{ path('app_athlete_index') }}"
+               class="flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-colors
+               {% if app.current_route starts with 'app_athlete' %}bg-indigo-600 text-white{% else %}text-gray-400 hover:text-white hover:bg-gray-800{% endif %}">
+                <svg class="w-4 h-4 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0z"/>
+                </svg>
+                Athlètes
+            </a>
+            <a href="{{ path('app_calendar') }}"
+               class="flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-colors
+               {% if app.current_route == 'app_calendar' %}bg-indigo-600 text-white{% else %}text-gray-400 hover:text-white hover:bg-gray-800{% endif %}">
+                <svg class="w-4 h-4 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"/>
+                </svg>
+                Calendrier
+            </a>
+        </nav>
+
+        <div class="p-4 border-t border-gray-800 space-y-1">
+            <a href="{{ path('app_training_type_index') }}"
+               class="flex items-center gap-3 px-3 py-2 rounded-lg text-xs font-medium transition-colors
+               {% if app.current_route == 'app_training_type_index' %}bg-gray-700 text-white{% else %}text-gray-600 hover:text-gray-300 hover:bg-gray-800{% endif %}">
+                <svg class="w-3.5 h-3.5 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 7h.01M7 3h5c.512 0 1.024.195 1.414.586l7 7a2 2 0 010 2.828l-7 7a2 2 0 01-2.828 0l-7-7A1.994 1.994 0 013 12V7a4 4 0 014-4z"/>
+                </svg>
+                Types de séances
+            </a>
+        </div>
+    </aside>
+
+    {# Main content #}
+    <div class="flex-1 flex flex-col ml-64">
+        {# Top bar #}
+        <header class="bg-gray-900 border-b border-gray-800 px-8 py-4 flex items-center justify-between sticky top-0 z-10">
+            <div class="text-sm text-gray-400">
+                {% block breadcrumb %}{% endblock %}
+            </div>
+            <div class="flex items-center gap-3">
+                <div class="w-8 h-8 bg-indigo-600 rounded-full flex items-center justify-center text-sm font-bold text-white">C</div>
+                <span class="text-sm text-gray-300">Coach</span>
+            </div>
+        </header>
+
+        {# Flash messages #}
+        <div class="px-8 pt-4 space-y-2">
+        {% for type, messages in app.flashes %}
+            {% for message in messages %}
+                <div x-data="{ show: true }" x-show="show" x-init="setTimeout(() => show = false, 4000)"
+                     x-transition:leave="transition ease-in duration-300"
+                     x-transition:leave-start="opacity-100"
+                     x-transition:leave-end="opacity-0"
+                     class="px-4 py-3 rounded-lg text-sm font-medium
+                     {% if type == 'success' %}bg-emerald-900/50 text-emerald-300 border border-emerald-700
+                     {% elseif type == 'error' %}bg-red-900/50 text-red-300 border border-red-700
+                     {% else %}bg-blue-900/50 text-blue-300 border border-blue-700{% endif %}">
+                    {{ message }}
+                </div>
+            {% endfor %}
+        {% endfor %}
+        </div>
+
+        {# Page content #}
+        <main class="flex-1 p-8">
+            {% block body %}{% endblock %}
+        </main>
+    </div>
+</div>
+
+</body>
+</html>

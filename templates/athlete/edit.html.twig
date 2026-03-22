@@ -1,0 +1,49 @@
+{% extends 'base.html.twig' %}
+{% block title %}Modifier {{ athlete.fullName }}{% endblock %}
+
+{% block breadcrumb %}
+    <a href="{{ path('app_dashboard') }}" class="hover:text-white">Tableau de bord</a>
+    <span class="mx-2 text-gray-600">/</span>
+    <a href="{{ path('app_athlete_index') }}" class="hover:text-white">Athlètes</a>
+    <span class="mx-2 text-gray-600">/</span>
+    <a href="{{ path('app_athlete_show', {id: athlete.id}) }}" class="hover:text-white">{{ athlete.fullName }}</a>
+    <span class="mx-2 text-gray-600">/</span>
+    <span class="text-white font-medium">Modifier</span>
+{% endblock %}
+
+{% block body %}
+<div class="max-w-2xl mx-auto">
+    <div class="mb-6">
+        <h1 class="text-2xl font-bold text-white">Modifier {{ athlete.fullName }}</h1>
+    </div>
+    <div class="bg-gray-900 border border-gray-800 rounded-xl p-6">
+        {{ form_start(form, {attr: {class: 'space-y-5', enctype: 'multipart/form-data'}}) }}
+        <div class="grid grid-cols-2 gap-4">
+            <div>{{ form_row(form.firstName) }}</div>
+            <div>{{ form_row(form.lastName) }}</div>
+        </div>
+        <div class="grid grid-cols-2 gap-4">
+            <div>{{ form_row(form.birthDate) }}</div>
+            <div>{{ form_row(form.gender) }}</div>
+        </div>
+        {{ form_row(form.discipline) }}
+        {{ form_row(form.notes) }}
+        {% if athlete.photo %}
+            <div>
+                <p class="text-sm text-gray-400 mb-2">Photo actuelle :</p>
+                <img src="/uploads/athletes/{{ athlete.photo }}" class="w-16 h-16 rounded-lg object-cover">
+            </div>
+        {% endif %}
+        {{ form_row(form.photoFile) }}
+        <div class="flex gap-3 pt-2">
+            <button type="submit" class="bg-indigo-600 hover:bg-indigo-500 text-white px-5 py-2.5 rounded-lg text-sm font-medium transition-colors">
+                Enregistrer
+            </button>
+            <a href="{{ path('app_athlete_show', {id: athlete.id}) }}" class="bg-gray-800 hover:bg-gray-700 text-gray-300 px-5 py-2.5 rounded-lg text-sm font-medium transition-colors">
+                Annuler
+            </a>
+        </div>
+        {{ form_end(form) }}
+    </div>
+</div>
+{% endblock %}

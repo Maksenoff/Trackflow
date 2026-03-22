@@ -1,0 +1,96 @@
+{% use 'form_div_layout.html.twig' %}
+
+{% block form_row %}
+<div class="space-y-1.5">
+    {{- form_label(form) -}}
+    {{- form_errors(form) -}}
+    {{- form_widget(form) -}}
+</div>
+{% endblock %}
+
+{% block form_label %}
+{% if label is not same as(false) %}
+<label{% if id is defined %} for="{{ id }}"{% endif %} class="block text-sm font-medium text-gray-300 mb-1.5">
+    {{ label|default(name|humanize) }}{% if required %}<span class="text-red-400 ml-1">*</span>{% endif %}
+</label>
+{% endif %}
+{% endblock %}
+
+{% block form_errors %}
+{% if errors|length > 0 %}
+    {% for error in errors %}
+        <p class="text-xs text-red-400 mt-1">{{ error.message }}</p>
+    {% endfor %}
+{% endif %}
+{% endblock %}
+
+{% block text_widget %}
+<input type="text" {{ block('widget_attributes') }}
+       class="w-full bg-gray-800 border border-gray-700 text-white rounded-lg px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent placeholder:text-gray-500 transition-colors"
+       {% if value is defined %}value="{{ value }}"{% endif %}>
+{% endblock %}
+
+{% block email_widget %}
+<input type="email" {{ block('widget_attributes') }}
+       class="w-full bg-gray-800 border border-gray-700 text-white rounded-lg px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent placeholder:text-gray-500 transition-colors"
+       {% if value is defined %}value="{{ value }}"{% endif %}>
+{% endblock %}
+
+{% block number_widget %}
+<input type="number" {{ block('widget_attributes') }}
+       class="w-full bg-gray-800 border border-gray-700 text-white rounded-lg px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent placeholder:text-gray-500 transition-colors"
+       {% if value is not null %}value="{{ value }}"{% endif %}>
+{% endblock %}
+
+{% block integer_widget %}
+<input type="number" {{ block('widget_attributes') }}
+       class="w-full bg-gray-800 border border-gray-700 text-white rounded-lg px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent placeholder:text-gray-500 transition-colors"
+       {% if value is not null %}value="{{ value }}"{% endif %}>
+{% endblock %}
+
+{% block date_widget %}
+{% if widget == 'single_text' %}
+<input type="date" {{ block('widget_attributes') }}
+       class="w-full bg-gray-800 border border-gray-700 text-white rounded-lg px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition-colors [color-scheme:dark]"
+       {% if value %}value="{{ value }}"{% endif %}>
+{% else %}
+    {{ parent() }}
+{% endif %}
+{% endblock %}
+
+{% block textarea_widget %}
+<textarea {{ block('widget_attributes') }}
+          class="w-full bg-gray-800 border border-gray-700 text-white rounded-lg px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent placeholder:text-gray-500 resize-none transition-colors">{{ value }}</textarea>
+{% endblock %}
+
+{% block choice_widget_collapsed %}
+<select {{ block('widget_attributes') }}{% if multiple %} multiple="multiple"{% endif %}
+        class="w-full bg-gray-800 border border-gray-700 text-white rounded-lg px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition-colors">
+    {% if placeholder is not none %}
+        <option value=""{% if not value %} selected{% endif %}>{{ placeholder }}</option>
+    {% endif %}
+    {% for group_label, choice in choices %}
+        {% if choice is iterable %}
+            <optgroup label="{{ group_label }}">
+                {% for c in choice %}
+                    <option value="{{ c.value }}"{% if c.value in value %} selected{% endif %}>{{ c.label }}</option>
+                {% endfor %}
+            </optgroup>
+        {% else %}
+            <option value="{{ choice.value }}"{% if choice.value in value %} selected{% endif %}>{{ choice.label }}</option>
+        {% endif %}
+    {% endfor %}
+</select>
+{% endblock %}
+
+{% block checkbox_widget %}
+<div class="flex items-center gap-2">
+<input type="checkbox" {{ block('widget_attributes') }}{% if value == 'true' or checked %} checked{% endif %}
+       class="w-4 h-4 rounded bg-gray-800 border-gray-600 accent-indigo-600 focus:ring-indigo-500 cursor-pointer">
+</div>
+{% endblock %}
+
+{% block file_widget %}
+<input type="file" {{ block('widget_attributes') }}
+       class="w-full text-sm text-gray-400 file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-sm file:font-medium file:bg-indigo-600/20 file:text-indigo-400 hover:file:bg-indigo-600/30 file:cursor-pointer transition-colors">
+{% endblock %}

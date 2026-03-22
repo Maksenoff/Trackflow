@@ -1,0 +1,13 @@
+{% extends 'base.html.twig' %}
+
+{% block body %}
+<div class="max-w-2xl mx-auto space-y-6">
+    <div>
+        {% block form_header %}{% endblock %}
+    </div>
+
+    <div class="bg-gray-900 border border-gray-800 rounded-xl p-6">
+        {% block form_content %}{% endblock %}
+    </div>
+</div>
+{% endblock %}
