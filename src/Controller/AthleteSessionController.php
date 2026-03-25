@@ -13,6 +13,7 @@ use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\Routing\Attribute\Route;
+use Symfony\Component\Security\Http\Attribute\IsGranted;
 
 #[Route('/athletes/{athleteId}/log')]
 class AthleteSessionController extends AbstractController
@@ -28,6 +29,10 @@ class AthleteSessionController extends AbstractController
         EntityManagerInterface $em,
         AthleteSessionRepository $asRepo
     ): Response {
+        if (!$this->isGranted('ROLE_COACH') && $this->getUser()->getLinkedAthlete()?->getId() !== $athleteId) {
+            throw $this->createAccessDeniedException();
+        }
+
         $athlete = $em->getRepository(Athlete::class)->find($athleteId);
         $session = $em->getRepository(Session::class)->find($sessionId);
 
@@ -75,6 +80,10 @@ class AthleteSessionController extends AbstractController
         Request $request,
         EntityManagerInterface $em
     ): Response {
+        if (!$this->isGranted('ROLE_COACH') && $this->getUser()->getLinkedAthlete()?->getId() !== $athleteId) {
+            throw $this->createAccessDeniedException();
+        }
+
         $athlete = $em->getRepository(Athlete::class)->find($athleteId);
         if (!$athlete || $athleteSession->getAthlete() !== $athlete) {
             throw $this->createNotFoundException();
@@ -103,6 +112,10 @@ class AthleteSessionController extends AbstractController
         Request $request,
         EntityManagerInterface $em
     ): Response {
+        if (!$this->isGranted('ROLE_COACH') && $this->getUser()->getLinkedAthlete()?->getId() !== $athleteId) {
+            throw $this->createAccessDeniedException();
+        }
+
         if ($this->isCsrfTokenValid('delete-as' . $athleteSession->getId(), $request->getPayload()->get('_token'))) {
             $em->remove($athleteSession);
             $em->flush();

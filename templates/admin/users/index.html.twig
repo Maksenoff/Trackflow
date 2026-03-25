@@ -1,0 +1,129 @@
+{% extends 'base.html.twig' %}
+
+{% block title %}Gestion des utilisateurs{% endblock %}
+
+{% block breadcrumb %}
+    <a href="{{ path('app_dashboard') }}" class="hover:text-white transition-colors">Tableau de bord</a>
+    <span class="mx-2 text-gray-600">/</span>
+    <span class="text-white font-semibold">Utilisateurs</span>
+{% endblock %}
+
+{% block body %}
+<div class="space-y-6">
+
+    {# Header #}
+    <div class="flex items-center justify-between">
+        <div>
+            <h1 class="text-2xl font-bold text-white">Utilisateurs</h1>
+            <p class="text-gray-400 mt-1">{{ users|length }} compte{{ users|length > 1 ? 's' : '' }} enregistré{{ users|length > 1 ? 's' : '' }}</p>
+        </div>
+    </div>
+
+    {# Flash messages #}
+    {% for type, messages in app.flashes %}
+        {% for message in messages %}
+            <div class="rounded-xl px-5 py-3 text-sm font-medium
+                {% if type == 'success' %}bg-emerald-900/40 border border-emerald-700 text-emerald-300
+                {% elseif type == 'error' %}bg-red-900/40 border border-red-700 text-red-300
+                {% else %}bg-blue-900/40 border border-blue-700 text-blue-300{% endif %}">
+                {{ message }}
+            </div>
+        {% endfor %}
+    {% endfor %}
+
+    {# Table #}
+    <div class="bg-gray-900 border border-gray-800 rounded-xl overflow-hidden">
+        <table class="w-full text-sm">
+            <thead>
+                <tr class="border-b border-gray-800">
+                    <th class="text-left text-gray-500 font-medium px-6 py-4">Utilisateur</th>
+                    <th class="text-left text-gray-500 font-medium px-6 py-4">Email</th>
+                    <th class="text-left text-gray-500 font-medium px-6 py-4">Rôle</th>
+                    <th class="text-left text-gray-500 font-medium px-6 py-4">Profil lié</th>
+                    <th class="text-right text-gray-500 font-medium px-6 py-4">Actions</th>
+                </tr>
+            </thead>
+            <tbody class="divide-y divide-gray-800">
+                {% for user in users %}
+                <tr class="hover:bg-gray-800/40 transition-colors group">
+                    <td class="px-6 py-4">
+                        <div class="flex items-center gap-3">
+                            <div class="w-9 h-9 rounded-full bg-indigo-600/20 flex items-center justify-center text-indigo-300 font-bold text-sm shrink-0">
+                                {{ user.firstName|slice(0,1)|upper }}{{ user.lastName|slice(0,1)|upper }}
+                            </div>
+                            <div>
+                                <p class="font-medium text-white">{{ user.fullName }}</p>
+                                {% if user == app.user %}
+                                    <span class="text-xs text-indigo-400">Vous</span>
+                                {% endif %}
+                            </div>
+                        </div>
+                    </td>
+                    <td class="px-6 py-4 text-gray-400">{{ user.email }}</td>
+                    <td class="px-6 py-4">
+                        {% if 'ROLE_ADMIN' in user.roles %}
+                            <span class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold bg-red-900/40 text-red-300 border border-red-800/50">
+                                <span class="w-1.5 h-1.5 rounded-full bg-red-400"></span>
+                                Admin
+                            </span>
+                        {% elseif 'ROLE_COACH' in user.roles %}
+                            <span class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold bg-amber-900/40 text-amber-300 border border-amber-800/50">
+                                <span class="w-1.5 h-1.5 rounded-full bg-amber-400"></span>
+                                Coach
+                            </span>
+                        {% else %}
+                            <span class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold bg-indigo-900/40 text-indigo-300 border border-indigo-800/50">
+                                <span class="w-1.5 h-1.5 rounded-full bg-indigo-400"></span>
+                                Athlète
+                            </span>
+                        {% endif %}
+                    </td>
+                    <td class="px-6 py-4">
+                        {% if user.linkedAthlete %}
+                            <a href="{{ path('app_athlete_show', {id: user.linkedAthlete.id}) }}"
+                               class="text-indigo-400 hover:text-indigo-300 transition-colors">
+                                {{ user.linkedAthlete.fullName }}
+                            </a>
+                        {% else %}
+                            <span class="text-gray-600">—</span>
+                        {% endif %}
+                    </td>
+                    <td class="px-6 py-4">
+                        <div class="flex items-center justify-end gap-2">
+                            <a href="{{ path('app_user_edit', {id: user.id}) }}"
+                               class="flex items-center gap-1.5 bg-gray-800 hover:bg-gray-700 text-gray-300 px-3 py-1.5 rounded-lg text-xs font-medium transition-colors">
+                                <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"/>
+                                </svg>
+                                Modifier
+                            </a>
+                            {% if user != app.user %}
+                            <form action="{{ path('app_user_delete', {id: user.id}) }}" method="post"
+                                  x-data
+                                  @submit.prevent="if(confirm('Supprimer {{ user.fullName }} ?')) $el.submit()">
+                                <input type="hidden" name="_token" value="{{ csrf_token('delete-user' ~ user.id) }}">
+                                <button type="submit"
+                                        class="flex items-center gap-1.5 bg-gray-800 hover:bg-red-900/40 hover:text-red-400 border border-transparent hover:border-red-800 text-gray-500 px-3 py-1.5 rounded-lg text-xs font-medium transition-all">
+                                    <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/>
+                                    </svg>
+                                    Supprimer
+                                </button>
+                            </form>
+                            {% endif %}
+                        </div>
+                    </td>
+                </tr>
+                {% else %}
+                <tr>
+                    <td colspan="5" class="px-6 py-12 text-center text-gray-500">
+                        Aucun utilisateur.
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+
+</div>
+{% endblock %}

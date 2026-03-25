@@ -10,6 +10,7 @@ use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\Routing\Attribute\Route;
+use Symfony\Component\Security\Http\Attribute\IsGranted;
 
 #[Route('/athletes/{athleteId}/performances')]
 class PerformanceController extends AbstractController
@@ -17,6 +18,10 @@ class PerformanceController extends AbstractController
     #[Route('/new', name: 'app_performance_new')]
     public function new(int $athleteId, Request $request, EntityManagerInterface $em): Response
     {
+        if (!$this->isGranted('ROLE_COACH') && $this->getUser()->getLinkedAthlete()?->getId() !== $athleteId) {
+            throw $this->createAccessDeniedException();
+        }
+
         $athlete = $em->getRepository(Athlete::class)->find($athleteId);
         if (!$athlete) throw $this->createNotFoundException();
 
@@ -44,6 +49,10 @@ class PerformanceController extends AbstractController
     #[Route('/{id}/edit', name: 'app_performance_edit')]
     public function edit(int $athleteId, Performance $performance, Request $request, EntityManagerInterface $em): Response
     {
+        if (!$this->isGranted('ROLE_COACH') && $this->getUser()->getLinkedAthlete()?->getId() !== $athleteId) {
+            throw $this->createAccessDeniedException();
+        }
+
         $athlete = $em->getRepository(Athlete::class)->find($athleteId);
         if (!$athlete || $performance->getAthlete() !== $athlete) throw $this->createNotFoundException();
 
@@ -66,6 +75,10 @@ class PerformanceController extends AbstractController
     #[Route('/{id}/delete', name: 'app_performance_delete', methods: ['POST'])]
     public function delete(int $athleteId, Performance $performance, Request $request, EntityManagerInterface $em): Response
     {
+        if (!$this->isGranted('ROLE_COACH') && $this->getUser()->getLinkedAthlete()?->getId() !== $athleteId) {
+            throw $this->createAccessDeniedException();
+        }
+
         if ($this->isCsrfTokenValid('delete-perf' . $performance->getId(), $request->getPayload()->get('_token'))) {
             $em->remove($performance);
             $em->flush();

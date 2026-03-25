@@ -1,0 +1,52 @@
+{% extends 'base.html.twig' %}
+{% block title %}Modifier — {{ competition.title }}{% endblock %}
+
+{% block breadcrumb %}
+    <a href="{{ path('app_competition_calendar', {month: competition.date|date('n'), year: competition.date|date('Y')}) }}" class="hover:text-white">Compétitions</a>
+    <span class="mx-2 text-gray-600">/</span>
+    <a href="{{ path('app_competition_show', {id: competition.id}) }}" class="hover:text-white">{{ competition.title }}</a>
+    <span class="mx-2 text-gray-600">/</span>
+    <span class="text-white font-medium">Modifier</span>
+{% endblock %}
+
+{% block body %}
+<div class="max-w-2xl mx-auto">
+    <div class="mb-6">
+        <h1 class="text-2xl font-bold text-white">Modifier la compétition</h1>
+    </div>
+    <div class="bg-gray-900 border border-gray-800 rounded-xl p-6">
+        {{ form_start(form, {attr: {class: 'space-y-5', enctype: 'multipart/form-data'}}) }}
+        {{ form_row(form.title) }}
+        <div class="grid grid-cols-2 gap-4">
+            <div>{{ form_row(form.date) }}</div>
+            <div>{{ form_row(form.competitionType) }}</div>
+        </div>
+        {{ form_row(form.location) }}
+        {{ form_row(form.websiteUrl) }}
+
+        {# Document upload with current file indicator #}
+        <div>
+            {% if competition.documentFilename %}
+                <div class="flex items-center gap-3 mb-2 bg-gray-800 rounded-lg px-3 py-2">
+                    <svg class="w-4 h-4 text-amber-400 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg>
+                    <span class="text-sm text-gray-300">Circulaire actuelle</span>
+                    <a href="{{ path('app_competition_document', {id: competition.id}) }}"
+                       class="text-xs text-amber-400 hover:text-amber-300 ml-auto">Télécharger</a>
+                </div>
+            {% endif %}
+            {{ form_row(form.documentFile) }}
+        </div>
+
+        {{ form_row(form.description) }}
+        <div class="flex gap-3 pt-2">
+            <button type="submit" class="bg-indigo-600 hover:bg-indigo-500 text-white px-5 py-2.5 rounded-lg text-sm font-medium transition-colors">
+                Enregistrer
+            </button>
+            <a href="{{ path('app_competition_show', {id: competition.id}) }}" class="bg-gray-800 hover:bg-gray-700 text-gray-300 px-5 py-2.5 rounded-lg text-sm font-medium transition-colors">
+                Annuler
+            </a>
+        </div>
+        {{ form_end(form) }}
+    </div>
+</div>
+{% endblock %}

@@ -13,6 +13,7 @@ use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\Routing\Attribute\Route;
 use Symfony\Component\Security\Csrf\CsrfTokenManagerInterface;
+use Symfony\Component\Security\Http\Attribute\IsGranted;
 use Symfony\Component\String\Slugger\SluggerInterface;
 
 #[Route('/athletes/{athleteId}/videos')]
@@ -23,6 +24,10 @@ class AthleteVideoController extends AbstractController
     #[Route('', name: 'app_athlete_videos', methods: ['GET'])]
     public function index(int $athleteId, EntityManagerInterface $em, AthleteVideoRepository $repo): Response
     {
+        if (!$this->isGranted('ROLE_COACH') && $this->getUser()->getLinkedAthlete()?->getId() !== $athleteId) {
+            throw $this->createAccessDeniedException();
+        }
+
         $athlete = $em->getRepository(Athlete::class)->find($athleteId);
         if (!$athlete) throw $this->createNotFoundException();
 
@@ -41,6 +46,10 @@ class AthleteVideoController extends AbstractController
         EntityManagerInterface $em,
         SluggerInterface $slugger
     ): JsonResponse {
+        if (!$this->isGranted('ROLE_COACH') && $this->getUser()->getLinkedAthlete()?->getId() !== $athleteId) {
+            throw $this->createAccessDeniedException();
+        }
+
         $athlete = $em->getRepository(Athlete::class)->find($athleteId);
         if (!$athlete) throw $this->createNotFoundException();
 
@@ -93,6 +102,10 @@ class AthleteVideoController extends AbstractController
         Request $request,
         EntityManagerInterface $em
     ): JsonResponse {
+        if (!$this->isGranted('ROLE_COACH') && $this->getUser()->getLinkedAthlete()?->getId() !== $athleteId) {
+            throw $this->createAccessDeniedException();
+        }
+
         if ($video->getAthlete()->getId() !== $athleteId) {
             throw $this->createNotFoundException();
         }

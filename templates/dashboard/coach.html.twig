@@ -1,0 +1,216 @@
+{% extends 'base.html.twig' %}
+
+{% block title %}Tableau de bord{% endblock %}
+
+{% block breadcrumb %}
+    <span class="text-white font-semibold">Tableau de bord</span>
+{% endblock %}
+
+{% block body %}
+<div class="space-y-8">
+
+    {# Header #}
+    <div class="flex items-center justify-between">
+        <div>
+            <h1 class="text-2xl font-bold text-white">Bonjour, {{ app.user.firstName }}</h1>
+            <p class="text-gray-400 mt-1">{{ totalAthletes }} athlète{{ totalAthletes > 1 ? 's' : '' }} suivi{{ totalAthletes > 1 ? 's' : '' }}</p>
+        </div>
+        {% if is_granted('ROLE_COACH') %}
+        <a href="{{ path('app_athlete_new') }}"
+           class="flex items-center gap-2 bg-indigo-600 hover:bg-indigo-500 text-white px-4 py-2 rounded-lg text-sm font-medium transition-colors">
+            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/>
+            </svg>
+            Nouvel athlète
+        </a>
+        {% endif %}
+    </div>
+
+    <div class="grid grid-cols-3 gap-6">
+
+        {# Colonnes gauche — séances + compétitions (2/3) #}
+        <div class="col-span-2 space-y-8">
+
+        {# Séances #}
+        <div class="space-y-4">
+
+            {# Prochaine séance — mise en avant #}
+            {% if nextSession %}
+                <a href="{{ path('app_session_show', {id: nextSession.id}) }}"
+                   class="block bg-indigo-600/20 border border-indigo-500 rounded-xl p-6 hover:bg-indigo-600/30 transition-colors">
+                    <p class="text-indigo-300 text-xs font-semibold uppercase tracking-wider mb-1">
+                        Prochaine séance · {{ nextSession.date|date('d/m/Y') }}
+                    </p>
+                    <div class="flex items-start justify-between gap-4 mt-1">
+                        <div>
+                            <p class="text-white text-xl font-bold">{{ nextSession.title }}</p>
+                            {% if nextSession.description %}
+                                <p class="text-gray-400 text-sm mt-1 line-clamp-2">{{ nextSession.description }}</p>
+                            {% endif %}
+                            {% if nextSession.trainingType %}
+                                <span class="inline-block mt-3 px-2 py-0.5 rounded text-xs font-medium"
+                                      style="background-color: {{ nextSession.trainingType.color }}33; color: {{ nextSession.trainingType.color }}">
+                                    {{ nextSession.trainingType.name }}
+                                </span>
+                            {% endif %}
+                        </div>
+                        <svg class="w-5 h-5 text-indigo-400 shrink-0 mt-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/>
+                        </svg>
+                    </div>
+                </a>
+            {% endif %}
+
+            {# Séances suivantes #}
+            {% if upcomingSessions|length > 1 %}
+                <div class="bg-gray-900 border border-gray-800 rounded-xl overflow-hidden">
+                    <div class="px-5 py-3 border-b border-gray-800 flex items-center justify-between">
+                        <h2 class="text-sm font-semibold text-white">Séances à venir</h2>
+                        <a href="{{ path('app_calendar') }}" class="text-xs text-indigo-400 hover:text-indigo-300">Calendrier →</a>
+                    </div>
+                    <div class="divide-y divide-gray-700/50">
+                        {% for session in upcomingSessions %}
+                            {% if not loop.first %}
+                            <a href="{{ path('app_session_show', {id: session.id}) }}"
+                               class="flex items-center justify-between px-5 py-4 hover:bg-gray-800/50 transition-colors">
+                                <div class="flex items-center gap-3">
+                                    {% if session.trainingType %}
+                                        <div class="w-2 h-2 rounded-full shrink-0" style="background-color: {{ session.trainingType.color }}"></div>
+                                    {% else %}
+                                        <div class="w-2 h-2 rounded-full bg-gray-600 shrink-0"></div>
+                                    {% endif %}
+                                    <div>
+                                        <p class="text-sm text-white font-medium">{{ session.title }}</p>
+                                        {% if session.trainingType %}
+                                            <p class="text-xs text-gray-500">{{ session.trainingType.name }}</p>
+                                        {% endif %}
+                                    </div>
+                                </div>
+                                <span class="text-xs text-gray-500 shrink-0">{{ session.date|date('d/m/Y') }}</span>
+                            </a>
+                            {% endif %}
+                        {% endfor %}
+                    </div>
+                </div>
+            {% elseif not nextSession %}
+                <div class="bg-gray-900 border border-gray-800 rounded-xl p-8 text-center">
+                    <p class="text-gray-500 text-sm">Aucune séance planifiée.</p>
+                    <a href="{{ path('app_session_new') }}"
+                       class="inline-flex items-center gap-2 mt-3 text-sm text-indigo-400 hover:text-indigo-300 transition-colors">
+                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/>
+                        </svg>
+                        Créer une séance
+                    </a>
+                </div>
+            {% endif %}
+
+        </div>{# fin séances #}
+
+        {# Compétitions à venir #}
+        <div class="space-y-4">
+            {% if nextCompetition %}
+                <a href="{{ path('app_competition_show', {id: nextCompetition.id}) }}"
+                   class="block rounded-xl p-6 hover:opacity-90 transition-opacity border"
+                   style="background-color: {{ nextCompetition.colorBg }}18; border-color: {{ nextCompetition.colorBg }}66">
+                    <p class="text-xs font-semibold uppercase tracking-wider mb-1"
+                       style="color: {{ nextCompetition.colorBg }}">
+                        Prochaine compétition · {{ nextCompetition.date|date('d/m/Y') }}
+                    </p>
+                    <div class="flex items-start justify-between gap-4 mt-1">
+                        <div>
+                            <p class="text-white text-xl font-bold">{{ nextCompetition.title }}</p>
+                            {% if nextCompetition.location %}
+                                <p class="text-gray-400 text-sm mt-1">{{ nextCompetition.location }}</p>
+                            {% endif %}
+                            {% if nextCompetition.competitionType %}
+                                <span class="inline-block mt-3 px-2 py-0.5 rounded text-xs font-medium"
+                                      style="background-color: {{ nextCompetition.colorBg }}33; color: {{ nextCompetition.colorBg }}">
+                                    {{ nextCompetition.typeLabel }}
+                                </span>
+                            {% endif %}
+                        </div>
+                        <svg class="w-5 h-5 shrink-0 mt-1" style="color: {{ nextCompetition.colorBg }}" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/>
+                        </svg>
+                    </div>
+                </a>
+            {% endif %}
+
+            {% if upcomingCompetitions|length > 1 %}
+                <div class="bg-gray-900 border border-gray-800 rounded-xl overflow-hidden">
+                    <div class="px-5 py-3 border-b border-gray-800 flex items-center justify-between">
+                        <h2 class="text-sm font-semibold text-white">Compétitions à venir</h2>
+                        <a href="{{ path('app_competition_calendar') }}" class="text-xs text-indigo-400 hover:text-indigo-300">Calendrier →</a>
+                    </div>
+                    <div class="divide-y divide-gray-700/50">
+                        {% for competition in upcomingCompetitions %}
+                            {% if not loop.first %}
+                            <a href="{{ path('app_competition_show', {id: competition.id}) }}"
+                               class="flex items-center justify-between px-5 py-4 hover:bg-gray-800/50 transition-colors">
+                                <div class="flex items-center gap-3">
+                                    <div class="w-2 h-2 rounded-full shrink-0" style="background-color: {{ competition.colorBg }}"></div>
+                                    <div>
+                                        <p class="text-sm text-white font-medium">{{ competition.title }}</p>
+                                        <p class="text-xs text-gray-500">{{ competition.typeLabel }}{% if competition.location %} · {{ competition.location }}{% endif %}</p>
+                                    </div>
+                                </div>
+                                <span class="text-xs text-gray-500 shrink-0">{{ competition.date|date('d/m/Y') }}</span>
+                            </a>
+                            {% endif %}
+                        {% endfor %}
+                    </div>
+                </div>
+            {% elseif not nextCompetition %}
+                <div class="bg-gray-900 border border-gray-800 rounded-xl p-8 text-center">
+                    <p class="text-gray-500 text-sm">Aucune compétition planifiée.</p>
+                    {% if is_granted('ROLE_COACH') %}
+                    <a href="{{ path('app_competition_new') }}"
+                       class="inline-flex items-center gap-2 mt-3 text-sm text-indigo-400 hover:text-indigo-300 transition-colors">
+                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/>
+                        </svg>
+                        Ajouter une compétition
+                    </a>
+                    {% endif %}
+                </div>
+            {% endif %}
+        </div>
+
+        {# Colonne droite — performances récentes (1/3) #}
+        <div class="space-y-4">
+            <div class="bg-gray-900 border border-gray-800 rounded-xl overflow-hidden">
+                <div class="px-5 py-3 border-b border-gray-800 flex items-center justify-between">
+                    <h2 class="text-sm font-semibold text-white">Performances récentes</h2>
+                    <a href="{{ path('app_athlete_index') }}" class="text-xs text-indigo-400 hover:text-indigo-300">Athlètes →</a>
+                </div>
+                {% if recentPerformances is empty %}
+                    <div class="px-5 py-8 text-center text-gray-500 text-sm">
+                        Aucune performance enregistrée.
+                    </div>
+                {% else %}
+                    <div class="divide-y divide-gray-800">
+                        {% for perf in recentPerformances %}
+                        <a href="{{ path('app_athlete_show', {id: perf.athlete.id}) }}"
+                           class="flex items-center justify-between px-5 py-3 hover:bg-gray-800/50 transition-colors">
+                            <div class="min-w-0">
+                                <p class="text-sm text-white font-medium truncate">{{ perf.athlete.fullName }}</p>
+                                <p class="text-xs text-gray-500">{{ perf.discipline }} · {{ perf.recordedAt|date('d/m/Y') }}</p>
+                            </div>
+                            <div class="text-right shrink-0 ml-3">
+                                <p class="text-sm text-indigo-300 font-mono font-medium">{{ perf.formattedValue }}</p>
+                                {% if perf.isPersonalBest %}
+                                    <span class="text-xs text-yellow-400">PB</span>
+                                {% endif %}
+                            </div>
+                        </a>
+                        {% endfor %}
+                    </div>
+                {% endif %}
+            </div>
+        </div>
+
+    </div>
+
+</div>
+{% endblock %}

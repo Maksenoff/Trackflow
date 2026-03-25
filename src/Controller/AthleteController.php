@@ -18,6 +18,7 @@ use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\Routing\Attribute\Route;
 use Symfony\Component\Security\Csrf\CsrfTokenManagerInterface;
+use Symfony\Component\Security\Http\Attribute\IsGranted;
 use Symfony\Component\String\Slugger\SluggerInterface;
 
 #[Route('/athletes')]
@@ -31,6 +32,7 @@ class AthleteController extends AbstractController
         ]);
     }
 
+    #[IsGranted('ROLE_ADMIN')]
     #[Route('/lookup-ffa', name: 'app_athlete_lookup_ffa', methods: ['POST'])]
     public function lookupFfa(Request $request, FfaSync $ffaSync): JsonResponse
     {
@@ -52,6 +54,16 @@ class AthleteController extends AbstractController
         return new Response('<pre>' . htmlspecialchars(substr($html ?? 'NULL / no response', 0, 100000)) . '</pre>');
     }
 
+    /** Debug only — show exactly what HTML athle.fr returns near birth date fields */
+    #[Route('/debug-birthdate', name: 'app_athlete_debug_birthdate', methods: ['GET'])]
+    public function debugBirthDate(Request $request, FfaSync $ffaSync): Response
+    {
+        $url = $request->query->get('url', '');
+        if (!$url) return new Response('Pass ?url=...', 400);
+        $info = $ffaSync->debugBirthDate($url);
+        return new Response('<pre>' . htmlspecialchars(json_encode($info, JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE)) . '</pre>');
+    }
+
     /** Debug only — show resolved bases URL + parsed results count */
     #[Route('/diagnose-ffa', name: 'app_athlete_diagnose_ffa', methods: ['GET'])]
     public function diagnoseFfa(Request $request, FfaSync $ffaSync): Response
@@ -62,6 +74,7 @@ class AthleteController extends AbstractController
         return new Response('<pre>' . htmlspecialchars(json_encode($info, JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE)) . '</pre>');
     }
 
+    #[IsGranted('ROLE_COACH')]
     #[Route('/new', name: 'app_athlete_new')]
     public function new(Request $request, EntityManagerInterface $em, SluggerInterface $slugger): Response
     {
@@ -70,6 +83,8 @@ class AthleteController extends AbstractController
         $form->handleRequest($request);
 
         if ($form->isSubmitted() && $form->isValid()) {
+            $disciplinesRaw = $request->request->get('disciplines_raw', '[]');
+            $athlete->setDisciplines(json_decode($disciplinesRaw, true) ?: []);
             $this->handlePhotoUpload($form, $athlete, $slugger);
             $em->persist($athlete);
             $em->flush();
@@ -77,7 +92,11 @@ class AthleteController extends AbstractController
             return $this->redirectToRoute('app_athlete_show', ['id' => $athlete->getId()]);
         }
 
-        return $this->render('athlete/new.html.twig', ['form' => $form, 'athlete' => $athlete]);
+        return $this->render('athlete/new.html.twig', [
+            'form'        => $form,
+            'athlete'     => $athlete,
+            'disciplines' => Performance::DISCIPLINES,
+        ]);
     }
 
     #[Route('/{id}', name: 'app_athlete_show')]
@@ -118,8 +137,9 @@ class AthleteController extends AbstractController
 
             return [
                 'id'             => $p->getId(),
-                'discipline'     => $p->getDiscipline(),
+                'discipline'     => ucfirst($p->getDiscipline()),
                 'unit'           => $p->getUnit(),
+                'value'          => (float) $p->getValue(),
                 'formattedValue' => $p->getFormattedValue(),
                 'dateFormatted'  => $date->format('d/m/Y'),
                 'dateRaw'        => $date->format('Y-m-d'),
@@ -129,7 +149,12 @@ class AthleteController extends AbstractController
                 'category'       => $category,
                 'isCompetition'  => (bool) $p->getIsCompetition(),
                 'isPersonalBest' => (bool) $p->getIsPersonalBest(),
+                'isIndoor'       => $p->getIsIndoor(),
+                'venue'          => $p->getVenue() ?? '',
+                'level'          => $p->getLevel() ?? '',
+                'levelPoints'    => $p->getLevelPoints(),
                 'notes'          => $p->getNotes() ?? '',
+                'wind'           => $p->getWind(),
                 'editUrl'        => $this->generateUrl('app_performance_edit', ['athleteId' => $athlete->getId(), 'id' => $p->getId()]),
                 'deleteUrl'      => $this->generateUrl('app_performance_delete', ['athleteId' => $athlete->getId(), 'id' => $p->getId()]),
                 'csrfToken'      => $csrf->getToken('delete-perf' . $p->getId())->getValue(),
@@ -153,39 +178,58 @@ class AthleteController extends AbstractController
         $pastSessions     = $sessionRepo->findPastSessions(30);
         $loggedIds        = $asRepo->findLoggedSessionIds($athlete);
         $unloggedSessions = array_filter($pastSessions, fn($s) => !in_array($s->getId(), $loggedIds));
+        $upcomingSessions = $sessionRepo->findUpcomingSessions(10);
+
+        $isOwnProfile = $this->isGranted('ROLE_COACH') || ($this->getUser()->getLinkedAthlete()?->getId() === $athlete->getId());
+        $canEdit      = $isOwnProfile;
 
         return $this->render('athlete/show.html.twig', [
             'athlete'                  => $athlete,
             'performancesJson'         => $performancesJson,
             'performancesByDiscipline' => $performancesByDiscipline,
             'chartData'                => $chartData,
-            'unloggedSessions'         => array_values($unloggedSessions),
-            'loggedSessions'           => $asRepo->findByAthlete($athlete),
+            'unloggedSessions'         => $canEdit ? array_values($unloggedSessions) : [],
+            'loggedSessions'           => $canEdit ? $asRepo->findByAthlete($athlete) : [],
+            'upcomingSessions'         => $upcomingSessions,
+            'isOwnProfile'             => $isOwnProfile,
+            'canEdit'                  => $canEdit,
         ]);
     }
 
     #[Route('/{id}/edit', name: 'app_athlete_edit')]
     public function edit(Request $request, Athlete $athlete, EntityManagerInterface $em, SluggerInterface $slugger): Response
     {
+        if (!$this->isGranted('ROLE_COACH') && $this->getUser()->getLinkedAthlete()?->getId() !== $athlete->getId()) {
+            throw $this->createAccessDeniedException();
+        }
+
         $form = $this->createForm(AthleteType::class, $athlete);
         $form->handleRequest($request);
 
         if ($form->isSubmitted() && $form->isValid()) {
+            $disciplinesRaw = $request->request->get('disciplines_raw', '[]');
+            $athlete->setDisciplines(json_decode($disciplinesRaw, true) ?: []);
             $this->handlePhotoUpload($form, $athlete, $slugger);
             $em->flush();
             $this->addFlash('success', 'Profil mis à jour.');
             return $this->redirectToRoute('app_athlete_show', ['id' => $athlete->getId()]);
         }
 
-        return $this->render('athlete/edit.html.twig', ['form' => $form, 'athlete' => $athlete]);
+        return $this->render('athlete/edit.html.twig', [
+            'form'        => $form,
+            'athlete'     => $athlete,
+            'disciplines' => Performance::DISCIPLINES,
+        ]);
     }
 
+    #[IsGranted('ROLE_ADMIN')]
     #[Route('/{id}/sync-ffa', name: 'app_athlete_sync_ffa', methods: ['POST'])]
-    public function syncFfa(Athlete $athlete, FfaSync $ffaSync): JsonResponse
+    public function syncFfa(Request $request, Athlete $athlete, FfaSync $ffaSync): JsonResponse
     {
-        // Cache: skip if synced less than 1 hour ago
+        // Cache: skip if synced less than 5 min ago AND not a forced manual sync
+        $force    = (bool) $request->request->get('force', false);
         $lastSync = $athlete->getLastSyncedAt();
-        if ($lastSync && $lastSync > new \DateTimeImmutable('-1 hour')) {
+        if (!$force && $lastSync && $lastSync > new \DateTimeImmutable('-5 minutes')) {
             return $this->json([
                 'cached'   => true,
                 'imported' => 0,
@@ -202,6 +246,7 @@ class AthleteController extends AbstractController
         return $this->json($result);
     }
 
+    #[IsGranted('ROLE_ADMIN')]
     #[Route('/{id}/delete', name: 'app_athlete_delete', methods: ['POST'])]
     public function delete(Request $request, Athlete $athlete, EntityManagerInterface $em): Response
     {

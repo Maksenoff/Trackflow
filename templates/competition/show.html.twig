@@ -1,0 +1,144 @@
+{% extends 'base.html.twig' %}
+{% block title %}{{ competition.title }}{% endblock %}
+
+{% block breadcrumb %}
+    <a href="{{ path('app_competition_calendar', {month: competition.date|date('n'), year: competition.date|date('Y')}) }}" class="hover:text-white transition-colors">Compétitions</a>
+    <span class="mx-2 text-gray-600">/</span>
+    <span class="text-white font-medium">{{ competition.title }}</span>
+{% endblock %}
+
+{% block body %}
+<div class="max-w-3xl mx-auto space-y-6">
+
+    {# Header card #}
+    <div class="bg-gray-900 border border-gray-800 rounded-2xl overflow-hidden">
+        <div class="h-2" style="background: {{ competition.colorBg }}"></div>
+        <div class="p-6">
+            <div class="flex items-start justify-between gap-4">
+                <div>
+                    <div class="flex items-center gap-3 mb-2">
+                        {% if competition.competitionType %}
+                            <span class="text-xs font-semibold px-2.5 py-1 rounded-full"
+                                  style="background: {{ competition.colorBg }}22; color: {{ competition.colorBg }}; border: 1px solid {{ competition.colorBg }}44">
+                                {{ competition.typeLabel }}
+                            </span>
+                        {% endif %}
+                        {% if competition.isPast %}
+                            <span class="text-xs text-gray-500 bg-gray-800 px-2 py-0.5 rounded-full">Passée</span>
+                        {% else %}
+                            <span class="text-xs text-emerald-400 bg-emerald-900/30 border border-emerald-800/50 px-2 py-0.5 rounded-full">À venir</span>
+                        {% endif %}
+                    </div>
+                    <h1 class="text-2xl font-bold text-white">{{ competition.title }}</h1>
+                    <div class="flex flex-wrap items-center gap-4 mt-2 text-sm text-gray-400">
+                        <span class="flex items-center gap-1.5">
+                            <svg class="w-4 h-4 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"/></svg>
+                            {{ competition.date|date('l d F Y')|capitalize }}
+                        </span>
+                        {% if competition.location %}
+                            <span class="flex items-center gap-1.5">
+                                <svg class="w-4 h-4 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"/></svg>
+                                {{ competition.location }}
+                            </span>
+                        {% endif %}
+                    </div>
+                </div>
+                {% if canEdit %}
+                <div class="flex gap-2 shrink-0">
+                    <a href="{{ path('app_competition_edit', {id: competition.id}) }}"
+                       class="flex items-center gap-1.5 bg-gray-800 hover:bg-gray-700 text-gray-300 px-3 py-2 rounded-lg text-sm transition-colors">
+                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"/></svg>
+                        Modifier
+                    </a>
+                    {% if is_granted('ROLE_ADMIN') %}
+                    <form action="{{ path('app_competition_delete', {id: competition.id}) }}" method="post">
+                        <input type="hidden" name="_token" value="{{ csrf_token('delete-competition' ~ competition.id) }}">
+                        <button type="submit" onclick="return confirm('Supprimer cette compétition ?')"
+                                class="flex items-center gap-1.5 bg-gray-800 hover:bg-red-900/40 hover:text-red-400 text-gray-300 px-3 py-2 rounded-lg text-sm transition-colors">
+                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/></svg>
+                            Supprimer
+                        </button>
+                    </form>
+                    {% endif %}
+                </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+
+    {# Infos pratiques #}
+    <div class="bg-gray-900 border border-gray-800 rounded-2xl p-6 space-y-4">
+        <h2 class="text-sm font-semibold text-gray-400 uppercase tracking-wider">Infos pratiques</h2>
+
+        {# Site officiel #}
+        <div class="flex items-start gap-3">
+            <svg class="w-4 h-4 text-gray-500 mt-0.5 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13.828 10.172a4 4 0 00-5.656 0l-4 4a4 4 0 105.656 5.656l1.102-1.101m-.758-4.899a4 4 0 005.656 0l4-4a4 4 0 00-5.656-5.656l-1.1 1.1"/></svg>
+            <div class="flex-1">
+                <p class="text-xs text-gray-500 mb-0.5">Site officiel</p>
+                {% if competition.websiteUrl %}
+                    <a href="{{ competition.websiteUrl }}" target="_blank" rel="noopener noreferrer"
+                       class="text-sm text-amber-400 hover:text-amber-300 break-all">
+                        {{ competition.websiteUrl }}
+                    </a>
+                {% elseif canEdit %}
+                    <a href="{{ path('app_competition_edit', {id: competition.id}) }}"
+                       class="text-sm text-gray-600 hover:text-gray-400 transition-colors">Ajouter un lien →</a>
+                {% else %}
+                    <span class="text-sm text-gray-600">Non renseigné</span>
+                {% endif %}
+            </div>
+        </div>
+
+        {# Circulaire #}
+        <div class="flex items-start gap-3">
+            <svg class="w-4 h-4 text-gray-500 mt-0.5 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg>
+            <div class="flex-1">
+                <p class="text-xs text-gray-500 mb-0.5">Circulaire</p>
+                {% if competition.documentFilename %}
+                    <a href="{{ path('app_competition_document', {id: competition.id}) }}"
+                       class="inline-flex items-center gap-2 text-sm text-amber-400 hover:text-amber-300 transition-colors">
+                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"/></svg>
+                        Télécharger la circulaire
+                    </a>
+                    {% if canEdit %}
+                        <span class="text-xs text-gray-600 ml-2">(remplacer via <a href="{{ path('app_competition_edit', {id: competition.id}) }}" class="hover:text-gray-400">Modifier</a>)</span>
+                    {% endif %}
+                {% elseif canEdit %}
+                    <a href="{{ path('app_competition_edit', {id: competition.id}) }}"
+                       class="text-sm text-gray-600 hover:text-gray-400 transition-colors">Ajouter une circulaire →</a>
+                {% else %}
+                    <span class="text-sm text-gray-600">Non disponible</span>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+
+    {# Notes #}
+    {% if competition.description or canEdit %}
+    <div class="bg-gray-900 border border-gray-800 rounded-2xl overflow-hidden">
+        <div class="px-6 py-4 border-b border-gray-800 flex items-center justify-between">
+            <h2 class="text-sm font-semibold text-white flex items-center gap-2">
+                <svg class="w-4 h-4 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg>
+                Notes
+            </h2>
+        </div>
+        <div class="p-6">
+            {% if competition.description %}
+                <pre class="text-gray-300 text-sm leading-relaxed whitespace-pre-wrap font-sans">{{ competition.description }}</pre>
+            {% else %}
+                <div class="text-center py-6">
+                    <p class="text-gray-500 text-sm">Aucune note.</p>
+                    {% if canEdit %}
+                    <a href="{{ path('app_competition_edit', {id: competition.id}) }}"
+                       class="inline-block mt-2 text-xs text-amber-400 hover:text-amber-300 transition-colors">
+                        Ajouter des notes →
+                    </a>
+                    {% endif %}
+                </div>
+            {% endif %}
+        </div>
+    </div>
+    {% endif %}
+
+</div>
+{% endblock %}

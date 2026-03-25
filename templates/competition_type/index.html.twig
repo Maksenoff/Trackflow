@@ -1,0 +1,122 @@
+{% extends 'base.html.twig' %}
+{% block title %}Types de compétitions{% endblock %}
+
+{% block breadcrumb %}
+    <span class="text-white font-medium">Paramètres · Types de compétitions</span>
+{% endblock %}
+
+{% block body %}
+<div class="max-w-2xl mx-auto space-y-6">
+
+    <div>
+        <h1 class="text-2xl font-bold text-white">Types de compétitions</h1>
+        <p class="text-gray-400 mt-1">Gérez les pastilles de type utilisées dans le calendrier des compétitions.</p>
+    </div>
+
+    {# Liste des types existants #}
+    <div class="bg-gray-900 border border-gray-800 rounded-xl overflow-hidden">
+        {% if types is empty %}
+            <div class="p-10 text-center text-gray-500 text-sm">
+                Aucun type créé. Commencez par en ajouter un ci-dessous.
+            </div>
+        {% else %}
+            <div class="divide-y divide-gray-800">
+                {% for type in types %}
+                    <div class="flex items-center justify-between px-5 py-3 transition-opacity duration-200"
+                         x-data="{
+                            editing: false,
+                            async deleteType() {
+                                const msg = '{{ ('Supprimer le type "' ~ type.name ~ '" ?')|e('js') }}{% if type.competitions|length > 0 %} Les {{ type.competitions|length }} compétitions associées n\'auront plus de type.{% endif %}';
+                                if (!confirm(msg)) return;
+                                const res = await fetch('{{ path('app_competition_type_delete', {id: type.id}) }}', {
+                                    method: 'POST',
+                                    headers: { 'Content-Type': 'application/x-www-form-urlencoded', 'X-Requested-With': 'XMLHttpRequest' },
+                                    body: '_token={{ csrf_token('delete-ct' ~ type.id)|url_encode }}'
+                                });
+                                if (res.ok) {
+                                    $el.style.opacity = '0';
+                                    setTimeout(() => $el.remove(), 200);
+                                }
+                            }
+                         }">
+
+                        {# Display mode #}
+                        <div class="flex items-center gap-3" x-show="!editing">
+                            <span class="w-5 h-5 rounded-full shrink-0 border-2 border-white/10"
+                                  style="background: {{ type.color }}"></span>
+                            <span class="font-medium text-white text-sm">{{ type.name }}</span>
+                            <span class="text-xs text-gray-600 font-mono">{{ type.color }}</span>
+                            {% if type.competitions|length > 0 %}
+                                <span class="text-xs text-gray-500">{{ type.competitions|length }} compétition{% if type.competitions|length > 1 %}s{% endif %}</span>
+                            {% endif %}
+                        </div>
+
+                        {# Inline edit form #}
+                        <form action="{{ path('app_competition_type_edit', {id: type.id}) }}" method="post"
+                              class="flex items-center gap-2 flex-1 mr-4" x-show="editing">
+                            <input type="text" name="competition_type[name]" value="{{ type.name }}"
+                                   class="form-input flex-1 text-sm py-1.5">
+                            <input type="color" name="competition_type[color]" value="{{ type.color }}"
+                                   class="w-10 h-8 rounded cursor-pointer bg-transparent border border-gray-700 p-0.5">
+                            <input type="hidden" name="competition_type[_token]" value="{{ csrf_token('competition_type') }}">
+                            <button type="submit"
+                                    class="bg-indigo-600 hover:bg-indigo-500 text-white px-3 py-1.5 rounded-lg text-xs font-medium transition-colors">
+                                OK
+                            </button>
+                            <button type="button" @click="editing = false"
+                                    class="bg-gray-700 hover:bg-gray-600 text-gray-300 px-3 py-1.5 rounded-lg text-xs transition-colors">
+                                Annuler
+                            </button>
+                        </form>
+
+                        <div class="flex items-center gap-2 shrink-0">
+                            <button @click="editing = !editing" x-show="!editing"
+                                    class="text-gray-500 hover:text-indigo-400 p-1.5 rounded hover:bg-gray-800 transition-colors">
+                                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"/>
+                                </svg>
+                            </button>
+                            <button type="button" @click="deleteType()"
+                                    class="text-gray-500 hover:text-red-400 p-1.5 rounded hover:bg-gray-800 transition-colors">
+                                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/>
+                                </svg>
+                            </button>
+                        </div>
+                    </div>
+                {% endfor %}
+            </div>
+        {% endif %}
+    </div>
+
+    {# Créer un nouveau type #}
+    <div class="bg-gray-900 border border-gray-800 rounded-xl p-6">
+        <h2 class="font-semibold text-white mb-4">Nouveau type</h2>
+        {{ form_start(form, {attr: {class: 'flex items-end gap-3'}}) }}
+        <div class="flex-1">
+            {{ form_row(form.name) }}
+        </div>
+        <div class="pb-0.5">
+            <label class="block text-sm font-medium text-gray-300 mb-1.5">Couleur</label>
+            {{ form_widget(form.color) }}
+            {% do form.color.setRendered() %}
+        </div>
+        <div class="pb-0.5">
+            <button type="submit"
+                    class="flex items-center gap-2 bg-indigo-600 hover:bg-indigo-500 text-white px-4 py-2.5 rounded-lg text-sm font-medium transition-colors whitespace-nowrap">
+                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/>
+                </svg>
+                Ajouter
+            </button>
+        </div>
+        {{ form_end(form) }}
+    </div>
+
+    <a href="{{ path('app_competition_calendar') }}" class="inline-flex items-center gap-2 text-sm text-gray-400 hover:text-white transition-colors">
+        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"/></svg>
+        Retour au calendrier des compétitions
+    </a>
+
+</div>
+{% endblock %}

@@ -48,6 +48,17 @@ class PerformanceRepository extends ServiceEntityRepository
             ->getResult();
     }
 
+    public function findRecentByAthlete(Athlete $athlete, int $limit = 5): array
+    {
+        return $this->createQueryBuilder('p')
+            ->andWhere('p.athlete = :athlete')
+            ->setParameter('athlete', $athlete)
+            ->orderBy('p.recordedAt', 'DESC')
+            ->setMaxResults($limit)
+            ->getQuery()
+            ->getResult();
+    }
+
     public function findByAthleteGroupedByDiscipline(Athlete $athlete): array
     {
         $performances = $this->createQueryBuilder('p')

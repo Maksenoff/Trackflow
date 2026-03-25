@@ -50,6 +50,7 @@ class CalendarController extends AbstractController
             'today'        => (int) date('j'),
             'currentMonth' => (int) date('n'),
             'currentYear'  => (int) date('Y'),
+            'canEdit'      => $this->isGranted('ROLE_COACH'),
         ]);
     }
 }

@@ -11,6 +11,7 @@ use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\Routing\Attribute\Route;
+use Symfony\Component\Security\Http\Attribute\IsGranted;
 
 #[Route('/sessions')]
 class SessionController extends AbstractController
@@ -23,6 +24,7 @@ class SessionController extends AbstractController
         ]);
     }
 
+    #[IsGranted('ROLE_COACH')]
     #[Route('/new', name: 'app_session_new')]
     public function new(Request $request, EntityManagerInterface $em): Response
     {
@@ -48,6 +50,7 @@ class SessionController extends AbstractController
         return $this->render('session/new.html.twig', ['form' => $form]);
     }
 
+    #[IsGranted('ROLE_COACH')]
     #[Route('/{id}/edit', name: 'app_session_edit')]
     public function edit(Session $session, Request $request, EntityManagerInterface $em): Response
     {
@@ -63,6 +66,7 @@ class SessionController extends AbstractController
         return $this->render('session/edit.html.twig', ['form' => $form, 'session' => $session]);
     }
 
+    #[IsGranted('ROLE_COACH')]
     #[Route('/{id}/reschedule', name: 'app_session_reschedule', methods: ['POST'])]
     public function reschedule(Session $session, Request $request, EntityManagerInterface $em): JsonResponse
     {
@@ -76,6 +80,7 @@ class SessionController extends AbstractController
         }
     }
 
+    #[IsGranted('ROLE_COACH')]
     #[Route('/{id}/delete', name: 'app_session_delete', methods: ['POST'])]
     public function delete(Session $session, Request $request, EntityManagerInterface $em): Response
     {

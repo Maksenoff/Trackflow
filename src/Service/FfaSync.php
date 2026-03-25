@@ -11,39 +11,70 @@ use Symfony\Contracts\HttpClient\HttpClientInterface;
 
 class FfaSync
 {
-    private const BASES_URL = 'https://bases.athle.fr/asp.net/athletes.aspx';
+    private const ATHLETE_PAGE_URL = 'https://www.athle.fr/athletes/%s/resultats';
+    private const AJAX_URL         = 'https://www.athle.fr/ajax/fiche-athlete-resultats.aspx';
 
-    /** Ordered list of [regex, discipline, unit] for mapDiscipline(). */
+    /** [regex, discipline, unit] — checked against both raw and space-compacted discipline string */
     private const DISCIPLINE_PATTERNS = [
-        ['/^60\s*M?\s*H/i',                    '60m-haies',    's'],
-        ['/^110\s*M?\s*H/i',                   '110m-haies',   's'],
-        ['/^100\s*M?\s*H/i',                   '110m-haies',   's'],
-        ['/^400\s*M?\s*H/i',                   '400m-haies',   's'],
-        ['/^60\s*M/i',                          '60m',          's'],
-        ['/^100\s*M/i',                         '100m',         's'],
-        ['/^200\s*M/i',                         '200m',         's'],
-        ['/^400\s*M/i',                         '400m',         's'],
-        ['/^800\s*M/i',                         '800m',         's'],
-        ['/^1\s*000\s*M|^1000\s*M/i',          '800m',         's'],
-        ['/^1\s*500\s*M|^1500\s*M/i',          '1500m',        's'],
-        ['/^2\s*000\s*M|^2000\s*M/i',          '3000m',        's'],
-        ['/^3\s*000\s*M|^3000\s*M/i',          '3000m',        's'],
-        ['/^5\s*000\s*M|^5000\s*M/i',          '5000m',        's'],
-        ['/^10\s*000\s*M|^10000\s*M/i',        '10000m',       's'],
-        ['/^10\s*KM|^10KM/i',                  '10000m',       's'],
-        ['/SEMI.MARATHON/i',                    'semi-marathon','s'],
-        ['/^MARATHON/i',                        'marathon',     's'],
-        ['/LONGUEUR/i',                         'longueur',     'm'],
-        ['/HAUTEUR/i',                          'hauteur',      'm'],
-        ['/TRIPLE/i',                           'triple',       'm'],
-        ['/PERCHE/i',                           'perche',       'm'],
-        ['/POIDS/i',                            'poids',        'm'],
-        ['/DISQUE/i',                           'disque',       'm'],
-        ['/JAVELOT/i',                          'javelot',      'm'],
-        ['/MARTEAU/i',                          'marteau',      'm'],
-        ['/D[ÉE]CATHLON/i',                    'decathlon',    'pts'],
-        ['/HEPTATHLON/i',                       'heptathlon',   'pts'],
-        ['/PENTATHLON/i',                       'heptathlon',   'pts'],
+        // Hurdles (before plain sprints to avoid wrong match)
+        ['/^50\s*m\s*(haies?|h\.?)\b/i',              '60m-haies',    's'],
+        ['/^60\s*m\s*(haies?|h\.?)\b/i',              '60m-haies',    's'],
+        ['/^110\s*m\s*(haies?|h\.?)\b/i',              '110m-haies',   's'],
+        ['/^100\s*m\s*(haies?|h\.?)\b/i',              '110m-haies',   's'],
+        ['/^400\s*m\s*(haies?|h\.?)\b/i',              '400m-haies',   's'],
+        // Sprints / middle / long distance
+        ['/^50\s*m\b/i',                               '60m',          's'],
+        ['/^60\s*m\b/i',                               '60m',          's'],
+        ['/^80\s*m\b/i',                               '100m',         's'],
+        ['/^100\s*m\b/i',                              '100m',         's'],
+        ['/^150\s*m\b/i',                              '200m',         's'],
+        ['/^200\s*m\b/i',                              '200m',         's'],
+        ['/^300\s*m\b/i',                              '400m',         's'],
+        ['/^400\s*m\b/i',                              '400m',         's'],
+        ['/^600\s*m\b/i',                              '800m',         's'],
+        ['/^800\s*m\b/i',                              '800m',         's'],
+        ['/^1\s*000\s*m\b/i',                          '1500m',        's'],
+        ['/^1\s*500\s*m\b/i',                          '1500m',        's'],
+        ['/\bmile\b/i',                                '1500m',        's'],
+        ['/^2\s*000\s*m\b/i',                          '3000m',        's'],
+        ['/^3\s*000\s*m\b/i',                          '3000m',        's'],
+        ['/^5\s*000\s*m\b/i',                          '5000m',        's'],
+        ['/^10\s*000\s*m\b/i',                         '10000m',       's'],
+        ['/^10\s*km\b/i',                              '10000m',       's'],
+        ['/semi.?marathon/i',                           'semi-marathon','s'],
+        ['/^marathon\b/i',                              'marathon',     's'],
+        // Race walking (before "marteau" to ensure priority; won't match "marteau" — see mapDiscipline)
+        ['/march[e]?\b/iu',                             'marche',       's'],
+        // Cross-country (all variants incl. "tcm/tcf/tcx" suffix markers)
+        ['/^cross\b/i',                                'cross',        's'],
+        ['/course\s+des\s+as/i',                       'cross',        's'],
+        ['/cross\s+des\s+as/i',                        'cross',        's'],
+        ['/\btc[mfx]\b/i',                             'cross',        's'],
+        // Field events
+        ['/longueur/i',                                'longueur',     'm'],
+        ['/hauteur/i',                                 'hauteur',      'm'],
+        ['/triple/i',                                  'triple',       'm'],
+        ['/perche/i',                                  'perche',       'm'],
+        ['/poids/i',                                   'poids',        'm'],
+        ['/disque/i',                                  'disque',       'm'],
+        ['/javelot/i',                                 'javelot',      'm'],
+        ['/marteau/i',                                 'marteau',      'm'],
+        // Combined
+        ['/d[ée]cathlon/i',                            'decathlon',    'pts'],
+        ['/heptathlon/i',                              'heptathlon',   'pts'],
+        ['/pentathlon/i',                              'heptathlon',   'pts'],
+        ['/triathlon/i',                               'heptathlon',   'pts'],
+        // Relays
+        ['/^4\s*[xX×]\s*60/i',                         '4x100m',       's'],
+        ['/^4\s*[xX×]\s*1\s*00/i',                    '4x100m',       's'],
+        ['/^4\s*[xX×]\s*2\s*00/i',                    '4x200m',       's'],
+        ['/^4\s*[xX×]\s*4\s*00/i',                    '4x400m',       's'],
+        ['/^relais\b/i',                               'autre',        's'],
+        ['/^ekiden\b/i',                               'autre',        's'],
+        // Trail / road races at non-standard distances → autre
+        ['/^trail\b/i',                                'autre',        's'],
+        ['/\d+\s*km\b/i',                              'autre',        's'],
+        ['/\d+\s*miles?\b/i',                          'autre',        's'],
     ];
 
     public function __construct(
@@ -57,36 +88,35 @@ class FfaSync
     // =========================================================================
 
     /**
-     * Fetch profile info (name, birthDate…) from any athle.fr URL.
-     * Also tries to discover the bases.athle.fr results URL automatically.
-     * Returns array with keys: firstName, lastName, birthDate, gender, discipline,
-     *                          basesUrl (nullable), error (nullable)
+     * Fetch profile info from a new athle.fr athlete URL.
+     * Returns: firstName, lastName, birthDate, gender, discipline, error
      */
     public function lookupProfile(string $url): array
     {
-        $html = $this->fetch($url);
+        $athleteId = $this->extractAthleteId($url);
+        if ($athleteId === null) {
+            return [
+                'firstName' => null, 'lastName' => null, 'birthDate' => null,
+                'gender' => null, 'discipline' => null,
+                'error' => 'URL invalide. Utilisez le format : https://www.athle.fr/athletes/XXXXX/resultats',
+            ];
+        }
+
+        [$html, $cookie] = $this->fetchWithCookie(sprintf(self::ATHLETE_PAGE_URL, $athleteId));
         if ($html === null) {
-            return ['firstName' => null, 'lastName' => null, 'birthDate' => null,
-                    'gender' => null, 'discipline' => null, 'basesUrl' => null,
-                    'error' => 'Impossible de charger la page. Vérifiez l\'URL.'];
+            return [
+                'firstName' => null, 'lastName' => null, 'birthDate' => null,
+                'gender' => null, 'discipline' => null,
+                'error' => 'Impossible de charger la page athlète. Vérifiez l\'URL.',
+            ];
         }
 
-        $profile = $this->parseProfile($html);
-
-        // Fast path: seq= already in the URL
-        parse_str((string) parse_url($url, PHP_URL_QUERY), $params);
-        if (!empty($params['seq'])) {
-            $profile['basesUrl'] = self::BASES_URL . '?' . http_build_query(['base' => 'resultats', 'seq' => $params['seq']]);
-        } else {
-            $profile['basesUrl'] = $this->findBasesUrl($html, $url);
-        }
-
-        return $profile;
+        return $this->parseProfile($html);
     }
 
     /**
-     * Import all competition results from bases.athle.fr, iterating all years.
-     * If the stored URL is an athle.fr profile page, it tries to find the bases URL first.
+     * Import all competition results for an athlete.
+     * The ffaProfileUrl must be a new athle.fr URL: https://www.athle.fr/athletes/{id}/...
      */
     public function sync(Athlete $athlete): array
     {
@@ -95,40 +125,34 @@ class FfaSync
             return ['imported' => 0, 'skipped' => 0, 'error' => 'Aucune URL de profil renseignée.'];
         }
 
-        // Resolve bases.athle.fr URL (might already be one, or found by scraping)
-        $basesUrl = $this->resolveBasesUrl($url);
-        if ($basesUrl === null) {
+        $athleteId = $this->extractAthleteId($url);
+        if ($athleteId === null) {
             return ['imported' => 0, 'skipped' => 0,
-                    'error' => 'Impossible de trouver la page de résultats sur bases.athle.fr.'];
+                    'error' => 'URL invalide. Format attendu : https://www.athle.fr/athletes/XXXXX/resultats'];
         }
 
-        // Extract seq (licence) from bases URL
-        parse_str((string) parse_url($basesUrl, PHP_URL_QUERY), $params);
-        $seq = $params['seq'] ?? null;
-        if (!$seq) {
-            return ['imported' => 0, 'skipped' => 0, 'error' => 'Paramètre seq introuvable dans l\'URL bases.athle.fr.'];
+        // Load the athlete page to get a session cookie + available years
+        [$html, $cookie] = $this->fetchWithCookie(sprintf(self::ATHLETE_PAGE_URL, $athleteId));
+        if ($html === null) {
+            return ['imported' => 0, 'skipped' => 0, 'error' => 'Impossible de charger la page athlète.'];
         }
 
-        // Build URLs for every year from current back to 2010.
-        // bases.athle.fr may use "saison" or "annee" as the year param — try both.
-        $currentYear = (int) date('Y');
-        $seasonUrls  = [$basesUrl]; // base URL (no year = latest / all)
-        for ($y = $currentYear; $y >= 2010; $y--) {
-            $seasonUrls[] = self::BASES_URL . '?' . http_build_query(['base' => 'resultats', 'seq' => $seq, 'saison' => $y]);
-            $seasonUrls[] = self::BASES_URL . '?' . http_build_query(['base' => 'resultats', 'seq' => $seq, 'annee'  => $y]);
+        $years = $this->extractAvailableYears($html);
+        if (empty($years)) {
+            $currentYear = (int) date('Y');
+            $years = range($currentYear, max(2010, $currentYear - 5));
         }
 
         $imported = 0;
         $skipped  = 0;
+        $updated  = 0;
 
-        foreach ($seasonUrls as $seasonUrl) {
-            $html = $this->fetch($seasonUrl);
-            if ($html === null) continue;
+        foreach ($years as $year) {
+            $ajaxHtml = $this->fetchAjaxResults($athleteId, (int) $year, $cookie);
+            if ($ajaxHtml === null) continue;
 
-            $rows = $this->parseResults($html);
-            if (empty($rows)) continue;
-
-            foreach ($rows as [$discipline, $unit, $value, $date]) {
+            $rows = $this->parseResults($ajaxHtml, (int) $year);
+            foreach ($rows as [$discipline, $unit, $value, $date, $isIndoor, $venue, $level, $levelPts, $wind]) {
                 $existing = $this->performanceRepo->findOneBy([
                     'athlete'    => $athlete,
                     'discipline' => $discipline,
@@ -136,7 +160,23 @@ class FfaSync
                     'recordedAt' => $date,
                 ]);
 
-                if ($existing) { $skipped++; continue; }
+                if ($existing) {
+                    // Always refresh level + levelPoints + wind on existing rows
+                    if ($level !== null && $existing->getLevel() !== $level) {
+                        $existing->setLevel($level);
+                        $updated++;
+                    }
+                    if ($levelPts !== null && $existing->getLevelPoints() !== $levelPts) {
+                        $existing->setLevelPoints($levelPts);
+                        $updated++;
+                    }
+                    if ($wind !== null && $existing->getWind() !== $wind) {
+                        $existing->setWind($wind);
+                        $updated++;
+                    }
+                    $skipped++;
+                    continue;
+                }
 
                 $perf = (new Performance())
                     ->setAthlete($athlete)
@@ -145,16 +185,21 @@ class FfaSync
                     ->setValue((string) $value)
                     ->setRecordedAt($date)
                     ->setIsCompetition(true)
-                    ->setIsPersonalBest(false);
+                    ->setIsPersonalBest(false)
+                    ->setIsIndoor($isIndoor)
+                    ->setVenue($venue)
+                    ->setLevel($level)
+                    ->setLevelPoints($levelPts)
+                    ->setWind($wind);
 
                 $this->em->persist($perf);
                 $imported++;
             }
         }
 
-        if ($imported > 0) {
+        if ($imported > 0 || $updated > 0) {
             $this->em->flush();
-            $this->updatePersonalBests($athlete);
+            if ($imported > 0) $this->updatePersonalBests($athlete);
         }
 
         $athlete->setLastSyncedAt(new \DateTimeImmutable());
@@ -171,14 +216,13 @@ class FfaSync
         $all = $this->performanceRepo->findBy(['athlete' => $athlete]);
         if (!$all) return;
 
-        // Reset all
         foreach ($all as $p) $p->setIsPersonalBest(false);
 
         $bests = [];
         foreach ($all as $p) {
-            $disc          = $p->getDiscipline();
-            $val           = (float) $p->getValue();
-            $higherBetter  = !in_array($p->getUnit(), ['s']);
+            $disc         = $p->getDiscipline();
+            $val          = (float) $p->getValue();
+            $higherBetter = !in_array($p->getUnit(), ['s']);
 
             if (!isset($bests[$disc])) {
                 $bests[$disc] = $p;
@@ -197,39 +241,106 @@ class FfaSync
     /** Expose raw fetch for debug endpoint */
     public function debugFetch(string $url): ?string
     {
-        return $this->fetch($url);
+        [$html] = $this->fetchWithCookie($url);
+        return $html;
     }
 
-    /** Diagnose: show resolved bases URL, first-year URL, and parsed result count */
-    public function diagnose(string $url): array
+    /**
+     * Debug birth date: return all HTML lines / text nodes that contain birth-related keywords,
+     * plus the parsed result, so we can see exactly what athle.fr provides.
+     */
+    public function debugBirthDate(string $url): array
     {
-        $basesUrl = $this->resolveBasesUrl($url);
-        if (!$basesUrl) {
-            return ['inputUrl' => $url, 'basesUrl' => null, 'error' => 'Could not resolve bases URL'];
+        $athleteId = $this->extractAthleteId($url);
+        if (!$athleteId) {
+            return ['error' => 'URL invalide'];
         }
 
-        parse_str((string) parse_url($basesUrl, PHP_URL_QUERY), $params);
-        $seq = $params['seq'] ?? null;
+        [$html] = $this->fetchWithCookie(sprintf(self::ATHLETE_PAGE_URL, $athleteId));
+        if (!$html) {
+            return ['error' => 'Page non chargée'];
+        }
 
-        $currentYear = (int) date('Y');
-        $testUrl  = self::BASES_URL . '?' . http_build_query(['base' => 'resultats', 'seq' => $seq, 'saison' => $currentYear]);
-        $html     = $this->fetch($testUrl);
-        $rows     = $html ? $this->parseResults($html) : [];
+        // Collect every line that contains a birth/date/naissance/nee/né keyword
+        $keywords = '/n[eé]e?|naiss|birth|ddn|date.*nais|born|\d{2}[\/-]\d{2}[\/-]\d{4}|janvier|f[eé]v|mars|avril|mai|juin|juill|ao[uû]|sept|octobre|novembre|d[eé]c/iu';
+        $lines = [];
+        foreach (explode("\n", $html) as $i => $line) {
+            if (preg_match($keywords, $line)) {
+                $lines[] = ['line' => $i + 1, 'html' => trim($line)];
+            }
+        }
+
+        // Also run actual parseProfile and return what it found
+        $parsed = $this->parseProfile($html);
 
         return [
-            'inputUrl'      => $url,
-            'basesUrl'      => $basesUrl,
-            'seq'           => $seq,
-            'testUrl'       => $testUrl,
-            'htmlLength'    => $html ? strlen($html) : 0,
-            'resultsFound'  => count($rows),
-            'firstResults'  => array_slice(array_map(fn($r) => [
+            'parsed'         => $parsed,
+            'matchingLines'  => array_slice($lines, 0, 40),
+        ];
+    }
+
+    /** Diagnose: show athlete ID, available years, and parsed result count for first year */
+    public function diagnose(string $url): array
+    {
+        $athleteId = $this->extractAthleteId($url);
+        if (!$athleteId) {
+            return ['inputUrl' => $url, 'athleteId' => null,
+                    'error' => 'Cannot extract athlete ID. Use https://www.athle.fr/athletes/XXXXX/resultats'];
+        }
+
+        $pageUrl = sprintf(self::ATHLETE_PAGE_URL, $athleteId);
+        [$html, $cookie] = $this->fetchWithCookie($pageUrl);
+        $years = $html ? $this->extractAvailableYears($html) : [];
+
+        $testYear = !empty($years) ? (int) $years[0] : (int) date('Y');
+        $ajaxHtml = $html ? $this->fetchAjaxResults($athleteId, $testYear, $cookie) : null;
+        $rows     = $ajaxHtml ? $this->parseResults($ajaxHtml, $testYear) : [];
+
+        // Collect all raw discipline strings across all years (matched + unmatched)
+        $rawDisciplines = ['matched' => [], 'unmatched' => []];
+        if ($html) {
+            foreach ($years as $yr) {
+                $yHtml = $this->fetchAjaxResults($athleteId, (int) $yr, $cookie);
+                if (!$yHtml) continue;
+                $crawler2 = new Crawler('<table>' . $yHtml . '</table>');
+                try {
+                    $crawler2->filter('tr.clickable')->each(function (Crawler $tr) use (&$rawDisciplines) {
+                        $cells = $tr->filter('td');
+                        if ($cells->count() < 2) return;
+                        $texts = [];
+                        $cells->each(function (Crawler $td, int $i) use (&$texts) { $texts[$i] = trim($td->text()); });
+                        $raw = $texts[1] ?? '';
+                        if (!$raw) return;
+                        $mapped = $this->mapDiscipline($raw);
+                        if ($mapped) {
+                            $rawDisciplines['matched'][$raw] = $mapped[0];
+                        } else {
+                            $rawDisciplines['unmatched'][$raw] = true;
+                        }
+                    });
+                } catch (\Throwable) {}
+            }
+            ksort($rawDisciplines['matched']);
+            ksort($rawDisciplines['unmatched']);
+            $rawDisciplines['unmatched'] = array_keys($rawDisciplines['unmatched']);
+        }
+
+        return [
+            'inputUrl'     => $url,
+            'athleteId'    => $athleteId,
+            'pageUrl'      => $pageUrl,
+            'htmlLength'   => $html ? strlen($html) : 0,
+            'years'        => $years,
+            'testYear'     => $testYear,
+            'ajaxLength'   => $ajaxHtml ? strlen($ajaxHtml) : 0,
+            'resultsFound' => count($rows),
+            'firstResults' => array_slice(array_map(fn($r) => [
                 'discipline' => $r[0],
                 'unit'       => $r[1],
                 'value'      => $r[2],
                 'date'       => $r[3]->format('Y-m-d'),
             ], $rows), 0, 5),
-            'htmlSnippet'   => $html ? substr(strip_tags($html), 0, 2000) : null,
+            'disciplines'  => $rawDisciplines,
         ];
     }
 
@@ -238,130 +349,221 @@ class FfaSync
     // =========================================================================
 
     /**
-     * If $url is already on bases.athle.fr, return it directly.
-     * If the URL has a seq= param (athle.fr profile), build the bases URL directly.
-     * Otherwise fetch the page and scan for a bases.athle.fr link.
+     * Extract the numeric internal athlete ID from a new athle.fr URL.
+     * Accepts:
+     *   https://www.athle.fr/athletes/12345/resultats
+     *   https://www.athle.fr/athletes/12345
+     *   12345  (plain number)
      */
-    private function resolveBasesUrl(string $url): ?string
+    private function extractAthleteId(string $url): ?string
     {
-        if (str_contains($url, 'bases.athle.fr')) {
+        $url = trim($url);
+
+        // Plain number
+        if (ctype_digit($url)) {
             return $url;
         }
 
-        // Fast path: seq= is already in the URL query string
-        parse_str((string) parse_url($url, PHP_URL_QUERY), $params);
-        if (!empty($params['seq'])) {
-            return self::BASES_URL . '?' . http_build_query(['base' => 'resultats', 'seq' => $params['seq']]);
-        }
-
-        $html = $this->fetch($url);
-        if ($html === null) return null;
-
-        return $this->findBasesUrl($html, $url);
-    }
-
-    /**
-     * Look for a bases.athle.fr results link anywhere in the HTML.
-     * Also scans script tags for seq= references.
-     */
-    private function findBasesUrl(string $html, string $sourceUrl): ?string
-    {
-        // 1. Direct <a href> to bases.athle.fr
-        $crawler = new Crawler($html);
-        $found   = null;
-        try {
-            $crawler->filter('a')->each(function (Crawler $a) use (&$found) {
-                if ($found) return;
-                $href = $a->attr('href') ?? '';
-                if (str_contains($href, 'bases.athle.fr') && str_contains($href, 'resultats')) {
-                    $found = $href;
-                }
-            });
-        } catch (\Throwable) {}
-        if ($found) return $found;
-
-        // 2. Any href containing bases.athle.fr (even without 'resultats')
-        try {
-            $crawler->filter('a[href*="bases.athle.fr"]')->each(function (Crawler $a) use (&$found) {
-                if ($found) return;
-                $href = $a->attr('href') ?? '';
-                if ($href) $found = $href;
-            });
-        } catch (\Throwable) {}
-        if ($found) return $found;
-
-        // 3. Scan raw HTML for bases.athle.fr URL pattern
-        if (preg_match('#(https?://bases\.athle\.fr/[^\s"\'<>]+seq=[^\s"\'<>]+)#i', $html, $m)) {
+        // /athletes/{id}
+        if (preg_match('#/athletes/(\d+)#', $url, $m)) {
             return $m[1];
-        }
-
-        // 4. Scan for seq= parameter value anywhere (in scripts/data attributes)
-        if (preg_match('/["\']?seq["\']?\s*[:=]\s*["\']?(\d{5,12})["\']?/i', $html, $m)) {
-            $seq = $m[1];
-            return self::BASES_URL . '?' . http_build_query(['base' => 'resultats', 'seq' => $seq]);
-        }
-
-        // 5. Scan for licence-like number near "licence" keyword
-        if (preg_match('/licen[cs]e?\D{0,10}(\d{7,12})/i', $html, $m)) {
-            return self::BASES_URL . '?' . http_build_query(['base' => 'resultats', 'seq' => $m[1]]);
-        }
-
-        // 6. If source URL itself contains a numeric ID, try it as seq
-        if (preg_match('/[\/=](\d{7,12})(?:[\/&?]|$)/', $sourceUrl, $m)) {
-            return self::BASES_URL . '?' . http_build_query(['base' => 'resultats', 'seq' => $m[1]]);
         }
 
         return null;
     }
 
-    /** Parse name, birthDate, gender, discipline from any FFA page HTML */
+    /**
+     * Fetch a URL and return [html, cookieString].
+     * Follows redirects and captures session cookies.
+     */
+    private function fetchWithCookie(string $url): array
+    {
+        try {
+            $r = $this->httpClient->request('GET', $url, [
+                'timeout'      => 20,
+                'max_redirects' => 5,
+                'headers' => [
+                    'User-Agent'      => 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
+                    'Accept'          => 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
+                    'Accept-Language' => 'fr-FR,fr;q=0.9',
+                ],
+            ]);
+
+            if ($r->getStatusCode() !== 200) return [null, null];
+
+            // Collect all Set-Cookie values for session reuse
+            $cookies = [];
+            foreach ($r->getHeaders(false)['set-cookie'] ?? [] as $raw) {
+                $part = explode(';', $raw)[0];
+                $cookies[] = trim($part);
+            }
+
+            return [$r->getContent(false), implode('; ', $cookies)];
+        } catch (\Throwable) {
+            return [null, null];
+        }
+    }
+
+    /**
+     * Call the AJAX results endpoint for a given athlete + year.
+     * Returns the HTML fragment or null if empty/failed.
+     */
+    private function fetchAjaxResults(string $athleteId, int $year, ?string $cookie): ?string
+    {
+        $url = self::AJAX_URL . '?' . http_build_query(['seq' => $athleteId, 'annee' => $year]);
+        try {
+            $headers = [
+                'User-Agent'       => 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
+                'Accept'           => 'text/html, */*; q=0.01',
+                'X-Requested-With' => 'XMLHttpRequest',
+                'Referer'          => sprintf(self::ATHLETE_PAGE_URL, $athleteId),
+            ];
+            if ($cookie) {
+                $headers['Cookie'] = $cookie;
+            }
+
+            $r = $this->httpClient->request('GET', $url, [
+                'timeout' => 20,
+                'headers' => $headers,
+            ]);
+
+            if ($r->getStatusCode() !== 200) return null;
+            $body = $r->getContent(false);
+            return strlen($body) > 10 ? $body : null;
+        } catch (\Throwable) {
+            return null;
+        }
+    }
+
+    /**
+     * Extract available years from the athlete page.
+     * They appear as: data-value="2024" on year selector options.
+     */
+    private function extractAvailableYears(string $html): array
+    {
+        $years = [];
+        if (preg_match_all('/class="[^"]*select-option-anneeAth[^"]*"[^>]*data-value="(\d{4})"/i', $html, $m)) {
+            foreach ($m[1] as $y) {
+                $int = (int) $y;
+                if ($int >= 2000 && $int <= 2100) $years[] = $int;
+            }
+        }
+        // Fallback: any data-value that looks like a year in the options area
+        if (empty($years) && preg_match_all('/data-value="(\d{4})"/i', $html, $m)) {
+            foreach ($m[1] as $y) {
+                $int = (int) $y;
+                if ($int >= 2000 && $int <= 2100) $years[] = $int;
+            }
+        }
+        $years = array_values(array_unique($years));
+        rsort($years);
+        return $years;
+    }
+
+    /**
+     * Parse athlete profile from the new athle.fr page HTML.
+     * Extracts: firstName, lastName, birthDate, gender, discipline.
+     */
     private function parseProfile(string $html): array
     {
         $crawler   = new Crawler($html);
         $firstName = null;
         $lastName  = null;
 
-        // --- Name from <title> (most reliable on athle.fr) ---
-        // Format: "Maksen ICHALLALEN | Profile | Fédération…"
-        // Or:     "Résultats de ICHALLALEN Maksen"
-        $candidates = [];
+        // Name from <title>: "Firstname LASTNAME | Profile | FFA"
         try {
             $title = trim($crawler->filter('title')->first()->text());
             $part  = trim(explode('|', $title)[0]);
-            $part  = preg_replace('/^résultats\s+de\s+/iu', '', $part);
-            if (mb_strlen($part) > 2) $candidates[] = $part;
+            if (mb_strlen($part) > 2 && stripos($part, 'fédération') === false) {
+                [$firstName, $lastName] = $this->splitName($part);
+            }
         } catch (\Throwable) {}
 
-        foreach (['.athlete-name', '.athleteName', 'h1', 'h2', '.profile-name', '[class*="name"]'] as $sel) {
+        // Fallback: h1 on the page
+        if (!$firstName && !$lastName) {
             try {
-                $node = $crawler->filter($sel)->first();
-                if ($node->count()) $candidates[] = trim(preg_replace('/\s+/', ' ', $node->text()));
+                $node = $crawler->filter('h1')->first();
+                if ($node->count()) {
+                    [$firstName, $lastName] = $this->splitName(
+                        trim(preg_replace('/\s+/', ' ', $node->text()))
+                    );
+                }
             } catch (\Throwable) {}
         }
 
-        foreach ($candidates as $c) {
-            [$fn, $ln] = $this->splitName($c);
-            if ($fn || $ln) { $firstName = $fn; $lastName = $ln; break; }
-        }
-
-        // --- Birth date & gender ---
+        // Birth date / gender
         $birthDate = null;
+        $birthYear = null;
         $gender    = null;
-        if (preg_match('/né(e?)\s*(?:le\s+)?(\d{2}\/\d{2}\/\d{4})/iu', $html, $m)) {
-            $dt = \DateTime::createFromFormat('d/m/Y', $m[2]);
-            if ($dt) {
-                $birthDate = $dt->format('Y-m-d');
-                $gender    = (strtolower($m[1]) === 'e') ? 'F' : 'M';
+
+        // 1. <time datetime="YYYY-MM-DD"> — semantic HTML used by some modern pages
+        try {
+            $crawler->filter('time[datetime]')->each(function (Crawler $node) use (&$birthDate) {
+                if ($birthDate !== null) return;
+                $dt = $node->attr('datetime');
+                if ($dt && preg_match('/^((?:19|20)\d{2})-(\d{2})-(\d{2})$/', $dt)) {
+                    $birthDate = $dt;
+                }
+            });
+        } catch (\Throwable) {}
+
+        // 2. JSON-LD structured data: {"birthDate": "YYYY-MM-DD"} or {"birthDate": "YYYY"}
+        if ($birthDate === null) {
+            if (preg_match_all('/<script[^>]+type=["\']application\/ld\+json["\'][^>]*>(.*?)<\/script>/si', $html, $ldMatches)) {
+                foreach ($ldMatches[1] as $json) {
+                    try {
+                        $ld = json_decode($json, true, 512, \JSON_THROW_ON_ERROR);
+                        $bd = $ld['birthDate'] ?? null;
+                        if ($bd) {
+                            if (preg_match('/^\d{4}-\d{2}-\d{2}$/', $bd)) {
+                                $birthDate = $bd;
+                            } elseif (preg_match('/^\d{4}$/', $bd)) {
+                                $birthYear = $birthYear ?? ($bd . '-01-01');
+                            }
+                        }
+                    } catch (\Throwable) {}
+                }
             }
-        } elseif (preg_match('/né(?:e)?\s+en\s+(19[4-9]\d|200\d|201\d)/iu', $html, $m)) {
-            $birthDate = $m[1] . '-01-01';
         }
 
-        // --- Dominant discipline ---
+        // 3. Text-node scan: "né(e) le dd/mm/yyyy", "naissance : dd/mm/yyyy", "Né(e) en : 1987"
+        // HTML: <p>...<span>Né(e) en : </span>1987</p>
+        // HTML: <p>...<span>Catégorie / Nationalité : </span>MA (M0)<span>/</span>M<span>/</span>FRA</p>
+        try {
+            $crawler->filter('p, span, div, td, li')->each(function (Crawler $node) use (&$birthDate, &$birthYear, &$gender) {
+                $text = trim($node->text());
+                // Full birth date: "né(e) le dd/mm/yyyy" or "Date de naissance : dd/mm/yyyy"
+                if ($birthDate === null && preg_match('/(?:n[ée]e?\s*(?:le\s+)?|naissance\s*:\s*)(\d{2}\/\d{2}\/\d{4})/iu', $text, $m)) {
+                    $dt = \DateTime::createFromFormat('d/m/Y', $m[1]);
+                    if ($dt) $birthDate = $dt->format('Y-m-d');
+                }
+                // Standalone dd/mm/yyyy near birth keyword
+                if ($birthDate === null && preg_match('/naiss|ddn|birth/iu', $text)
+                    && preg_match('/\b(\d{2}\/\d{2}\/(?:19|20)\d{2})\b/', $text, $m2)) {
+                    $dt = \DateTime::createFromFormat('d/m/Y', $m2[1]);
+                    if ($dt) $birthDate = $dt->format('Y-m-d');
+                }
+                // Birth year fallback: "Né(e) en : 1987"
+                if ($birthYear === null && preg_match('/N[ée]\(?e?\)?\s+en\s*:\s*(\d{4})/iu', $text, $m)) {
+                    $birthYear = $m[1] . '-01-01';
+                }
+                // Gender from "Catégorie / Nationalité : MA (M0) / M / FRA"
+                if ($gender === null && preg_match('/Cat[ée]gorie/iu', $text)) {
+                    $parts = preg_split('/\//', $text);
+                    foreach ($parts as $part) {
+                        $trimmed = trim($part);
+                        if ($trimmed === 'M' || $trimmed === 'F') { $gender = $trimmed; break; }
+                    }
+                }
+            });
+        } catch (\Throwable) {}
+        $birthDate = $birthDate ?? $birthYear;
+
+        // Dominant discipline from any td text on the page
         $discipline = null;
         $counts     = [];
         try {
-            $crawler->filter('td, span, div, p, li')->each(function (Crawler $node) use (&$counts) {
+            $crawler->filter('td')->each(function (Crawler $node) use (&$counts) {
                 $mapped = $this->mapDiscipline(trim($node->text()));
                 if ($mapped) {
                     $counts[$mapped[0]] = ($counts[$mapped[0]] ?? 0) + 1;
@@ -375,21 +577,221 @@ class FfaSync
             'lastName'   => $lastName,
             'birthDate'  => $birthDate,
             'gender'     => $gender,
-            'discipline' => $discipline,
+            'discipline' => $discipline ? [$discipline] : [],
             'error'      => (!$firstName && !$lastName)
-                ? 'Nom introuvable sur cette page. Vérifiez l\'URL.'
+                ? 'Nom introuvable. Vérifiez l\'URL (format : https://www.athle.fr/athletes/XXXXX/resultats).'
                 : null,
         ];
     }
 
     /**
+     * Parse results from the AJAX HTML fragment returned by fiche-athlete-resultats.aspx.
+     *
+     * Column order: Date | Epreuve | Performance | Vent | Tour | Place | Niveau | Points | Lieu
+     * Rows with class "clickable" are data rows; "detail-row" rows are duplicates — skip them.
+     * Date is partial ("12 Mai") so the year is injected from the AJAX parameter.
+     * Returns: [discipline, unit, value, date, isIndoor, venue]
+     */
+    private function parseResults(string $html, int $year): array
+    {
+        // Wrap fragment in a table so DomCrawler can parse it
+        $crawler = new Crawler('<table>' . $html . '</table>');
+        $results = [];
+
+        try {
+            $crawler->filter('tr.clickable')->each(function (Crawler $tr) use (&$results, $year) {
+                $cells = $tr->filter('td');
+                if ($cells->count() < 3) return;
+
+                $texts = [];
+                $cells->each(function (Crawler $td, int $i) use (&$texts) {
+                    $texts[$i] = trim($td->text());
+                });
+
+                $rawDisc = $texts[1] ?? '';
+                $mapped  = $this->mapDiscipline($rawDisc);
+                if (!$mapped) return;
+
+                [$discipline, $unit] = $mapped;
+                $value    = $this->parsePerf($texts[2] ?? '', $unit);
+                $date     = $this->parsePartialDate($texts[0] ?? '', $year);
+                $isIndoor = (bool) preg_match('/\b(salle|indoor|piste\s+courte?)\b/iu', $rawDisc);
+                $venue    = $texts[8] ?? null;
+                if ($venue === '') $venue = null;
+                $level    = $texts[6] ?? null;
+                if ($level === '' || $level === '-') $level = null;
+                $levelPtsRaw = trim($texts[7] ?? '');
+                $levelPts = is_numeric($levelPtsRaw) ? (int) $levelPtsRaw : null;
+                $windRaw  = trim($texts[3] ?? '');
+                $wind     = $this->parseWind($windRaw);
+
+                if ($value !== null && $date !== null) {
+                    $results[] = [$discipline, $unit, $value, $date, $isIndoor, $venue, $level, $levelPts, $wind];
+                }
+            });
+        } catch (\Throwable) {}
+
+        // Deduplicate on discipline+value+date
+        $seen   = [];
+        $unique = [];
+        foreach ($results as $r) {
+            $key = $r[0] . '|' . $r[2] . '|' . $r[3]->format('Y-m-d');
+            if (!isset($seen[$key])) { $seen[$key] = true; $unique[] = $r; }
+        }
+
+
+        return $unique;
+    }
+
+    /**
+     * Parse a wind string from athle.fr.
+     * Returns "+1.2", "-0.3", "NC", or null (empty / not applicable).
+     */
+    private function parseWind(string $raw): ?string
+    {
+        if ($raw === '' || $raw === '-') return null;
+        $upper = strtoupper($raw);
+        if ($upper === 'NC') return 'NC';
+        // Normalize: replace comma with dot, keep sign
+        $clean = str_replace(',', '.', $raw);
+        if (preg_match('/^[+\-]?\d+(?:\.\d+)?$/', $clean)) {
+            $val = (float) $clean;
+            return ($val >= 0 ? '+' : '') . number_format($val, 1, '.', '');
+        }
+        return null;
+    }
+
+    /**
+     * Map a discipline name to [discipline, unit].
+     * Handles new athle.fr format ("3 000m", "100m haies") and old format ("100 M", "LONGUEUR").
+     */
+    private function mapDiscipline(string $raw): ?array
+    {
+        // Strip indoor/salle/tcm suffix
+        $norm = preg_replace('/[-\s]*(salle|indoor|en\s+salle|tcm|piste\s+couverte)\s*$/iu', '', $raw);
+        $norm = trim(preg_replace('/\s+/', ' ', $norm));
+        // Compact version: remove spaces between digits ("3 000m" → "3000m")
+        $compact = preg_replace('/(\d)\s+(\d)/u', '$1$2', $norm);
+
+        foreach (self::DISCIPLINE_PATTERNS as [$pattern, $discipline, $unit]) {
+            if (preg_match($pattern, $norm) || preg_match($pattern, $compact)) {
+                return [$discipline, $unit];
+            }
+        }
+
+        return null;
+    }
+
+    /**
+     * Parse a performance string to a float (seconds, metres, or points).
+     *
+     * New athle.fr uses '' (two apostrophes) for hundredths separator.
+     * Examples: "10'56''77" → 656.77s,  "39'14''" → 2354s,  "7''34" → 7.34s
+     * Also handles old format with " (double-quote).
+     * Parenthetical repetition is stripped: "38'58'' (38'58'')" → "38'58''"
+     */
+    private function parsePerf(string $raw, string $unit): ?float
+    {
+        // Strip trailing parenthetical
+        $raw = trim(preg_replace('/\s*\([^)]*\)\s*$/', '', $raw));
+        if ($raw === '') return null;
+        if (in_array(strtoupper($raw), ['-', 'DNS', 'DNF', 'DQ', 'NM', 'PM', 'AB', 'ABD', 'DISQ', 'NP'])) return null;
+
+        // Normalise '' → " so the rest of the logic is uniform
+        $raw = str_replace("''", '"', $raw);
+
+        if ($unit === 's') {
+            // h'mm"ss.hh  (e.g. 1h long races)
+            if (preg_match("/^(\d+)[h'](\d+)['\"](\d+)[\".,](\d+)$/u", $raw, $m)) {
+                return (int)$m[1] * 3600 + (int)$m[2] * 60 + (int)$m[3] + (int)$m[4] / 100;
+            }
+            // mm'ss"hh
+            if (preg_match("/^(\d+)['](\d+)[\".,](\d+)$/u", $raw, $m)) {
+                return (int)$m[1] * 60 + (int)$m[2] + (int)$m[3] / 100;
+            }
+            // mm'ss"  (no hundredths)
+            if (preg_match("/^(\d+)['](\d+)[\"]?$/u", $raw, $m)) {
+                return (int)$m[1] * 60 + (float)$m[2];
+            }
+            // ss"hh
+            if (preg_match('/^(\d+)"(\d+)$/', $raw, $m)) {
+                return (int)$m[1] + (int)$m[2] / 100;
+            }
+            // h:mm:ss.hh
+            $parts = explode(':', str_replace(',', '.', $raw));
+            if (count($parts) === 3) return (int)$parts[0] * 3600 + (int)$parts[1] * 60 + (float)$parts[2];
+            if (count($parts) === 2) return (int)$parts[0] * 60 + (float)$parts[1];
+            $clean = str_replace(',', '.', $raw);
+            return is_numeric($clean) ? (float)$clean : null;
+        }
+
+        // Field measurement "NNmCC" format: "53m02" = 53.02 m, "7m25" = 7.25 m, "1m89" = 1.89 m
+        if (preg_match('/^(\d+)m(\d{1,2})$/i', $raw, $m)) {
+            return (float)$m[1] + (int)str_pad($m[2], 2, '0') / 100;
+        }
+
+        // Combined event score "8 309 pts" → 8309
+        $raw = preg_replace('/\s*pts\s*$/i', '', $raw);
+
+        // Metres / points: strip spaces, replace comma with dot
+        $clean = str_replace([' ', ','], ['', '.'], $raw);
+        return is_numeric($clean) ? (float)$clean : null;
+    }
+
+    /**
+     * Parse a partial date like "12 Mai" using the given year.
+     * Also handles full dates ("12/05/2024", "12 Nov. 2023").
+     */
+    private function parsePartialDate(string $raw, int $year): ?\DateTime
+    {
+        $raw = trim($raw);
+        if ($raw === '') return null;
+
+        // Full date formats
+        foreach (['d/m/Y', 'd-m-Y', 'Y-m-d', 'd/m/y'] as $fmt) {
+            $dt = \DateTime::createFromFormat($fmt, $raw);
+            if ($dt) { $dt->setTime(0, 0, 0); return $dt; }
+        }
+
+        static $months = [
+            'jan' => 1, 'fév' => 2, 'fev' => 2, 'mar' => 3,
+            'avr' => 4, 'mai' => 5, 'jui' => 6, 'jul' => 7,
+            'aoû' => 8, 'aou' => 8, 'sep' => 9, 'oct' => 10,
+            'nov' => 11, 'déc' => 12, 'dec' => 12,
+        ];
+
+        // Partial: "12 Mai" or "12 Déc."
+        if (preg_match('/^(\d{1,2})\s+([A-Za-zÀ-ÿ]{2,5})\.?$/u', $raw, $m)) {
+            $key = mb_strtolower(mb_substr($m[2], 0, 3), 'UTF-8');
+            if (isset($months[$key])) {
+                $dt = new \DateTime();
+                $dt->setDate($year, $months[$key], (int)$m[1]);
+                $dt->setTime(0, 0, 0);
+                return $dt;
+            }
+        }
+
+        // Full with explicit year: "12 Nov. 2023"
+        if (preg_match('/(\d{1,2})\s+([A-Za-zÀ-ÿ]{2,5})\.?\s+(\d{4})/u', $raw, $m)) {
+            $key = mb_strtolower(mb_substr($m[2], 0, 3), 'UTF-8');
+            if (isset($months[$key])) {
+                $dt = new \DateTime();
+                $dt->setDate((int)$m[3], $months[$key], (int)$m[1]);
+                $dt->setTime(0, 0, 0);
+                return $dt;
+            }
+        }
+
+        return null;
+    }
+
+    /**
      * Split "Firstname LASTNAME" or "LASTNAME Firstname" into [firstName, lastName].
-     * ALL-CAPS words → last name, mixed-case words → first name.
+     * ALL-CAPS words → last name, mixed-case → first name.
      */
     private function splitName(string $text): array
     {
         $text  = preg_replace('/\s*[\|\-].*$/u', '', $text);
-        $text  = preg_replace('/^résultats\s+de\s+/iu', '', $text);
         $text  = trim($text);
         $words = preg_split('/\s+/u', $text) ?: [];
         if (count($words) < 2) return [null, null];
@@ -409,189 +811,7 @@ class FfaSync
 
         return [
             mb_convert_case(implode(' ', $mixed), MB_CASE_TITLE, 'UTF-8'),
-            mb_convert_case(implode(' ', $upper),  MB_CASE_TITLE, 'UTF-8'),
+            mb_strtoupper(implode(' ', $upper), 'UTF-8'),
         ];
-    }
-
-    /**
-     * Parse all competition result rows from a bases.athle.fr HTML page.
-     * Returns array of [discipline, unit, float value, \DateTime date].
-     *
-     * bases.athle.fr column order: Date | Epreuve | Performance | Vent | Tour | Place | Niveau | Points | Lieu
-     */
-    private function parseResults(string $html): array
-    {
-        $crawler = new Crawler($html);
-        $results = [];
-
-        try {
-            $crawler->filter('table')->each(function (Crawler $table) use (&$results) {
-                $colDate    = null;
-                $colEpreuve = null;
-                $colPerf    = null;
-
-                $table->filter('tr')->each(function (Crawler $tr, int $rowIdx) use (
-                    &$colDate, &$colEpreuve, &$colPerf, &$results
-                ) {
-                    $cells = $tr->filter('th, td');
-                    if ($cells->count() < 3) return;
-
-                    // Detect header row
-                    if ($colDate === null && $colEpreuve === null) {
-                        $texts = [];
-                        $cells->each(fn(Crawler $c, int $i) => ($texts[$i] = mb_strtolower(trim($c->text()), 'UTF-8')));
-                        $isHeader = false;
-                        foreach ($texts as $i => $t) {
-                            if (str_contains($t, 'date'))                               { $colDate    = $i; $isHeader = true; }
-                            if (str_contains($t, 'preuve') || str_contains($t, 'iscipline')) { $colEpreuve = $i; $isHeader = true; }
-                            if (str_contains($t, 'perf'))                               { $colPerf    = $i; $isHeader = true; }
-                        }
-                        if ($isHeader) return;
-                    }
-
-                    if ($colDate === null || $colEpreuve === null || $colPerf === null) return;
-
-                    $texts = [];
-                    $cells->each(fn(Crawler $td, int $i) => ($texts[$i] = trim($td->text())));
-
-                    $mapped = $this->mapDiscipline($texts[$colEpreuve] ?? '');
-                    if (!$mapped) return;
-
-                    [$discipline, $unit] = $mapped;
-                    $value = $this->parsePerf($texts[$colPerf] ?? '', $unit);
-                    $date  = $this->parseDate($texts[$colDate] ?? '');
-
-                    if ($value !== null && $date !== null) {
-                        $results[] = [$discipline, $unit, $value, $date];
-                    }
-                });
-            });
-        } catch (\Throwable) {}
-
-        // Deduplicate on discipline+value+date
-        $seen   = [];
-        $unique = [];
-        foreach ($results as $r) {
-            $key = $r[0] . '|' . $r[2] . '|' . $r[3]->format('Y-m-d');
-            if (!isset($seen[$key])) { $seen[$key] = true; $unique[] = $r; }
-        }
-
-        return $unique;
-    }
-
-    /**
-     * Map a bases.athle.fr "Epreuve" value to [discipline, unit].
-     * Strips indoor suffix "- Salle" before regex matching.
-     */
-    private function mapDiscipline(string $raw): ?array
-    {
-        $norm = preg_replace('/[-\s]*(salle|indoor|en\s+salle)\s*$/iu', '', $raw);
-        $norm = trim(preg_replace('/\s+/', ' ', $norm));
-
-        foreach (self::DISCIPLINE_PATTERNS as [$pattern, $discipline, $unit]) {
-            if (preg_match($pattern, $norm)) {
-                return [$discipline, $unit];
-            }
-        }
-
-        return null;
-    }
-
-    /**
-     * Parse a performance string into seconds (or metres/points).
-     * Handles bases.athle.fr formats:
-     *   7"34       → 7.34 s  (seconds"hundredths)
-     *   1'23"45    → 83.45 s (minutes'seconds"hundredths)
-     *   7,34 / 7.34
-     */
-    private function parsePerf(string $raw, string $unit): ?float
-    {
-        $raw = trim($raw);
-        if ($raw === '') return null;
-        if (in_array(strtoupper($raw), ['-', 'DNS', 'DNF', 'DQ', 'NM', 'PM', 'AB', 'ABD', 'DISQ', 'NP'])) return null;
-
-        if ($unit === 's') {
-            // h'mm"ss  (rare long distances)
-            if (preg_match("/^(\d+)[h'](\d+)['\"](\d+)[\".,](\d+)$/u", $raw, $m)) {
-                return (int)$m[1] * 3600 + (int)$m[2] * 60 + (int)$m[3] + (int)$m[4] / 100;
-            }
-            // mm'ss"hh  or  mm'ss.hh
-            if (preg_match("/^(\d+)['](\d+)[\".,](\d+)$/u", $raw, $m)) {
-                return (int)$m[1] * 60 + (int)$m[2] + (int)$m[3] / 100;
-            }
-            // mm'ss
-            if (preg_match("/^(\d+)['](\d+)$/u", $raw, $m)) {
-                return (int)$m[1] * 60 + (float)$m[2];
-            }
-            // ss"hh  (bases.athle.fr standard: 7"34)
-            if (preg_match('/^(\d+)"(\d+)$/', $raw, $m)) {
-                return (int)$m[1] + (int)$m[2] / 100;
-            }
-            // h:mm:ss.hh
-            $parts = explode(':', str_replace(',', '.', $raw));
-            if (count($parts) === 3) return (int)$parts[0] * 3600 + (int)$parts[1] * 60 + (float)$parts[2];
-            if (count($parts) === 2) return (int)$parts[0] * 60 + (float)$parts[1];
-            // plain decimal
-            $clean = str_replace(',', '.', $raw);
-            return is_numeric($clean) ? (float)$clean : null;
-        }
-
-        $clean = str_replace([' ', ','], ['', '.'], $raw);
-        return is_numeric($clean) ? (float)$clean : null;
-    }
-
-    /**
-     * Parse a date string. Handles:
-     *   d/m/Y, d-m-Y, Y-m-d
-     *   "22 Nov. 2025", "20 Déc. 2025"  (French abbreviated months)
-     */
-    private function parseDate(string $raw): ?\DateTime
-    {
-        $raw = trim($raw);
-        if ($raw === '') return null;
-
-        foreach (['d/m/Y', 'd-m-Y', 'Y-m-d', 'd/m/y'] as $fmt) {
-            $dt = \DateTime::createFromFormat($fmt, $raw);
-            if ($dt) { $dt->setTime(0, 0, 0); return $dt; }
-        }
-
-        // French abbreviated months: "22 Nov. 2025", "20 Déc. 2025"
-        static $months = [
-            'jan' => 1, 'fév' => 2, 'fev' => 2, 'mar' => 3,
-            'avr' => 4, 'mai' => 5, 'jui' => 6, 'jul' => 7,
-            'aoû' => 8, 'aou' => 8, 'sep' => 9, 'oct' => 10,
-            'nov' => 11, 'déc' => 12, 'dec' => 12,
-        ];
-
-        if (preg_match('/(\d{1,2})\s+([A-Za-zÀ-ÿ]{3,5})\.?\s+(\d{4})/u', $raw, $m)) {
-            $key = mb_strtolower(mb_substr($m[2], 0, 3), 'UTF-8');
-            if (isset($months[$key])) {
-                $dt = new \DateTime();
-                $dt->setDate((int)$m[3], $months[$key], (int)$m[1]);
-                $dt->setTime(0, 0, 0);
-                return $dt;
-            }
-        }
-
-        return null;
-    }
-
-    private function fetch(string $url): ?string
-    {
-        try {
-            $r = $this->httpClient->request('GET', $url, [
-                'timeout' => 15,
-                'headers' => [
-                    'User-Agent'      => 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
-                    'Accept'          => 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
-                    'Accept-Language' => 'fr-FR,fr;q=0.9',
-                    'Referer'         => 'https://www.athle.fr/',
-                ],
-            ]);
-            if ($r->getStatusCode() !== 200) return null;
-            return $r->getContent(false);
-        } catch (\Throwable) {
-            return null;
-        }
     }
 }

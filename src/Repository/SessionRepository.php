@@ -17,8 +17,8 @@ class SessionRepository extends ServiceEntityRepository
     {
         return $this->createQueryBuilder('s')
             ->andWhere('s.date BETWEEN :start AND :end')
-            ->setParameter('start', $start)
-            ->setParameter('end', $end)
+            ->setParameter('start', $start->format('Y-m-d'))
+            ->setParameter('end', $end->format('Y-m-d'))
             ->orderBy('s.date', 'ASC')
             ->addOrderBy('s.id', 'ASC')
             ->getQuery()
@@ -31,6 +31,17 @@ class SessionRepository extends ServiceEntityRepository
             ->andWhere('s.date < :today')
             ->setParameter('today', new \DateTime('today'))
             ->orderBy('s.date', 'DESC')
+            ->setMaxResults($limit)
+            ->getQuery()
+            ->getResult();
+    }
+
+    public function findUpcomingSessions(int $limit = 10): array
+    {
+        return $this->createQueryBuilder('s')
+            ->andWhere('s.date >= :today')
+            ->setParameter('today', new \DateTime('today'))
+            ->orderBy('s.date', 'ASC')
             ->setMaxResults($limit)
             ->getQuery()
             ->getResult();

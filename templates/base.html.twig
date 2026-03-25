@@ -50,9 +50,18 @@
                 </svg>
                 Calendrier
             </a>
+            <a href="{{ path('app_competition_calendar') }}"
+               class="flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-colors
+               {% if app.current_route starts with 'app_competition' %}bg-indigo-600 text-white{% else %}text-gray-400 hover:text-white hover:bg-gray-800{% endif %}">
+                <svg class="w-4 h-4 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4M7.835 4.697a3.42 3.42 0 001.946-.806 3.42 3.42 0 014.438 0 3.42 3.42 0 001.946.806 3.42 3.42 0 013.138 3.138 3.42 3.42 0 00.806 1.946 3.42 3.42 0 010 4.438 3.42 3.42 0 00-.806 1.946 3.42 3.42 0 01-3.138 3.138 3.42 3.42 0 00-1.946.806 3.42 3.42 0 01-4.438 0 3.42 3.42 0 00-1.946-.806 3.42 3.42 0 01-3.138-3.138 3.42 3.42 0 00-.806-1.946 3.42 3.42 0 010-4.438 3.42 3.42 0 00.806-1.946 3.42 3.42 0 013.138-3.138z"/>
+                </svg>
+                Compétitions
+            </a>
         </nav>
 
         <div class="p-4 border-t border-gray-800 space-y-1">
+            {% if is_granted('ROLE_ADMIN') %}
             <a href="{{ path('app_training_type_index') }}"
                class="flex items-center gap-3 px-3 py-2 rounded-lg text-xs font-medium transition-colors
                {% if app.current_route == 'app_training_type_index' %}bg-gray-700 text-white{% else %}text-gray-600 hover:text-gray-300 hover:bg-gray-800{% endif %}">
@@ -61,6 +70,24 @@
                 </svg>
                 Types de séances
             </a>
+            <a href="{{ path('app_competition_type_index') }}"
+               class="flex items-center gap-3 px-3 py-2 rounded-lg text-xs font-medium transition-colors
+               {% if app.current_route starts with 'app_competition_type' %}bg-gray-700 text-white{% else %}text-gray-600 hover:text-gray-300 hover:bg-gray-800{% endif %}">
+                <svg class="w-3.5 h-3.5 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4M7.835 4.697a3.42 3.42 0 001.946-.806 3.42 3.42 0 014.438 0 3.42 3.42 0 001.946.806 3.42 3.42 0 013.138 3.138 3.42 3.42 0 00.806 1.946 3.42 3.42 0 010 4.438 3.42 3.42 0 00-.806 1.946 3.42 3.42 0 01-3.138 3.138 3.42 3.42 0 00-1.946.806 3.42 3.42 0 01-4.438 0 3.42 3.42 0 00-1.946-.806 3.42 3.42 0 01-3.138-3.138 3.42 3.42 0 00-.806-1.946 3.42 3.42 0 010-4.438 3.42 3.42 0 00.806-1.946 3.42 3.42 0 013.138-3.138z"/>
+                </svg>
+                Types de compétitions
+            </a>
+            <a href="{{ path('app_user_index') }}"
+               class="flex items-center gap-3 px-3 py-2 rounded-lg text-xs font-medium transition-colors
+               {% if app.current_route starts with 'app_user' %}bg-gray-700 text-white{% else %}text-gray-600 hover:text-gray-300 hover:bg-gray-800{% endif %}">
+                <svg class="w-3.5 h-3.5 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z"/>
+                </svg>
+                Utilisateurs
+            </a>
+            {% endif %}
+
         </div>
     </aside>
 
@@ -71,9 +98,65 @@
             <div class="text-sm text-gray-400">
                 {% block breadcrumb %}{% endblock %}
             </div>
-            <div class="flex items-center gap-3">
-                <div class="w-8 h-8 bg-indigo-600 rounded-full flex items-center justify-center text-sm font-bold text-white">C</div>
-                <span class="text-sm text-gray-300">Coach</span>
+            {# Dropdown profil #}
+            <div class="relative" x-data="{ open: false }" @click.outside="open = false">
+                <button @click="open = !open"
+                        class="flex items-center gap-2.5 px-3 py-1.5 rounded-lg hover:bg-gray-800 transition-colors">
+                    <div class="w-8 h-8 bg-indigo-600 rounded-full flex items-center justify-center text-sm font-bold text-white shrink-0">
+                        {{ app.user.firstName|slice(0,1)|upper }}
+                    </div>
+                    <div class="text-left">
+                        <p class="text-sm font-medium text-white leading-tight">{{ app.user.firstName }} {{ app.user.lastName }}</p>
+                        <p class="text-xs text-gray-500 leading-tight">{{ is_granted('ROLE_ADMIN') ? 'Coach' : 'Athlète' }}</p>
+                    </div>
+                    <svg class="w-4 h-4 text-gray-500 ml-1 transition-transform" :class="open ? 'rotate-180' : ''" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/>
+                    </svg>
+                </button>
+
+                <div x-show="open"
+                     x-transition:enter="transition ease-out duration-100"
+                     x-transition:enter-start="opacity-0 scale-95"
+                     x-transition:enter-end="opacity-100 scale-100"
+                     x-transition:leave="transition ease-in duration-75"
+                     x-transition:leave-start="opacity-100 scale-100"
+                     x-transition:leave-end="opacity-0 scale-95"
+                     style="display:none"
+                     class="absolute right-0 top-full mt-1.5 w-52 bg-gray-900 border border-gray-800 rounded-xl shadow-xl z-50 overflow-hidden">
+
+                    <div class="px-4 py-3 border-b border-gray-800">
+                        <p class="text-xs text-gray-500 truncate">{{ app.user.email }}</p>
+                    </div>
+
+                    {# Lien Profil #}
+                    {% if app.user.linkedAthlete %}
+                        <a href="{{ path('app_athlete_show', {id: app.user.linkedAthlete.id}) }}"
+                           class="flex items-center gap-3 px-4 py-2.5 text-sm text-gray-300 hover:bg-gray-800 hover:text-white transition-colors">
+                            <svg class="w-4 h-4 text-gray-500 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"/>
+                            </svg>
+                            Mon profil
+                        </a>
+                    {% else %}
+                        <a href="{{ path('app_register_link_profile') }}"
+                           class="flex items-center gap-3 px-4 py-2.5 text-sm text-gray-300 hover:bg-gray-800 hover:text-white transition-colors">
+                            <svg class="w-4 h-4 text-gray-500 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/>
+                            </svg>
+                            Créer mon profil
+                        </a>
+                    {% endif %}
+
+                    <div class="border-t border-gray-800">
+                        <a href="{{ path('app_logout') }}"
+                           class="flex items-center gap-3 px-4 py-2.5 text-sm text-red-400 hover:bg-red-900/20 hover:text-red-300 transition-colors">
+                            <svg class="w-4 h-4 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"/>
+                            </svg>
+                            Se déconnecter
+                        </a>
+                    </div>
+                </div>
             </div>
         </header>
 

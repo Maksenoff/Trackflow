@@ -11,7 +11,7 @@
 {% endblock %}
 
 {% block body %}
-<div class="space-y-6" x-data="{ activeTab: 'performances' }">
+<div class="space-y-6" x-data="{ activeTab: 'performances', deleteOpen: false }">
 
     {# Athlete header #}
     <div class="bg-gray-900 border border-gray-800 rounded-xl p-6">
@@ -26,7 +26,18 @@
                 </div>
                 <div>
                     <h1 class="text-2xl font-bold text-white">{{ athlete.fullName }}</h1>
-                    <p class="text-indigo-400 font-medium mt-0.5">{{ athlete.discipline }}</p>
+                    <div class="flex flex-wrap gap-2 mt-2">
+                        {% for disc in athlete.disciplines %}
+                            <span class="inline-flex items-center gap-1.5 text-sm font-semibold text-indigo-200 bg-indigo-600/20 border border-indigo-500/30 px-3 py-1 rounded-lg">
+                                <svg class="w-3.5 h-3.5 text-indigo-400 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"/>
+                                </svg>
+                                {{ disc|capitalize }}
+                            </span>
+                        {% else %}
+                            <span class="text-sm text-gray-500">Aucune discipline</span>
+                        {% endfor %}
+                    </div>
                     <div class="flex items-center gap-4 mt-2 text-sm text-gray-400">
                         {% if athlete.age %}
                             <span>{{ athlete.age }} ans</span>
@@ -39,6 +50,7 @@
                 </div>
             </div>
             <div class="flex gap-2">
+                {% if canEdit %}
                 <a href="{{ path('app_athlete_edit', {id: athlete.id}) }}"
                    class="flex items-center gap-2 bg-gray-800 hover:bg-gray-700 text-gray-300 px-3 py-2 rounded-lg text-sm transition-colors">
                     <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -46,16 +58,51 @@
                     </svg>
                     Modifier
                 </a>
-                <form action="{{ path('app_athlete_delete', {id: athlete.id}) }}" method="post"
-                      x-data onsubmit="return confirm('Supprimer cet athlète et toutes ses données ?')">
-                    <input type="hidden" name="_token" value="{{ csrf_token('delete' ~ athlete.id) }}">
-                    <button type="submit" class="flex items-center gap-2 bg-gray-800 hover:bg-red-900/50 hover:text-red-400 text-gray-300 px-3 py-2 rounded-lg text-sm transition-colors">
-                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/>
-                        </svg>
-                        Supprimer
-                    </button>
-                </form>
+                {% if is_granted('ROLE_ADMIN') %}
+                <button type="button" @click="deleteOpen = true"
+                        class="flex items-center gap-2 bg-gray-800 hover:bg-red-900/40 hover:text-red-400 hover:border-red-800 border border-gray-700 text-gray-300 px-3 py-2 rounded-lg text-sm transition-all">
+                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/>
+                    </svg>
+                    Supprimer
+                </button>
+
+                {# Delete confirmation modal #}
+                <div x-show="deleteOpen" x-transition.opacity
+                     class="fixed inset-0 z-50 flex items-center justify-center p-4"
+                     style="background: rgba(0,0,0,0.7)">
+                    <div x-show="deleteOpen" x-transition.scale.origin.center
+                         @click.outside="deleteOpen = false"
+                         class="bg-gray-900 border border-gray-700 rounded-2xl p-6 max-w-sm w-full shadow-2xl">
+                        <div class="flex items-center gap-3 mb-4">
+                            <div class="w-10 h-10 rounded-full bg-red-900/40 flex items-center justify-center shrink-0">
+                                <svg class="w-5 h-5 text-red-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/>
+                                </svg>
+                            </div>
+                            <div>
+                                <h3 class="text-white font-semibold">Supprimer l'athlète</h3>
+                                <p class="text-sm text-gray-400">{{ athlete.fullName }}</p>
+                            </div>
+                        </div>
+                        <p class="text-sm text-gray-400 mb-6">Cette action est irréversible. Toutes les performances, séances et objectifs associés seront supprimés.</p>
+                        <div class="flex gap-3">
+                            <form action="{{ path('app_athlete_delete', {id: athlete.id}) }}" method="post" class="flex-1">
+                                <input type="hidden" name="_token" value="{{ csrf_token('delete' ~ athlete.id) }}">
+                                <button type="submit"
+                                        class="w-full cursor-pointer bg-red-600 hover:bg-red-500 text-white px-4 py-2.5 rounded-lg text-sm font-medium transition-colors">
+                                    Oui, supprimer
+                                </button>
+                            </form>
+                            <button type="button" @click="deleteOpen = false"
+                                    class="flex-1 cursor-pointer bg-gray-800 hover:bg-gray-700 text-gray-300 px-4 py-2.5 rounded-lg text-sm font-medium transition-colors">
+                                Annuler
+                            </button>
+                        </div>
+                    </div>
+                </div>
+                {% endif %}{# end ROLE_ADMIN #}
+                {% endif %}{# end canEdit #}
             </div>
         </div>
 
@@ -107,43 +154,49 @@
                 class="flex-1 py-2 px-4 rounded-lg text-sm font-medium transition-colors">
             Performances
         </button>
+        {% if canEdit %}
         <button @click="activeTab = 'sessions'"
                 :class="activeTab === 'sessions' ? 'bg-gray-700 text-white' : 'text-gray-400 hover:text-white'"
                 class="flex-1 py-2 px-4 rounded-lg text-sm font-medium transition-colors">
             Séances
         </button>
+        {% endif %}
         <button @click="activeTab = 'goals'"
                 :class="activeTab === 'goals' ? 'bg-gray-700 text-white' : 'text-gray-400 hover:text-white'"
                 class="flex-1 py-2 px-4 rounded-lg text-sm font-medium transition-colors">
             Objectifs
         </button>
+        {% if canEdit %}
         <button @click="activeTab = 'videos'; $nextTick(() => videoApp.load())"
                 :class="activeTab === 'videos' ? 'bg-gray-700 text-white' : 'text-gray-400 hover:text-white'"
                 class="flex-1 py-2 px-4 rounded-lg text-sm font-medium transition-colors">
             Vidéos
         </button>
+        {% endif %}
     </div>
 
     {# Performances tab #}
     <div x-show="activeTab === 'performances'" x-transition
-         x-data="perfTab({{ performancesJson|json_encode }})"
+         x-data="perfTab({{ performancesJson|json_encode }}, {{ athlete.disciplines|json_encode }})"
          x-init="init()">
 
-        {# Header #}
+        {# Header row #}
         <div class="flex items-center justify-between mb-4">
             <div class="flex items-center gap-3">
                 <h2 class="text-lg font-semibold text-white">Performances</h2>
-                <span class="text-xs bg-gray-800 text-gray-400 px-2 py-0.5 rounded-full" x-text="filtered.length + ' résultat' + (filtered.length > 1 ? 's' : '')"></span>
+                <span class="text-xs bg-gray-800 text-gray-400 px-2 py-0.5 rounded-full"
+                      x-text="filtered.length + ' résultat' + (filtered.length > 1 ? 's' : '')"></span>
             </div>
+            {% if canEdit %}
             <div class="flex items-center gap-2">
                 {% if athlete.ffaProfileUrl %}
-                <button id="manual-sync-btn"
-                        onclick="triggerSync()"
-                        class="flex items-center gap-1.5 bg-gray-800 hover:bg-gray-700 text-gray-300 px-3 py-2 rounded-lg text-sm transition-colors">
-                    <svg id="sync-icon" class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <button id="manual-sync-btn" @click="triggerSync()"
+                        :disabled="syncing"
+                        class="flex items-center gap-1.5 bg-gray-800 hover:bg-gray-700 disabled:opacity-60 text-gray-300 px-3 py-2 rounded-lg text-sm transition-colors">
+                    <svg :class="syncing ? 'animate-spin' : ''" class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/>
                     </svg>
-                    <span id="sync-label">Sync athle.fr</span>
+                    <span x-text="syncLabel"></span>
                 </button>
                 {% endif %}
                 <a href="{{ path('app_performance_new', {athleteId: athlete.id}) }}"
@@ -154,6 +207,7 @@
                     Ajouter
                 </a>
             </div>
+            {% endif %}
         </div>
 
         <template x-if="allPerfs.length === 0">
@@ -162,19 +216,92 @@
             </div>
         </template>
 
-        <template x-if="allPerfs.length > 0">
-            <div class="space-y-4">
+        {# ── Bilan annuel niveau (accordéon, style FFA) ── #}
+        <template x-if="annualBilan.length > 0">
+            <div class="bg-gray-900 border border-gray-800 rounded-xl overflow-hidden mb-4">
 
-                {# Season tabs #}
+                {# Header / toggle #}
+                <button type="button" @click="_bilanOpen = !_bilanOpen"
+                        class="w-full flex items-center justify-between px-4 py-3 hover:bg-gray-800/40 transition-colors text-left">
+                    <div class="flex items-center gap-3 flex-wrap min-w-0">
+                        <svg :class="_bilanOpen ? 'rotate-90' : ''"
+                             class="w-4 h-4 text-gray-500 transition-transform shrink-0"
+                             fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/>
+                        </svg>
+                        <span class="text-sm font-semibold text-white shrink-0">Bilan niveau</span>
+                        {# Preview des 3 dernières années quand replié #}
+                        <template x-if="!_bilanOpen">
+                            <div class="flex items-center gap-3 flex-wrap">
+                                <template x-for="row in annualBilan.slice(0,4)" :key="row.year">
+                                    <div class="flex items-center gap-1.5">
+                                        <span class="text-xs text-gray-500" x-text="row.year"></span>
+                                        <span class="text-xs font-bold bg-violet-900/50 text-violet-200 border border-violet-700/40 px-2 py-0.5 rounded"
+                                              x-text="row.level"></span>
+                                    </div>
+                                </template>
+                            </div>
+                        </template>
+                    </div>
+                    <span class="text-xs text-gray-600 shrink-0 ml-2" x-text="annualBilan.length + ' ans'"></span>
+                </button>
+
+                {# Corps — table style FFA #}
+                <div x-show="_bilanOpen" x-transition.duration.150ms class="border-t border-gray-800">
+                    <table class="w-full text-sm">
+                        <thead>
+                            <tr class="text-xs text-gray-600 uppercase tracking-wide border-b border-gray-800/60">
+                                <th class="text-left px-4 py-2 font-medium w-14">Année</th>
+                                <th class="text-left px-4 py-2 font-medium w-28">Niveau</th>
+                                <th class="text-left px-4 py-2 font-medium">Top performances</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <template x-for="row in annualBilan" :key="row.year">
+                                <tr class="border-t border-gray-800/40 hover:bg-white/[0.02] transition-colors">
+                                    <td class="px-4 py-2.5 text-gray-400 font-semibold text-sm" x-text="row.year"></td>
+                                    <td class="px-4 py-2.5">
+                                        <div class="flex items-center gap-1.5">
+                                            <span class="text-xs font-bold bg-violet-900/50 text-violet-200 border border-violet-700/40 px-2 py-1 rounded-lg"
+                                                  x-text="row.level"></span>
+                                            <span class="text-xs text-gray-600" x-text="'(' + row.pts + ' pts)'"></span>
+                                        </div>
+                                    </td>
+                                    <td class="px-4 py-2.5">
+                                        <div class="flex items-center gap-4 flex-wrap">
+                                            <template x-for="(p, i) in row.top2" :key="i">
+                                                <div class="flex items-center gap-1.5 text-xs">
+                                                    <span class="text-gray-400" x-text="p.disc"></span>
+                                                    <span class="text-gray-200 font-semibold" x-text="p.value"></span>
+                                                    <template x-if="p.level">
+                                                        <span class="text-[10px] font-semibold bg-violet-900/40 text-violet-300 border border-violet-700/30 px-1.5 py-0.5 rounded"
+                                                              x-text="p.level + (p.pts ? ' · ' + p.pts + 'pts' : '')"></span>
+                                                    </template>
+                                                </div>
+                                            </template>
+                                        </div>
+                                    </td>
+                                </tr>
+                            </template>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </template>
+
+        <template x-if="allPerfs.length > 0">
+            <div class="space-y-3">
+
+                {# ── Season tabs ── #}
                 <div class="flex flex-wrap gap-2">
-                    <button @click="activeSeason = ''; activePage = 0"
+                    <button @click="activeSeason = ''"
                             :class="activeSeason === '' ? 'bg-indigo-600 text-white' : 'bg-gray-800 text-gray-400 hover:text-white'"
                             class="px-3 py-1.5 rounded-lg text-sm font-medium transition-colors">
                         Toutes
                         <span class="ml-1 text-xs opacity-70" x-text="'(' + allPerfs.length + ')'"></span>
                     </button>
                     <template x-for="[s, count] in seasons" :key="s">
-                        <button @click="activeSeason = s; activePage = 0; activeDisc = ''; activeCat = ''"
+                        <button @click="activeSeason = s; activeCat = ''"
                                 :class="activeSeason === s ? 'bg-indigo-600 text-white' : 'bg-gray-800 text-gray-400 hover:text-white'"
                                 class="px-3 py-1.5 rounded-lg text-sm font-medium transition-colors">
                             <span x-text="s.replace('-20', '-')"></span>
@@ -183,141 +310,180 @@
                     </template>
                 </div>
 
-                {# Discipline + category filters #}
+                {# ── Category + Indoor/Outdoor filters ── #}
                 <div class="flex flex-wrap gap-2 items-center">
-                    <span class="text-xs text-gray-500 mr-1">Discipline :</span>
-                    <button @click="activeDisc = ''; activePage = 0"
-                            :class="activeDisc === '' ? 'bg-gray-700 text-white' : 'bg-gray-800/50 text-gray-500 hover:text-white'"
-                            class="px-2.5 py-1 rounded-md text-xs font-medium transition-colors">Toutes</button>
-                    <template x-for="d in disciplines" :key="d">
-                        <button @click="activeDisc = (activeDisc === d ? '' : d); activePage = 0"
-                                :class="activeDisc === d ? 'bg-gray-700 text-white' : 'bg-gray-800/50 text-gray-500 hover:text-white'"
-                                class="px-2.5 py-1 rounded-md text-xs font-medium transition-colors"
-                                x-text="d"></button>
-                    </template>
-
                     <template x-if="categories.length > 1">
-                        <div class="flex flex-wrap gap-2 items-center ml-3">
-                            <span class="text-xs text-gray-500 mr-1">Catégorie :</span>
-                            <button @click="activeCat = ''; activePage = 0"
+                        <div class="flex flex-wrap gap-2 items-center">
+                            <span class="text-xs text-gray-500">Catégorie :</span>
+                            <button @click="activeCat = ''"
                                     :class="activeCat === '' ? 'bg-gray-700 text-white' : 'bg-gray-800/50 text-gray-500 hover:text-white'"
                                     class="px-2.5 py-1 rounded-md text-xs font-medium transition-colors">Toutes</button>
                             <template x-for="c in categories" :key="c">
-                                <button @click="activeCat = (activeCat === c ? '' : c); activePage = 0"
+                                <button @click="activeCat = (activeCat === c ? '' : c)"
                                         :class="activeCat === c ? 'bg-gray-700 text-white' : 'bg-gray-800/50 text-gray-500 hover:text-white'"
                                         class="px-2.5 py-1 rounded-md text-xs font-medium transition-colors"
                                         x-text="c"></button>
                             </template>
                         </div>
                     </template>
-                </div>
-
-                {# Results table #}
-                <div class="bg-gray-900 border border-gray-800 rounded-xl overflow-hidden">
-                    <table class="w-full text-sm">
-                        <thead>
-                            <tr class="border-b border-gray-800 text-xs text-gray-500 uppercase tracking-wide">
-                                <th class="text-left px-4 py-3 font-medium">Date</th>
-                                <th class="text-left px-4 py-3 font-medium">Discipline</th>
-                                <th class="text-left px-4 py-3 font-medium">Performance</th>
-                                <th class="text-left px-4 py-3 font-medium hidden sm:table-cell">Saison</th>
-                                <th class="text-left px-4 py-3 font-medium hidden md:table-cell">Catégorie</th>
-                                <th class="px-4 py-3"></th>
-                            </tr>
-                        </thead>
-                        <tbody class="divide-y divide-gray-800/60">
-                            <template x-for="p in paginated" :key="p.id">
-                                <tr class="hover:bg-gray-800/30 transition-colors group">
-                                    <td class="px-4 py-3 text-gray-400 whitespace-nowrap" x-text="p.dateFormatted"></td>
-                                    <td class="px-4 py-3">
-                                        <span class="text-gray-300 font-medium" x-text="p.discipline"></span>
-                                    </td>
-                                    <td class="px-4 py-3">
-                                        <div class="flex items-center gap-2">
-                                            <template x-if="p.isPersonalBest">
-                                                <span title="Record personnel">⭐</span>
-                                            </template>
-                                            <span :class="p.isPersonalBest ? 'text-yellow-300 font-bold' : 'text-white font-medium'"
-                                                  x-text="p.formattedValue"></span>
-                                            <template x-if="p.isCompetition && !p.isPersonalBest">
-                                                <span class="text-xs bg-blue-900/40 text-blue-400 px-1.5 py-0.5 rounded font-medium">Compét</span>
-                                            </template>
-                                        </div>
-                                        <p x-show="p.notes" x-text="p.notes" class="text-xs text-gray-500 mt-0.5"></p>
-                                    </td>
-                                    <td class="px-4 py-3 hidden sm:table-cell">
-                                        <span class="text-xs text-gray-500" x-text="p.season.replace('-20', '-')"></span>
-                                    </td>
-                                    <td class="px-4 py-3 hidden md:table-cell">
-                                        <span x-show="p.category" x-text="p.category"
-                                              class="text-xs bg-gray-800 text-gray-400 px-2 py-0.5 rounded-full"></span>
-                                    </td>
-                                    <td class="px-4 py-3">
-                                        <div class="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
-                                            <a :href="p.editUrl" class="text-gray-500 hover:text-indigo-400 p-1 rounded transition-colors">
-                                                <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"/></svg>
-                                            </a>
-                                            <button @click="deletePerf(p)"
-                                                    class="text-gray-500 hover:text-red-400 p-1 rounded transition-colors">
-                                                <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
-                                            </button>
-                                        </div>
-                                    </td>
-                                </tr>
-                            </template>
-                            <tr x-show="filtered.length === 0">
-                                <td colspan="6" class="px-4 py-10 text-center text-gray-500">Aucun résultat pour ces filtres.</td>
-                            </tr>
-                        </tbody>
-                    </table>
-
-                    {# Pagination #}
-                    <div x-show="totalPages > 1" class="flex items-center justify-between px-4 py-3 border-t border-gray-800">
-                        <span class="text-xs text-gray-500"
-                              x-text="(activePage * pageSize + 1) + '–' + Math.min((activePage + 1) * pageSize, filtered.length) + ' sur ' + filtered.length"></span>
-                        <div class="flex gap-1">
-                            <button @click="activePage--" :disabled="activePage === 0"
-                                    class="px-2.5 py-1 rounded text-xs bg-gray-800 text-gray-400 disabled:opacity-30 hover:text-white transition-colors">←</button>
-                            <template x-for="i in totalPages" :key="i">
-                                <button @click="activePage = i - 1"
-                                        :class="activePage === i - 1 ? 'bg-indigo-600 text-white' : 'bg-gray-800 text-gray-400 hover:text-white'"
-                                        class="px-2.5 py-1 rounded text-xs transition-colors"
-                                        x-text="i"></button>
-                            </template>
-                            <button @click="activePage++" :disabled="activePage >= totalPages - 1"
-                                    class="px-2.5 py-1 rounded text-xs bg-gray-800 text-gray-400 disabled:opacity-30 hover:text-white transition-colors">→</button>
-                        </div>
+                    <div class="flex gap-1 ml-auto">
+                        <button @click="activeIndoor = (activeIndoor === null ? true : (activeIndoor === true ? false : null))"
+                                :class="activeIndoor === true ? 'bg-indigo-800/60 text-indigo-300 border-indigo-700' : activeIndoor === false ? 'bg-amber-900/40 text-amber-300 border-amber-800' : 'bg-gray-800/50 text-gray-500 border-gray-700 hover:text-white'"
+                                class="px-2.5 py-1 rounded-md text-xs font-medium border transition-colors">
+                            <span x-text="activeIndoor === true ? '🏛 Indoor' : activeIndoor === false ? '🌤 Outdoor' : '🏛/🌤 Tous'"></span>
+                        </button>
                     </div>
                 </div>
 
-                {# Charts per discipline (collapsible) #}
-                {% if performancesByDiscipline is not empty %}
-                <div x-data="{ chartsOpen: false }">
-                    <button @click="chartsOpen = !chartsOpen"
-                            class="flex items-center gap-2 text-sm text-gray-400 hover:text-white transition-colors">
-                        <svg :class="chartsOpen ? 'rotate-90' : ''" class="w-4 h-4 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/>
-                        </svg>
-                        Graphiques de progression
-                    </button>
-                    <div x-show="chartsOpen" x-transition class="mt-3 space-y-4">
-                        {% for discipline, perfs in performancesByDiscipline %}
-                            {% if perfs|length > 1 %}
-                            <div class="bg-gray-900 border border-gray-800 rounded-xl p-4">
-                                <p class="text-sm font-medium text-gray-300 mb-3">{{ discipline }}</p>
-                                <canvas id="chart-{{ loop.index }}" height="70"
-                                        data-labels="{{ chartData[discipline].labels|json_encode }}"
-                                        data-values="{{ chartData[discipline].values|json_encode }}"
-                                        data-unit="{{ chartData[discipline].unit }}"
-                                        data-higher-is-better="{{ chartData[discipline].higherIsBetter ? 'true' : 'false' }}"
-                                        class="performance-chart">
-                                </canvas>
+                {# ── Discipline accordions ── #}
+                <div class="space-y-2">
+                    <template x-for="disc in disciplineGroups" :key="disc.name">
+                        <div class="bg-gray-900 border border-gray-800 rounded-xl overflow-hidden flex">
+
+                            {# Left accent bar for specialties #}
+                            <div class="w-1 shrink-0 rounded-l-xl transition-colors"
+                                 :class="specialties.includes(disc.name) ? 'bg-indigo-500' : 'bg-gray-700'"></div>
+                            <div class="flex-1 min-w-0">
+                            {# Accordion header — always visible, shows PB & SB #}
+                            <button type="button"
+                                    @click="toggleDisc(disc.name)"
+                                    class="w-full flex items-center justify-between px-4 py-3 hover:bg-gray-800/40 transition-colors text-left">
+                                <div class="flex items-center gap-3 flex-1 min-w-0">
+                                    <svg :class="isDiscOpen(disc.name) ? 'rotate-90' : ''"
+                                         class="w-4 h-4 text-gray-500 transition-transform shrink-0"
+                                         fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/>
+                                    </svg>
+                                    <span class="font-semibold text-white" x-text="disc.name"></span>
+                                    <span class="text-xs bg-gray-800 text-gray-500 px-2 py-0.5 rounded-full shrink-0"
+                                          x-text="disc.perfs.length + ' perf' + (disc.perfs.length > 1 ? 's' : '')"></span>
+                                </div>
+                                <div class="flex items-center shrink-0 ml-4">
+                                    {# PB #}
+                                    <div style="width:80px">
+                                        <template x-if="disc.pb">
+                                            <div class="border-l-2 border-yellow-400/70 pl-2.5">
+                                                <div class="text-[9px] font-semibold text-gray-300 uppercase tracking-[0.12em]">PB</div>
+                                                <div class="text-sm font-mono font-bold text-yellow-400 leading-tight" x-text="disc.pb"></div>
+                                            </div>
+                                        </template>
+                                    </div>
+                                    {# SB #}
+                                    <div style="width:80px">
+                                        <template x-if="disc.sb">
+                                            <div class="border-l-2 border-emerald-400/70 pl-2.5">
+                                                <div class="text-[9px] font-semibold text-gray-300 uppercase tracking-[0.12em]">SB</div>
+                                                <div class="text-sm font-mono font-bold text-emerald-400 leading-tight" x-text="disc.sb"></div>
+                                            </div>
+                                        </template>
+                                    </div>
+                                </div>
+                            </button>
+
+                            {# Accordion body #}
+                            <div x-show="isDiscOpen(disc.name)" x-transition.duration.150ms
+                                 class="border-t border-gray-800">
+
+                                {# Chart — canvas present always so init can find it; hidden when < 2 perfs #}
+                                <div x-show="disc.hasChart" class="px-4 py-3">
+                                    <div class="bg-gray-950 border border-gray-700/60 rounded-lg px-3 pt-3 pb-2">
+                                        <canvas :data-disc="disc.name"
+                                                :data-labels="JSON.stringify(disc.chartLabels)"
+                                                :data-values="JSON.stringify(disc.chartValues)"
+                                                :data-unit="disc.unit"
+                                                :data-higher-is-better="disc.higherIsBetter ? 'true' : 'false'"
+                                                class="perf-disc-chart" height="75">
+                                        </canvas>
+                                    </div>
+                                </div>
+
+                                {# Performances table #}
+                                <table class="w-full text-sm">
+                                    <thead>
+                                        <tr class="text-xs text-gray-600 uppercase tracking-wide border-t border-gray-800/60">
+                                            <th class="text-left px-4 py-1.5 font-medium w-24">Date</th>
+                                            <th class="text-left px-4 py-1.5 font-medium">Performance</th>
+                                            <th class="text-left px-4 py-1.5 font-medium hidden sm:table-cell">Lieu</th>
+                                            <th class="text-left px-4 py-1.5 font-medium hidden md:table-cell">Saison</th>
+                                            <th class="text-left px-4 py-1.5 font-medium hidden md:table-cell">Cat.</th>
+                                            <th class="text-left px-4 py-1.5 font-medium hidden md:table-cell">Niveau</th>
+                                            <th class="w-14"></th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        <template x-for="p in disc.perfs" :key="p.id">
+                                            <tr class="border-t border-gray-800/40 hover:bg-white/[0.02] transition-colors group">
+                                                <td class="px-4 py-2 text-gray-500 whitespace-nowrap text-xs" x-text="p.dateFormatted"></td>
+                                                <td class="px-4 py-2">
+                                                    <div class="flex items-center gap-1.5">
+                                                        <span class="w-3 shrink-0 text-center text-xs leading-none"
+                                                              :class="p.isPersonalBest ? 'text-yellow-400' : 'opacity-0'"
+                                                              title="Record personnel">★</span>
+                                                        <span :class="p.isPersonalBest ? 'text-yellow-300 font-bold' : 'text-gray-100 font-medium'"
+                                                              x-text="p.formattedValue"></span>
+                                                        <template x-if="p.isIndoor === true">
+                                                            <span class="text-[10px] font-medium text-indigo-400 bg-indigo-950 px-1.5 py-0.5 rounded" title="Indoor">IN</span>
+                                                        </template>
+                                                        <template x-if="p.isIndoor === false">
+                                                            <span class="text-[10px] font-medium text-amber-400 bg-amber-950/60 px-1.5 py-0.5 rounded" title="Outdoor">OUT</span>
+                                                        </template>
+                                                        <template x-if="p.wind !== null && p.wind !== undefined">
+                                                            <span class="inline-flex items-center gap-0.5 text-[10px] font-medium text-sky-400 bg-sky-950/50 px-1.5 py-0.5 rounded"
+                                                                  :title="'Vent : ' + p.wind + (p.wind !== 'NC' ? ' m/s' : '')">
+                                                                <svg style="width:17px;height:17px;flex-shrink:0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9.59 4.59A2 2 0 1111 8H2m10.59 11.41A2 2 0 1014 16H2m15.73-8.27A2.5 2.5 0 1119.5 12H2"/>
+                                                                </svg>
+                                                                <span x-text="p.wind + (p.wind !== 'NC' ? ' m/s' : '')"></span>
+                                                            </span>
+                                                        </template>
+                                                    </div>
+                                                    <p x-show="p.notes" x-text="p.notes" class="text-xs text-gray-600 mt-0.5"></p>
+                                                </td>
+                                                <td class="px-4 py-2 hidden sm:table-cell">
+                                                    <span class="text-xs text-gray-600" x-text="p.venue || ''"></span>
+                                                </td>
+                                                <td class="px-4 py-2 hidden md:table-cell">
+                                                    <span class="text-xs text-gray-700" x-text="p.seasonShort"></span>
+                                                </td>
+                                                <td class="px-4 py-2 hidden md:table-cell">
+                                                    <span x-show="p.category" x-text="p.category"
+                                                          class="text-[10px] bg-gray-800 text-gray-500 px-2 py-0.5 rounded-full"></span>
+                                                </td>
+                                                <td class="px-4 py-2 hidden md:table-cell">
+                                                    <template x-if="p.level || p.levelPoints">
+                                                        <div class="flex items-center gap-1">
+                                                            <span x-show="p.level" x-text="p.level"
+                                                                  class="text-[10px] font-semibold bg-violet-900/40 text-violet-300 border border-violet-700/30 px-1.5 py-0.5 rounded"></span>
+                                                            <span x-show="p.levelPoints" x-text="p.levelPoints + ' pts'"
+                                                                  class="text-[10px] text-gray-500"></span>
+                                                        </div>
+                                                    </template>
+                                                </td>
+                                                <td class="px-3 py-2">
+                                                    {% if canEdit %}
+                                                    <div class="flex items-center gap-0.5 opacity-0 group-hover:opacity-100 transition-opacity">
+                                                        <a :href="p.editUrl" class="text-gray-700 hover:text-indigo-400 p-1 rounded transition-colors">
+                                                            <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"/></svg>
+                                                        </a>
+                                                        <button @click="deletePerf(p)" class="text-gray-700 hover:text-red-400 p-1 rounded transition-colors">
+                                                            <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
+                                                        </button>
+                                                    </div>
+                                                    {% endif %}
+                                                </td>
+                                            </tr>
+                                        </template>
+                                    </tbody>
+                                </table>
                             </div>
-                            {% endif %}
-                        {% endfor %}
+                        </div>{# end flex-1 #}
+                        </div>{# end flex card #}
+                    </template>
+
+                    <div x-show="disciplineGroups.length === 0" class="bg-gray-900 border border-gray-800 rounded-xl p-8 text-center text-gray-500 text-sm">
+                        Aucun résultat pour ces filtres.
                     </div>
                 </div>
-                {% endif %}
 
             </div>
         </template>
@@ -325,47 +491,96 @@
 
     {# Sessions tab #}
     <div x-show="activeTab === 'sessions'" x-transition>
-        <div class="space-y-6">
+        <div style="overflow:hidden">
+
+            {# Prochaine séance #}
+            {% if upcomingSessions is not empty %}
+                {% set next = upcomingSessions[0] %}
+                <div style="margin-top: 2.5rem">
+                    <div class="flex items-center gap-3 mb-4">
+                        <h2 class="text-sm font-semibold text-gray-400 uppercase tracking-widest">Prochaine séance</h2>
+                        <span class="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse"></span>
+                    </div>
+                    <div class="bg-gray-900 border border-indigo-600/40 rounded-xl overflow-hidden relative">
+                        <div class="h-1" style="background: {{ next.colorBg }}"></div>
+                        <div class="px-5 py-4 flex items-center justify-between gap-4">
+                            <div class="flex items-center gap-5">
+                                <div class="text-center shrink-0">
+                                    <p class="text-2xl font-bold text-white leading-none">{{ next.date|date('d') }}</p>
+                                    <p class="text-xs text-gray-400 uppercase mt-0.5">{{ next.date|date('M Y') }}</p>
+                                </div>
+                                <div class="w-px h-8 bg-gray-700"></div>
+                                <div>
+                                    <p class="text-base font-semibold text-white">{{ next.title }}</p>
+                                    <div class="flex items-center gap-2 mt-1 flex-wrap">
+                                        <span class="text-xs px-2 py-0.5 rounded font-medium"
+                                              style="background: {{ next.colorBg }}22; color: {{ next.colorBg }}">
+                                            {{ next.typeLabel }}
+                                        </span>
+                                        {% if next.durationMinutes %}
+                                            <span class="text-xs text-gray-500">{{ next.durationMinutes }} min</span>
+                                        {% endif %}
+                                    </div>
+                                </div>
+                            </div>
+                            <a href="{{ path('app_calendar') }}"
+                               class="text-xs text-indigo-400 hover:text-indigo-300 font-medium transition-colors shrink-0">
+                                Voir le calendrier →
+                            </a>
+                        </div>
+                        {% if upcomingSessions|length > 1 %}
+                            <div class="border-t border-gray-800 px-5 py-2 flex gap-4 overflow-x-auto">
+                                {% for s in upcomingSessions[1:] %}
+                                    <span class="text-xs text-gray-500 whitespace-nowrap shrink-0">
+                                        <span class="text-gray-400 font-medium">{{ s.date|date('d/m') }}</span>
+                                        · {{ s.title }}
+                                    </span>
+                                {% endfor %}
+                            </div>
+                        {% endif %}
+                    </div>
+                </div>
+            {% endif %}
 
             {# Séances à enregistrer #}
             {% if unloggedSessions is not empty %}
-                <div>
-                    <div class="flex items-center gap-2 mb-3">
-                        <h2 class="text-base font-semibold text-white">Séances passées à enregistrer</h2>
-                        <span class="text-xs bg-indigo-600/20 text-indigo-400 border border-indigo-600/30 px-2 py-0.5 rounded-full">
+                <div style="margin-top: 2.5rem">
+                    <div class="flex items-center gap-3 mb-4">
+                        <h2 class="text-sm font-semibold text-gray-400 uppercase tracking-widest">À débriefer</h2>
+                        <span class="text-xs bg-amber-500/10 text-amber-400 border border-amber-500/20 px-2.5 py-0.5 rounded-full font-medium">
                             {{ unloggedSessions|length }}
                         </span>
                     </div>
-                    <div class="space-y-2">
+                    <div class="grid grid-cols-2 lg:grid-cols-3 gap-3">
                         {% for session in unloggedSessions %}
-                            <div class="bg-gray-900 border border-gray-800 rounded-xl overflow-hidden hover:border-indigo-600/40 transition-colors">
+                            <div class="bg-gray-900 border border-gray-800 rounded-xl overflow-hidden hover:border-amber-500/30 transition-colors">
                                 <div class="h-0.5" style="background: {{ session.colorBg }}"></div>
-                                <div class="flex items-center justify-between px-4 py-3">
-                                    <div class="flex items-center gap-4">
-                                        <div class="text-center w-10 shrink-0">
-                                            <p class="text-base font-bold text-white leading-none">{{ session.date|date('d') }}</p>
-                                            <p class="text-xs text-gray-500 uppercase">{{ session.date|date('M') }}</p>
-                                        </div>
-                                        <div>
-                                            <p class="text-sm font-medium text-white">{{ session.title }}</p>
-                                            <div class="flex items-center gap-2 mt-0.5">
-                                                <span class="text-xs px-1.5 py-0.5 rounded font-medium"
-                                                      style="background: {{ session.colorBg }}22; color: {{ session.colorBg }}">
-                                                    {{ session.typeLabel }}
-                                                </span>
-                                                {% if session.durationMinutes %}
-                                                    <span class="text-xs text-gray-500">{{ session.durationMinutes }} min</span>
-                                                {% endif %}
+                                <div class="px-3 py-3 flex flex-col gap-2">
+                                    <div class="flex items-start justify-between gap-2">
+                                        <div class="flex items-center gap-2">
+                                            <div class="text-center shrink-0">
+                                                <p class="text-lg font-bold text-white leading-none">{{ session.date|date('d') }}</p>
+                                                <p class="text-[10px] text-gray-500 uppercase">{{ session.date|date('M') }}</p>
                                             </div>
                                         </div>
+                                        <a href="{{ path('app_athlete_session_log', {athleteId: athlete.id, sessionId: session.id}) }}"
+                                           class="flex items-center gap-1 bg-indigo-600 hover:bg-indigo-500 text-white px-2.5 py-1.5 rounded-lg text-[10px] font-semibold transition-colors shrink-0 shadow-sm">
+                                            Débrief
+                                            <svg class="w-2.5 h-2.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M9 5l7 7-7 7"/>
+                                            </svg>
+                                        </a>
                                     </div>
-                                    <a href="{{ path('app_athlete_session_log', {athleteId: athlete.id, sessionId: session.id}) }}"
-                                       class="flex items-center gap-1.5 bg-indigo-600 hover:bg-indigo-500 text-white px-3 py-1.5 rounded-lg text-xs font-medium transition-colors shrink-0">
-                                        <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"/>
-                                        </svg>
-                                        Enregistrer mon ressenti
-                                    </a>
+                                    <p class="text-xs font-medium text-white leading-tight">{{ session.title }}</p>
+                                    <div class="flex items-center gap-2 flex-wrap">
+                                        <span class="text-[10px] px-1.5 py-0.5 rounded font-medium"
+                                              style="background: {{ session.colorBg }}22; color: {{ session.colorBg }}">
+                                            {{ session.typeLabel }}
+                                        </span>
+                                        {% if session.durationMinutes %}
+                                            <span class="text-[10px] text-gray-500">{{ session.durationMinutes }} min</span>
+                                        {% endif %}
+                                    </div>
                                 </div>
                             </div>
                         {% endfor %}
@@ -373,74 +588,76 @@
                 </div>
             {% endif %}
 
-            {# Séances déjà enregistrées #}
-            <div>
-                <h2 class="text-base font-semibold text-white mb-3">Historique des séances</h2>
+            {# Historique #}
+            <div style="margin-top: 2.5rem">
+                <h2 class="text-sm font-semibold text-gray-400 uppercase tracking-widest mb-4">Historique</h2>
                 {% if loggedSessions is empty %}
                     <div class="bg-gray-900 border border-gray-800 rounded-xl p-10 text-center text-gray-500 text-sm">
                         Aucune séance enregistrée pour l'instant.
                     </div>
                 {% else %}
-                    <div class="space-y-2">
+                    <div class="grid grid-cols-2 lg:grid-cols-3 gap-3">
                         {% for as in loggedSessions %}
                             {% set s = as.session %}
-                            <div class="bg-gray-900 border border-gray-800 rounded-xl overflow-hidden">
+                            <div class="bg-gray-900 border border-gray-800 rounded-xl overflow-hidden flex flex-col">
                                 <div class="h-0.5" style="background: {{ s.colorBg }}"></div>
-                                <div class="px-4 py-3">
-                                    <div class="flex items-start justify-between gap-4">
-                                        <div class="flex items-start gap-4 flex-1 min-w-0">
-                                            <div class="text-center w-10 shrink-0 pt-0.5">
-                                                <p class="text-base font-bold text-white leading-none">{{ s.date|date('d') }}</p>
-                                                <p class="text-xs text-gray-500 uppercase">{{ s.date|date('M') }}</p>
-                                            </div>
-                                            <div class="flex-1 min-w-0">
-                                                <p class="text-sm font-medium text-white">{{ s.title }}</p>
-                                                <div class="flex items-center gap-2 mt-0.5 flex-wrap">
-                                                    <span class="text-xs px-1.5 py-0.5 rounded font-medium"
-                                                          style="background: {{ s.colorBg }}22; color: {{ s.colorBg }}">
-                                                        {{ s.typeLabel }}
-                                                    </span>
-                                                    {% if as.difficulty is not null %}
-                                                        <span class="flex items-center gap-1 text-xs text-gray-400">
-                                                            Difficulté :
-                                                            <span class="font-bold
-                                                                {% if as.difficulty <= 3 %}text-emerald-400
-                                                                {% elseif as.difficulty <= 6 %}text-yellow-400
-                                                                {% else %}text-red-400{% endif %}">
-                                                                {{ as.difficulty }}/10
-                                                            </span>
-                                                        </span>
-                                                    {% endif %}
-                                                </div>
-                                                {% if as.comment %}
-                                                    <p class="text-xs text-gray-400 mt-1.5 italic leading-relaxed">"{{ as.comment }}"</p>
-                                                {% endif %}
-                                            </div>
+                                <div class="px-3 py-3 flex-1 flex flex-col gap-2">
+                                    {# Ligne 1 : date + boutons #}
+                                    <div class="flex items-start justify-between gap-1">
+                                        <div class="text-center shrink-0">
+                                            <p class="text-lg font-bold text-white leading-none">{{ s.date|date('d') }}</p>
+                                            <p class="text-[10px] text-gray-500 uppercase">{{ s.date|date('M') }}</p>
                                         </div>
-                                        <div class="flex gap-1 shrink-0">
+                                        <div class="flex gap-0.5 shrink-0">
                                             <a href="{{ path('app_athlete_session_edit', {athleteId: athlete.id, id: as.id}) }}"
-                                               class="text-gray-500 hover:text-indigo-400 p-1.5 rounded hover:bg-gray-800 transition-colors">
-                                                <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                               class="text-gray-600 hover:text-indigo-400 p-1 rounded hover:bg-gray-800 transition-colors">
+                                                <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"/>
                                                 </svg>
                                             </a>
                                             <form action="{{ path('app_athlete_session_delete', {athleteId: athlete.id, id: as.id}) }}" method="post" class="inline">
                                                 <input type="hidden" name="_token" value="{{ csrf_token('delete-as' ~ as.id) }}">
                                                 <button type="submit" onclick="return confirm('Supprimer ce ressenti ?')"
-                                                        class="text-gray-500 hover:text-red-400 p-1.5 rounded hover:bg-gray-800 transition-colors">
-                                                    <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                        class="text-gray-600 hover:text-red-400 p-1 rounded hover:bg-gray-800 transition-colors">
+                                                    <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
                                                     </svg>
                                                 </button>
                                             </form>
                                         </div>
                                     </div>
+                                    {# Ligne 2 : titre #}
+                                    <p class="text-xs font-medium text-white leading-tight">{{ s.title }}</p>
+                                    {# Ligne 3 : type #}
+                                    <span class="text-[10px] px-1.5 py-0.5 rounded font-medium w-fit"
+                                          style="background: {{ s.colorBg }}22; color: {{ s.colorBg }}">
+                                        {{ s.typeLabel }}
+                                    </span>
+                                    {# Commentaire #}
+                                    {% if as.comment %}
+                                        <p class="text-[10px] text-gray-400 italic leading-relaxed line-clamp-2">"{{ as.comment }}"</p>
+                                    {% endif %}
+                                    {# Effort en bas à droite #}
+                                    {% if as.difficulty is not null %}
+                                        <div class="flex justify-end mt-auto pt-1">
+                                            <span class="inline-flex items-center gap-1 text-[10px] font-bold px-2 py-1 rounded-lg
+                                                {% if as.difficulty <= 3 %}bg-emerald-500/10 text-emerald-400
+                                                {% elseif as.difficulty <= 6 %}bg-yellow-500/10 text-yellow-400
+                                                {% else %}bg-red-500/10 text-red-400{% endif %}">
+                                                <svg style="width:19px;height:19px;flex-shrink:0" fill="currentColor" viewBox="0 0 24 24">
+                                                    <path d="M20.57 14.86L22 13.43 20.57 12 17 15.57 8.43 7 12 3.43 10.57 2 9.14 3.43 7.71 2 5.57 4.14 4.14 2.71 2.71 4.14l1.43 1.43L2 7.71l1.43 1.43L2 10.57 3.43 12 7 8.43 15.57 17 12 20.57 13.43 22l1.43-1.43L16.29 22l2.14-2.14 1.43 1.43 1.43-1.43-1.43-1.43L22 16.29l-1.43-1.43z"/>
+                                                </svg>
+                                                {{ as.difficulty }}/10
+                                            </span>
+                                        </div>
+                                    {% endif %}
                                 </div>
                             </div>
                         {% endfor %}
                     </div>
                 {% endif %}
             </div>
+
         </div>
     </div>
 
@@ -448,6 +665,7 @@
     <div x-show="activeTab === 'goals'" x-transition>
         <div class="flex items-center justify-between mb-4">
             <h2 class="text-lg font-semibold text-white">Objectifs</h2>
+            {% if canEdit %}
             <a href="{{ path('app_goal_new', {athleteId: athlete.id}) }}"
                class="flex items-center gap-2 bg-indigo-600 hover:bg-indigo-500 text-white px-3 py-2 rounded-lg text-sm font-medium transition-colors">
                 <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -455,6 +673,7 @@
                 </svg>
                 Ajouter
             </a>
+            {% endif %}
         </div>
 
         {% if athlete.goals is empty %}
@@ -512,6 +731,7 @@
                                     {% elseif goal.isOverdue %}En retard
                                     {% else %}En cours{% endif %}
                                 </span>
+                                {% if canEdit %}
                                 <a href="{{ path('app_goal_edit', {athleteId: athlete.id, id: goal.id}) }}"
                                    class="text-gray-500 hover:text-indigo-400 transition-colors">
                                     <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -525,6 +745,7 @@
                                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
                                     </svg>
                                 </button>
+                                {% endif %}
                             </div>
                         </div>
                     </div>
@@ -1155,31 +1376,36 @@ function goalDelete(id, url, token) {
 {% endif %}
 
 // ── Performances tab Alpine component ──────────────────────────────────────
-function perfTab(data) {
+function perfTab(data, specialties) {
+    // Stored outside Alpine's reactive proxy so Chart.js instances are never proxified
+    const _charts = {};
+
     return {
-        allPerfs:    data,
+        allPerfs:     data,
+        specialties:  specialties || [],
         activeSeason: '',
-        activeDisc:   '',
         activeCat:    '',
-        activePage:   0,
-        pageSize:     50,
+        activeIndoor: null,   // null = all, true = indoor only, false = outdoor only
+        syncing:      false,
+        syncLabel:    'Sync FFA',
+        _openDiscs:   {},     // disc.name -> bool
+        _bilanOpen:   false,
 
         init() {
             // Default to latest season
             if (this.seasons.length) {
                 this.activeSeason = this.seasons[0][0];
             }
+            // Update charts whenever any filter changes
+            this.$watch('activeSeason', () => this._updateCharts());
+            this.$watch('activeCat',    () => this._updateCharts());
+            this.$watch('activeIndoor', () => this._updateCharts());
         },
 
         get seasons() {
             const counts = {};
             this.allPerfs.forEach(p => { counts[p.season] = (counts[p.season] || 0) + 1; });
             return Object.entries(counts).sort((a, b) => b[0].localeCompare(a[0]));
-        },
-
-        get disciplines() {
-            const src = this.activeSeason ? this.allPerfs.filter(p => p.season === this.activeSeason) : this.allPerfs;
-            return [...new Set(src.map(p => p.discipline))].sort();
         },
 
         get categories() {
@@ -1189,22 +1415,240 @@ function perfTab(data) {
             return cats.sort((a, b) => order.indexOf(a) - order.indexOf(b));
         },
 
+        // Annual bilan: groups ALL perfs by FFA season (Sept→Aug), picks top 2 by levelPoints
+        // Season "2025-2026" is labelled "2025-26" to match athle.fr naming convention
+        get annualBilan() {
+            const bySeason = {};
+            this.allPerfs.forEach(p => {
+                if (!p.levelPoints || !p.level || !p.season) return;
+                if (!bySeason[p.season]) bySeason[p.season] = [];
+                bySeason[p.season].push(p);
+            });
+            const rows = [];
+            Object.keys(bySeason).sort((a, b) => b.localeCompare(a)).forEach(season => {
+                const sorted = bySeason[season].slice().sort((a, b) => b.levelPoints - a.levelPoints);
+                const top2 = sorted.slice(0, 2);
+                const avg = Math.floor(top2.reduce((s, p) => s + p.levelPoints, 0) / top2.length);
+                rows.push({
+                    year: top2[0].seasonShort,
+                    level: top2[0].level,
+                    pts: avg,
+                    top2: top2.map(p => ({ disc: p.discipline, value: p.formattedValue, level: p.level, pts: p.levelPoints })),
+                });
+            });
+            return rows;
+        },
+
         get filtered() {
             return this.allPerfs.filter(p => {
                 if (this.activeSeason && p.season !== this.activeSeason) return false;
-                if (this.activeDisc   && p.discipline !== this.activeDisc) return false;
-                if (this.activeCat    && p.category   !== this.activeCat)  return false;
+                if (this.activeCat    && p.category !== this.activeCat)  return false;
+                if (this.activeIndoor === true  && p.isIndoor !== true)  return false;
+                if (this.activeIndoor === false && p.isIndoor !== false)  return false;
                 return true;
             });
         },
 
-        get totalPages() {
-            return Math.ceil(this.filtered.length / this.pageSize);
+        // Compare two formatted performance values; returns -1/0/+1 where lower is better for time (unit 's')
+        // Returns negative if a is better than b
+        _compareBetter(a, b, higherIsBetter) {
+            const va = parseFloat(a.value), vb = parseFloat(b.value);
+            if (isNaN(va) || isNaN(vb)) return 0;
+            return higherIsBetter ? (vb - va) : (va - vb);
         },
 
-        get paginated() {
-            const start = this.activePage * this.pageSize;
-            return this.filtered.slice(start, start + this.pageSize);
+        get disciplineGroups() {
+            const f = this.filtered;
+            // Collect discipline names in order of first appearance (already sorted by date DESC from server)
+            const discOrder = [];
+            const discMap   = {};
+            f.forEach(p => {
+                if (!discMap[p.discipline]) {
+                    discMap[p.discipline] = [];
+                    discOrder.push(p.discipline);
+                }
+                discMap[p.discipline].push(p);
+            });
+
+            // Sort: athlete's specialties first (in their declared order), then the rest
+            const sp = this.specialties;
+            discOrder.sort((a, b) => {
+                const ia = sp.indexOf(a), ib = sp.indexOf(b);
+                if (ia !== -1 && ib !== -1) return ia - ib;   // both specialties → preserve order
+                if (ia !== -1) return -1;                       // a is specialty → first
+                if (ib !== -1) return 1;                        // b is specialty → first
+                return 0;                                       // neither → keep original order
+            });
+
+            return discOrder.map(name => {
+                const perfs = discMap[name]; // already DESC by date
+                const unit  = perfs[0].unit;
+                const higherIsBetter = unit !== 's';
+
+                // PB = best within the current filtered set for this discipline
+                let pbPerf = perfs[0];
+                perfs.forEach(p => {
+                    if (this._compareBetter(p, pbPerf, higherIsBetter) < 0) pbPerf = p;
+                });
+
+                // SB = best within the active season; if no season filter, best in the latest season present
+                const sbSeason = this.activeSeason || (this.seasons.length ? this.seasons[0][0] : '');
+                const seasonPerfs = perfs.filter(p => p.season === sbSeason);
+                let sbPerf = seasonPerfs[0] || null;
+                seasonPerfs.forEach(p => {
+                    if (this._compareBetter(p, sbPerf, higherIsBetter) < 0) sbPerf = p;
+                });
+
+                // Chart: filtered perfs for this discipline, chronological (oldest → newest)
+                const chronological = [...perfs].reverse();
+                const hasChart = chronological.length >= 2;
+                const chartLabels = chronological.map(p => p.dateRaw);
+                const chartValues = chronological.map(p => parseFloat(p.value));
+
+                return {
+                    name,
+                    perfs,
+                    unit,
+                    higherIsBetter,
+                    pb:         pbPerf ? pbPerf.formattedValue : null,
+                    sb:         sbPerf ? sbPerf.formattedValue : null,
+                    sbSeason,
+                    hasChart,
+                    chartLabels,
+                    chartValues,
+                };
+            });
+        },
+
+        _updateCharts() {
+            for (const name in _charts) {
+                const chart = _charts[name];
+                if (!chart) continue;
+                const perfs = this.filtered.filter(p => p.discipline === name);
+                const chron = [...perfs].reverse();
+                chart.data.labels           = chron.map(p => p.dateRaw);
+                chart.data.datasets[0].data = chron.map(p => parseFloat(p.value));
+                chart.update('none'); // 'none' = no animation on filter update
+            }
+        },
+
+        initDiscChart(canvas) {
+            if (!canvas) return;
+            const name = canvas.dataset.disc;
+            // If already inited and instance still alive, just refresh data
+            if (canvas._chartInited && _charts[name]) {
+                this._updateCharts();
+                return;
+            }
+            // Destroy stale instance if canvas was recycled
+            if (_charts[name]) { _charts[name].destroy(); delete _charts[name]; }
+            canvas._chartInited = true;
+            const labels = JSON.parse(canvas.dataset.labels || '[]');
+            const values = JSON.parse(canvas.dataset.values || '[]');
+            const unit   = canvas.dataset.unit || '';
+            const higher = canvas.dataset.higherIsBetter === 'true';
+            if (labels.length < 2) return;
+
+            const color = higher ? '#a78bfa' : '#60a5fa';
+            _charts[name] = new Chart(canvas, {
+                type: 'line',
+                data: {
+                    labels,
+                    datasets: [{
+                        data: values,
+                        borderColor: color,
+                        backgroundColor: color + '22',
+                        borderWidth: 2,
+                        pointRadius: 3,
+                        pointHoverRadius: 5,
+                        fill: true,
+                        tension: 0.3,
+                    }],
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: true,
+                    plugins: {
+                        legend: { display: false },
+                        tooltip: {
+                            callbacks: {
+                                label: ctx => {
+                                    const v = ctx.parsed.y;
+                                    if (unit === 's' && v >= 60) {
+                                        const m = Math.floor(v / 60), s = (v - m * 60).toFixed(2);
+                                        return m + ':' + s.padStart(5, '0');
+                                    }
+                                    return v + (unit ? ' ' + unit : '');
+                                },
+                            },
+                        },
+                    },
+                    scales: {
+                        x: {
+                            ticks: { color: '#6b7280', font: { size: 10 }, maxTicksLimit: 8 },
+                            grid:  { color: 'rgba(255,255,255,0.05)' },
+                        },
+                        y: {
+                            ticks: {
+                                color: '#6b7280',
+                                font: { size: 10 },
+                                callback: v => {
+                                    if (unit === 's' && v >= 60) {
+                                        const m = Math.floor(v / 60), s = (v - m * 60).toFixed(0);
+                                        return m + ':' + String(s).padStart(2, '0');
+                                    }
+                                    return v;
+                                },
+                            },
+                            grid: { color: 'rgba(255,255,255,0.05)' },
+                            reverse: !higher,
+                        },
+                    },
+                },
+            });
+        },
+
+        triggerSync() {
+            if (this.syncing) return;
+            this.syncing   = true;
+            this.syncLabel = 'Synchronisation…';
+            const fd = new FormData(); fd.append('force', '1');
+            fetch('{{ path('app_athlete_sync_ffa', {id: athlete.id}) }}', {
+                method: 'POST',
+                headers: { 'X-Requested-With': 'XMLHttpRequest' },
+                body: fd,
+            })
+            .then(r => r.json())
+            .then(data => {
+                this.syncing = false;
+                if (data.error) {
+                    this.syncLabel = data.error;
+                } else if (data.cached) {
+                    this.syncLabel = 'À jour · ' + data.lastSync;
+                } else if (data.imported > 0) {
+                    this.syncLabel = data.imported + ' importé(s) !';
+                    setTimeout(() => location.reload(), 1200);
+                } else {
+                    this.syncLabel = 'Déjà à jour';
+                }
+            })
+            .catch(() => { this.syncing = false; this.syncLabel = 'Erreur réseau'; });
+        },
+
+        toggleDisc(name) {
+            const opening = !this._openDiscs[name];
+            this._openDiscs[name] = opening;
+            if (opening) {
+                // Double rAF: first waits for Alpine DOM update, second for browser layout
+                requestAnimationFrame(() => requestAnimationFrame(() => {
+                    const canvas = document.querySelector('[data-disc="' + name + '"]');
+                    if (canvas) this.initDiscChart(canvas);
+                }));
+            }
+        },
+
+        isDiscOpen(name) {
+            return this._openDiscs[name] === true;
         },
 
         deletePerf(p) {
@@ -1215,38 +1659,6 @@ function perfTab(data) {
                 .then(r => r.ok ? (this.allPerfs = this.allPerfs.filter(x => x.id !== p.id)) : alert('Erreur suppression'));
         },
     };
-}
-
-// ── Manual sync button ──────────────────────────────────────────────────────
-function triggerSync() {
-    var btn   = document.getElementById('manual-sync-btn');
-    var icon  = document.getElementById('sync-icon');
-    var label = document.getElementById('sync-label');
-    if (!btn) return;
-    btn.disabled = true;
-    icon.classList.add('animate-spin');
-    label.textContent = 'Synchronisation…';
-
-    fetch('{{ path('app_athlete_sync_ffa', {id: athlete.id}) }}', {
-        method: 'POST',
-        headers: { 'X-Requested-With': 'XMLHttpRequest' }
-    })
-    .then(r => r.json())
-    .then(data => {
-        icon.classList.remove('animate-spin');
-        btn.disabled = false;
-        if (data.error) {
-            label.textContent = data.error;
-        } else if (data.cached) {
-            label.textContent = 'À jour · ' + data.lastSync;
-        } else if (data.imported > 0) {
-            label.textContent = data.imported + ' résultat(s) importé(s) !';
-            setTimeout(() => location.reload(), 1200);
-        } else {
-            label.textContent = 'Déjà à jour';
-        }
-    })
-    .catch(() => { icon.classList.remove('animate-spin'); btn.disabled = false; label.textContent = 'Erreur réseau'; });
 }
 </script>
 {% endblock %}

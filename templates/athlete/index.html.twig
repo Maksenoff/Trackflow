@@ -15,6 +15,7 @@
             <h1 class="text-2xl font-bold text-white">Athlètes</h1>
             <p class="text-gray-400 mt-1">{{ athletes|length }} athlète{% if athletes|length > 1 %}s{% endif %} suivi{% if athletes|length > 1 %}s{% endif %}</p>
         </div>
+        {% if is_granted('ROLE_ADMIN') %}
         <a href="{{ path('app_athlete_new') }}"
            class="flex items-center gap-2 bg-indigo-600 hover:bg-indigo-500 text-white px-4 py-2 rounded-lg text-sm font-medium transition-colors">
             <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -22,6 +23,7 @@
             </svg>
             Nouvel athlète
         </a>
+        {% endif %}
     </div>
 
     {% if athletes is empty %}
@@ -31,12 +33,14 @@
             </svg>
             <h3 class="text-lg font-medium text-gray-300 mb-2">Aucun athlète</h3>
             <p class="text-gray-500 mb-6">Commencez par ajouter votre premier athlète.</p>
+            {% if is_granted('ROLE_ADMIN') %}
             <a href="{{ path('app_athlete_new') }}" class="inline-flex items-center gap-2 bg-indigo-600 hover:bg-indigo-500 text-white px-5 py-2.5 rounded-lg text-sm font-medium transition-colors">
                 <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/>
                 </svg>
                 Ajouter un athlète
             </a>
+            {% endif %}
         </div>
     {% else %}
         <div class="grid grid-cols-3 gap-4">
@@ -53,7 +57,7 @@
                         </div>
                         <div class="flex-1 min-w-0">
                             <h3 class="font-semibold text-white group-hover:text-indigo-300 transition-colors">{{ athlete.fullName }}</h3>
-                            <p class="text-sm text-indigo-400 mt-0.5">{{ athlete.discipline }}</p>
+                            <p class="text-sm text-indigo-400 mt-0.5">{% for disc in athlete.disciplines %}{{ disc|capitalize }}{% if not loop.last %}, {% endif %}{% endfor %}</p>
                             {% if athlete.age %}
                                 <p class="text-xs text-gray-500 mt-1">{{ athlete.age }} ans · {{ athlete.gender == 'M' ? 'Homme' : (athlete.gender == 'F' ? 'Femme' : '') }}</p>
                             {% endif %}

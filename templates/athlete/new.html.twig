@@ -17,7 +17,6 @@
     data-last-name="{{ form.lastName.vars.id }}"
     data-birth-date="{{ form.birthDate.vars.id }}"
     data-gender="{{ form.gender.vars.id }}"
-    data-discipline="{{ form.discipline.vars.id }}"
     style="display:none"></div>
 
 <div class="max-w-2xl mx-auto" x-data="newAthlete()" x-init="init()">
@@ -29,7 +28,7 @@
 
     {# Step 1 — Choose mode #}
     <div x-show="step === 'choose'" x-transition class="grid grid-cols-2 gap-4">
-        <button @click="step = 'licence'"
+        <button type="button" @click="step = 'licence'"
                 class="bg-gray-900 border border-gray-800 hover:border-indigo-500 rounded-xl p-6 text-left transition-colors group">
             <div class="w-10 h-10 rounded-lg bg-indigo-600/20 flex items-center justify-center mb-4 group-hover:bg-indigo-600/30 transition-colors">
                 <svg class="w-5 h-5 text-indigo-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -40,7 +39,7 @@
             <p class="text-sm text-gray-400">Collez l'URL du profil athle.fr pour préremplir le profil et synchroniser les résultats.</p>
         </button>
 
-        <button @click="step = 'form'"
+        <button type="button" @click="step = 'form'"
                 class="bg-gray-900 border border-gray-800 hover:border-gray-600 rounded-xl p-6 text-left transition-colors group">
             <div class="w-10 h-10 rounded-lg bg-gray-800 flex items-center justify-center mb-4 group-hover:bg-gray-700 transition-colors">
                 <svg class="w-5 h-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -55,7 +54,7 @@
     {# Step 2 — URL lookup #}
     <div x-show="step === 'licence'" x-transition class="bg-gray-900 border border-gray-800 rounded-xl p-6">
         <div class="flex items-center gap-3 mb-5">
-            <button @click="step = 'choose'" class="text-gray-500 hover:text-white transition-colors">
+            <button type="button" @click="step = 'choose'" class="text-gray-500 hover:text-white transition-colors">
                 <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"/>
                 </svg>
@@ -73,7 +72,7 @@
                    @keydown.enter="lookupUrl()"
                    placeholder="https://www.athle.fr/athlete/… ou https://bases.athle.fr/…"
                    class="flex-1 bg-gray-800 border border-gray-700 rounded-lg px-4 py-2.5 text-white text-sm focus:outline-none focus:border-indigo-500 transition-colors">
-            <button @click="lookupUrl()"
+            <button type="button" @click="lookupUrl()"
                     :disabled="lookupLoading || !urlInput.trim()"
                     class="flex items-center gap-2 bg-indigo-600 hover:bg-indigo-500 disabled:opacity-50 disabled:cursor-not-allowed text-white px-4 py-2.5 rounded-lg text-sm font-medium transition-colors">
                 <svg x-show="lookupLoading" class="w-4 h-4 animate-spin" fill="none" viewBox="0 0 24 24">
@@ -91,7 +90,7 @@
     {# Step 3 — Form #}
     <div x-show="step === 'form'" class="bg-gray-900 border border-gray-800 rounded-xl p-6">
         <div class="flex items-center gap-3 mb-5">
-            <button @click="step = 'choose'" class="text-gray-500 hover:text-white transition-colors">
+            <button type="button" @click="step = 'choose'" class="text-gray-500 hover:text-white transition-colors">
                 <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"/>
                 </svg>
@@ -107,7 +106,7 @@
             </span>
         </div>
 
-        {{ form_start(form, {attr: {class: 'space-y-5', enctype: 'multipart/form-data'}}) }}
+        {{ form_start(form, {attr: {class: 'space-y-5', enctype: 'multipart/form-data', novalidate: 'novalidate'}}) }}
 
         {{ form_row(form.ffaProfileUrl) }}
 
@@ -119,7 +118,21 @@
             <div>{{ form_row(form.birthDate) }}</div>
             <div>{{ form_row(form.gender) }}</div>
         </div>
-        {{ form_row(form.discipline) }}
+        <div>
+            <p class="text-sm font-medium text-gray-300 mb-2">Spécialités</p>
+            <input type="hidden" name="disciplines_raw" id="disciplines_raw_new" value="[]">
+            <div class="flex flex-wrap gap-2" id="disc-pills-new">
+                {% for label, value in disciplines %}
+                    <button type="button"
+                            class="disc-pill inline-block bg-gray-800 text-gray-400 border border-gray-700 hover:border-gray-500 hover:text-gray-200 px-3 py-1.5 rounded-lg text-xs font-medium transition-all cursor-pointer"
+                            data-value="{{ value }}"
+                            data-hidden="disciplines_raw_new"
+                            onclick="discPillToggle(this)">
+                        {{ label }}
+                    </button>
+                {% endfor %}
+            </div>
+        </div>
         {{ form_row(form.notes) }}
         {{ form_row(form.photoFile) }}
 
@@ -202,7 +215,6 @@
                     [ids.lastName]:  data.lastName   || '',
                     [ids.birthDate]: data.birthDate  || '',
                     [ids.gender]:    data.gender     || '',
-                    [ids.discipline]:data.discipline || '',
                 };
 
                 Object.entries(fields).forEach(([id, val]) => {
@@ -213,11 +225,39 @@
                     el.dispatchEvent(new Event('change', { bubbles: true }));
                     el.dispatchEvent(new Event('input',  { bubbles: true }));
                 });
+
+                // Préfill disciplines via pill buttons
+                if (data.discipline && data.discipline.length > 0) {
+                    var discs = Array.isArray(data.discipline) ? data.discipline : [data.discipline];
+                    document.querySelectorAll('#disc-pills-new .disc-pill').forEach(function(btn) {
+                        if (discs.includes(btn.dataset.value) && !btn.classList.contains('bg-indigo-600')) {
+                            discPillToggle(btn);
+                        }
+                    });
+                }
             },
         };
     }
 
     window.newAthlete = newAthlete;
 }());
+
+function discPillToggle(btn) {
+    var hiddenInput = document.getElementById(btn.dataset.hidden);
+    if (!hiddenInput) return;
+    var selected = JSON.parse(hiddenInput.value || '[]');
+    var val = btn.dataset.value;
+    var idx = selected.indexOf(val);
+    if (idx === -1) {
+        selected.push(val);
+        btn.classList.remove('bg-gray-800', 'text-gray-400', 'border-gray-700');
+        btn.classList.add('bg-indigo-600', 'text-white', 'border-indigo-500');
+    } else {
+        selected.splice(idx, 1);
+        btn.classList.remove('bg-indigo-600', 'text-white', 'border-indigo-500');
+        btn.classList.add('bg-gray-800', 'text-gray-400', 'border-gray-700');
+    }
+    hiddenInput.value = JSON.stringify(selected);
+}
 </script>
 {% endblock %}

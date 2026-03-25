@@ -3,7 +3,7 @@
 namespace App\Controller;
 
 use App\Repository\AthleteRepository;
-use App\Repository\GoalRepository;
+use App\Repository\CompetitionRepository;
 use App\Repository\PerformanceRepository;
 use App\Repository\SessionRepository;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
@@ -17,21 +17,45 @@ class DashboardController extends AbstractController
         AthleteRepository $athleteRepo,
         SessionRepository $sessionRepo,
         PerformanceRepository $performanceRepo,
-        GoalRepository $goalRepo,
+        CompetitionRepository $competitionRepo,
     ): Response {
-        $athletes = $athleteRepo->findAllOrderedByName();
-        $recentPerformances = $performanceRepo->findRecentPerformances(8);
-        $sessionsThisMonth = $sessionRepo->countThisMonth();
-        $goalsAchieved = $goalRepo->countByStatus('achieved');
-        $goalsInProgress = $goalRepo->countByStatus('in_progress');
+        $upcomingSessions     = $sessionRepo->findUpcomingSessions(4);
+        $upcomingCompetitions = $competitionRepo->findUpcomingCompetitions(4);
 
-        return $this->render('dashboard/index.html.twig', [
-            'athletes' => $athletes,
-            'recentPerformances' => $recentPerformances,
-            'sessionsThisMonth' => $sessionsThisMonth,
-            'goalsAchieved' => $goalsAchieved,
-            'goalsInProgress' => $goalsInProgress,
-            'totalAthletes' => count($athletes),
+        // Vue athlète : données personnelles uniquement
+        if ($this->isGranted('ROLE_ATHLETE') && !$this->isGranted('ROLE_COACH')) {
+            $linkedAthlete = $this->getUser()->getLinkedAthlete();
+            if (!$linkedAthlete) {
+                return $this->render('dashboard/athlete.html.twig', [
+                    'athlete'               => null,
+                    'recentPerformances'    => [],
+                    'upcomingSessions'      => [],
+                    'nextSession'           => null,
+                    'upcomingCompetitions'  => $upcomingCompetitions,
+                    'nextCompetition'       => $upcomingCompetitions[0] ?? null,
+                ]);
+            }
+
+            return $this->render('dashboard/athlete.html.twig', [
+                'athlete'               => $linkedAthlete,
+                'recentPerformances'    => $performanceRepo->findRecentByAthlete($linkedAthlete, 5),
+                'upcomingSessions'      => $upcomingSessions,
+                'nextSession'           => $upcomingSessions[0] ?? null,
+                'upcomingCompetitions'  => $upcomingCompetitions,
+                'nextCompetition'       => $upcomingCompetitions[0] ?? null,
+            ]);
+        }
+
+        // Vue coach / admin
+        $this->denyAccessUnlessGranted('ROLE_COACH');
+
+        return $this->render('dashboard/coach.html.twig', [
+            'totalAthletes'         => $athleteRepo->count([]),
+            'recentPerformances'    => $performanceRepo->findRecentPerformances(10),
+            'upcomingSessions'      => $upcomingSessions,
+            'nextSession'           => $upcomingSessions[0] ?? null,
+            'upcomingCompetitions'  => $upcomingCompetitions,
+            'nextCompetition'       => $upcomingCompetitions[0] ?? null,
         ]);
     }
 }

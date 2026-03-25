@@ -3,7 +3,6 @@
 namespace App\Form;
 
 use App\Entity\Athlete;
-use App\Entity\Performance;
 use Symfony\Component\Form\AbstractType;
 use Symfony\Component\Form\Extension\Core\Type\ChoiceType;
 use Symfony\Component\Form\Extension\Core\Type\DateType;
@@ -18,11 +17,6 @@ class AthleteType extends AbstractType
 {
     public function buildForm(FormBuilderInterface $builder, array $options): void
     {
-        $disciplines = [];
-        foreach (Performance::DISCIPLINES as $label => $value) {
-            $disciplines[$label] = $value;
-        }
-
         $builder
             ->add('firstName', TextType::class, ['label' => 'Prénom', 'attr' => ['class' => 'form-input']])
             ->add('lastName', TextType::class, ['label' => 'Nom', 'attr' => ['class' => 'form-input']])
@@ -39,15 +33,10 @@ class AthleteType extends AbstractType
                 'placeholder' => 'Non spécifié',
                 'attr' => ['class' => 'form-select'],
             ])
-            ->add('discipline', ChoiceType::class, [
-                'label' => 'Discipline principale',
-                'choices' => $disciplines,
-                'attr' => ['class' => 'form-select'],
-            ])
             ->add('ffaProfileUrl', TextType::class, [
                 'label' => 'URL profil athle.fr',
                 'required' => false,
-                'attr' => ['class' => 'form-input', 'placeholder' => 'https://bases.athle.fr/asp.net/athletes.aspx?...'],
+                'attr' => ['class' => 'form-input', 'placeholder' => 'https://www.athle.fr/athletes/XXXXX/resultats'],
             ])
             ->add('notes', TextareaType::class, [
                 'label' => 'Notes',

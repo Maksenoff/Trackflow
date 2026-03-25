@@ -11,6 +11,7 @@ use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\Routing\Attribute\Route;
+use Symfony\Component\Security\Http\Attribute\IsGranted;
 
 #[Route('/athletes/{athleteId}/goals')]
 class GoalController extends AbstractController
@@ -18,6 +19,10 @@ class GoalController extends AbstractController
     #[Route('/new', name: 'app_goal_new')]
     public function new(int $athleteId, Request $request, EntityManagerInterface $em): Response
     {
+        if (!$this->isGranted('ROLE_COACH') && $this->getUser()->getLinkedAthlete()?->getId() !== $athleteId) {
+            throw $this->createAccessDeniedException();
+        }
+
         $athlete = $em->getRepository(Athlete::class)->find($athleteId);
         if (!$athlete) throw $this->createNotFoundException();
 
@@ -42,6 +47,10 @@ class GoalController extends AbstractController
     #[Route('/{id}/edit', name: 'app_goal_edit')]
     public function edit(int $athleteId, Goal $goal, Request $request, EntityManagerInterface $em): Response
     {
+        if (!$this->isGranted('ROLE_COACH') && $this->getUser()->getLinkedAthlete()?->getId() !== $athleteId) {
+            throw $this->createAccessDeniedException();
+        }
+
         $athlete = $em->getRepository(Athlete::class)->find($athleteId);
         if (!$athlete || $goal->getAthlete() !== $athlete) throw $this->createNotFoundException();
 
@@ -64,6 +73,10 @@ class GoalController extends AbstractController
     #[Route('/{id}/delete', name: 'app_goal_delete', methods: ['POST'])]
     public function delete(int $athleteId, Goal $goal, Request $request, EntityManagerInterface $em): Response
     {
+        if (!$this->isGranted('ROLE_COACH') && $this->getUser()->getLinkedAthlete()?->getId() !== $athleteId) {
+            throw $this->createAccessDeniedException();
+        }
+
         if ($this->isCsrfTokenValid('delete-goal' . $goal->getId(), $request->getPayload()->get('_token'))) {
             $em->remove($goal);
             $em->flush();
@@ -78,6 +91,10 @@ class GoalController extends AbstractController
     #[Route('/{id}/toggle', name: 'app_goal_toggle', methods: ['POST'])]
     public function toggle(int $athleteId, Goal $goal, Request $request, EntityManagerInterface $em): Response
     {
+        if (!$this->isGranted('ROLE_COACH') && $this->getUser()->getLinkedAthlete()?->getId() !== $athleteId) {
+            throw $this->createAccessDeniedException();
+        }
+
         if ($this->isCsrfTokenValid('toggle-goal' . $goal->getId(), $request->getPayload()->get('_token'))) {
             $goal->setStatus($goal->isAchieved() ? 'in_progress' : 'achieved');
             $em->flush();

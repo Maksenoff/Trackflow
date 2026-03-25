@@ -34,6 +34,11 @@ class Performance
         'Lancer du marteau' => 'marteau',
         'Décathlon' => 'decathlon',
         'Heptathlon' => 'heptathlon',
+        'Cross country' => 'cross',
+        'Marche' => 'marche',
+        'Relais 4x100m' => '4x100m',
+        'Relais 4x200m' => '4x200m',
+        'Relais 4x400m' => '4x400m',
         'Autre' => 'autre',
     ];
 
@@ -71,6 +76,21 @@ class Performance
     #[ORM\Column(nullable: true)]
     private ?bool $isCompetition = false;
 
+    #[ORM\Column(nullable: true)]
+    private ?bool $isIndoor = null;
+
+    #[ORM\Column(length: 150, nullable: true)]
+    private ?string $venue = null;
+
+    #[ORM\Column(length: 15, nullable: true)]
+    private ?string $level = null;
+
+    #[ORM\Column(nullable: true)]
+    private ?int $levelPoints = null;
+
+    #[ORM\Column(length: 10, nullable: true)]
+    private ?string $wind = null;
+
     public function __construct()
     {
         $this->recordedAt = new \DateTime();
@@ -104,6 +124,21 @@ class Performance
 
     public function getIsCompetition(): ?bool { return $this->isCompetition; }
     public function setIsCompetition(?bool $isCompetition): static { $this->isCompetition = $isCompetition; return $this; }
+
+    public function getIsIndoor(): ?bool { return $this->isIndoor; }
+    public function setIsIndoor(?bool $isIndoor): static { $this->isIndoor = $isIndoor; return $this; }
+
+    public function getVenue(): ?string { return $this->venue; }
+    public function setVenue(?string $venue): static { $this->venue = $venue; return $this; }
+
+    public function getLevel(): ?string { return $this->level; }
+    public function setLevel(?string $level): static { $this->level = $level; return $this; }
+
+    public function getLevelPoints(): ?int { return $this->levelPoints; }
+    public function setLevelPoints(?int $levelPoints): static { $this->levelPoints = $levelPoints; return $this; }
+
+    public function getWind(): ?string { return $this->wind; }
+    public function setWind(?string $wind): static { $this->wind = $wind; return $this; }
 
     public function getFormattedValue(): string
     {

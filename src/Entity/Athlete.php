@@ -28,8 +28,8 @@ class Athlete
     #[ORM\Column(length: 20, nullable: true)]
     private ?string $gender = null;
 
-    #[ORM\Column(length: 100)]
-    private ?string $discipline = null;
+    #[ORM\Column(name: 'discipline', type: Types::JSON)]
+    private array $disciplines = [];
 
     #[ORM\Column(type: Types::TEXT, nullable: true)]
     private ?string $notes = null;
@@ -76,7 +76,7 @@ class Athlete
     public function setFirstName(string $firstName): static { $this->firstName = $firstName; return $this; }
 
     public function getLastName(): ?string { return $this->lastName; }
-    public function setLastName(string $lastName): static { $this->lastName = $lastName; return $this; }
+    public function setLastName(string $lastName): static { $this->lastName = mb_strtoupper($lastName, 'UTF-8'); return $this; }
 
     public function getFullName(): string { return $this->firstName . ' ' . $this->lastName; }
 
@@ -92,8 +92,9 @@ class Athlete
     public function getGender(): ?string { return $this->gender; }
     public function setGender(?string $gender): static { $this->gender = $gender; return $this; }
 
-    public function getDiscipline(): ?string { return $this->discipline; }
-    public function setDiscipline(string $discipline): static { $this->discipline = $discipline; return $this; }
+    public function getDiscipline(): string { return implode(', ', $this->disciplines); }
+    public function getDisciplines(): array { return $this->disciplines; }
+    public function setDisciplines(array $disciplines): static { $this->disciplines = $disciplines; return $this; }
 
     public function getNotes(): ?string { return $this->notes; }
     public function setNotes(?string $notes): static { $this->notes = $notes; return $this; }
