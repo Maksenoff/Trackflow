@@ -28,7 +28,5 @@ RUN curl -fsSL https://deb.nodesource.com/setup_22.x | bash - \
         # Ensure var directory exists with correct permissions
         RUN mkdir -p var/cache var/log && chmod -R 777 var
 
-        # FrankenPHP listens on PORT env variable (Railway sets this)
-        ENV SERVER_NAME=":8080"
 
         EXPOSE 8080
