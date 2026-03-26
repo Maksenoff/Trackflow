@@ -2,6 +2,7 @@
 
 namespace App\Controller;
 
+use App\Repository\CompetitionRegistrationRepository;
 use App\Repository\CompetitionRepository;
 use App\Repository\CompetitionTypeRepository;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
@@ -12,7 +13,7 @@ use Symfony\Component\Routing\Attribute\Route;
 class CompetitionCalendarController extends AbstractController
 {
     #[Route('/competitions/calendar', name: 'app_competition_calendar')]
-    public function index(Request $request, CompetitionRepository $compRepo, CompetitionTypeRepository $ctRepo): Response
+    public function index(Request $request, CompetitionRepository $compRepo, CompetitionTypeRepository $ctRepo, CompetitionRegistrationRepository $regRepo): Response
     {
         $month = (int) $request->query->get('month', date('n'));
         $year  = (int) $request->query->get('year',  date('Y'));
@@ -37,6 +38,17 @@ class CompetitionCalendarController extends AbstractController
         $frMonths  = ['janvier','février','mars','avril','mai','juin','juillet','août','septembre','octobre','novembre','décembre'];
         $monthName = $frMonths[$month - 1] . ' ' . $year;
 
+        // IDs des compétitions où l'utilisateur courant est inscrit
+        $registeredIds = [];
+        $linkedAthlete = $this->getUser()?->getLinkedAthlete();
+        if ($linkedAthlete) {
+            foreach ($competitions as $comp) {
+                if ($regRepo->findByAthleteAndCompetition($linkedAthlete, $comp)) {
+                    $registeredIds[] = $comp->getId();
+                }
+            }
+        }
+
         return $this->render('competition/calendar/index.html.twig', [
             'competitionTypes' => $ctRepo->findAllOrdered(),
             'year'             => $year,
@@ -51,6 +63,7 @@ class CompetitionCalendarController extends AbstractController
             'currentMonth'     => (int) date('n'),
             'currentYear'      => (int) date('Y'),
             'canEdit'          => $this->isGranted('ROLE_COACH'),
+            'registeredIds'    => $registeredIds,
         ]);
     }
 }

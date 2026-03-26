@@ -3,7 +3,9 @@
 namespace App\Controller;
 
 use App\Entity\Competition;
+use App\Entity\Performance;
 use App\Form\CompetitionFormType;
+use App\Repository\CompetitionRegistrationRepository;
 use App\Repository\CompetitionRepository;
 use Doctrine\ORM\EntityManagerInterface;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
@@ -25,11 +27,47 @@ class CompetitionController extends AbstractController
     }
 
     #[Route('/{id}', name: 'app_competition_show', requirements: ['id' => '\d+'])]
-    public function show(Competition $competition): Response
+    public function show(Competition $competition, CompetitionRegistrationRepository $registrationRepo): Response
     {
+        $registrations  = $registrationRepo->findByCompetition($competition);
+        $myRegistration = null;
+        $athleteDisciplines = [];
+
+        $linkedAthlete = $this->getUser()?->getLinkedAthlete();
+        if ($linkedAthlete) {
+            $myRegistration     = $registrationRepo->findByAthleteAndCompetition($linkedAthlete, $competition);
+            $athleteDisciplines = $linkedAthlete->getDisciplines();
+        }
+
+        // Map code → label, uniquement disciplines sur stade
+        $disciplineLabels = array_filter(
+            array_flip(Performance::DISCIPLINES),
+            fn($code) => !in_array($code, Performance::OFF_TRACK_DISCIPLINES),
+            ARRAY_FILTER_USE_KEY
+        );
+
+        // Groupes de disciplines pour la modal d'inscription
+        $disciplineGroups = [
+            'Sprints'       => ['60m', '100m', '200m', '400m'],
+            'Demi-fond / Fond' => ['800m', '1500m', '3000m', '5000m', '10000m'],
+            'Haies'         => ['60m-haies', '110m-haies', '400m-haies'],
+            'Sauts'         => ['longueur', 'hauteur', 'triple', 'perche'],
+            'Lancers'       => ['poids', 'disque', 'javelot', 'marteau'],
+            'Combinés'      => ['decathlon', 'heptathlon'],
+            'Marche'        => ['marche'],
+            'Relais'        => ['4x100m', '4x200m', '4x400m'],
+            'Autre'         => ['autre'],
+        ];
+
         return $this->render('competition/show.html.twig', [
-            'competition' => $competition,
-            'canEdit'     => $this->isGranted('ROLE_COACH'),
+            'competition'        => $competition,
+            'canEdit'            => $this->isGranted('ROLE_COACH'),
+            'canRegister'        => !$competition->isPast() && ($linkedAthlete !== null || $this->isGranted('ROLE_COACH')),
+            'registrations'      => $registrations,
+            'myRegistration'     => $myRegistration,
+            'athleteDisciplines' => $athleteDisciplines,
+            'disciplineLabels'   => $disciplineLabels,
+            'disciplineGroups'   => $disciplineGroups,
         ]);
     }
 

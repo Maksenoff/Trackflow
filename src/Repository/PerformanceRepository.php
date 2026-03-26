@@ -59,6 +59,36 @@ class PerformanceRepository extends ServiceEntityRepository
             ->getResult();
     }
 
+    public function findCompetitionSparkline(Athlete $athlete, string $discipline, int $limit = 8): array
+    {
+        return $this->createQueryBuilder('p')
+            ->andWhere('p.athlete = :athlete')
+            ->andWhere('p.discipline = :discipline')
+            ->andWhere('p.isCompetition = true')
+            ->setParameter('athlete', $athlete)
+            ->setParameter('discipline', $discipline)
+            ->orderBy('p.recordedAt', 'DESC')
+            ->setMaxResults($limit)
+            ->getQuery()
+            ->getResult();
+    }
+
+    public function findLastCompetitionBefore(Athlete $athlete, string $discipline, \DateTimeInterface $before): ?Performance
+    {
+        return $this->createQueryBuilder('p')
+            ->andWhere('p.athlete = :athlete')
+            ->andWhere('p.discipline = :discipline')
+            ->andWhere('p.isCompetition = true')
+            ->andWhere('p.recordedAt < :before')
+            ->setParameter('athlete', $athlete)
+            ->setParameter('discipline', $discipline)
+            ->setParameter('before', $before)
+            ->orderBy('p.recordedAt', 'DESC')
+            ->setMaxResults(1)
+            ->getQuery()
+            ->getOneOrNullResult();
+    }
+
     public function findByAthleteGroupedByDiscipline(Athlete $athlete): array
     {
         $performances = $this->createQueryBuilder('p')

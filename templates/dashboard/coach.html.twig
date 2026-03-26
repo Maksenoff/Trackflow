@@ -175,7 +175,9 @@
                     {% endif %}
                 </div>
             {% endif %}
-        </div>
+        </div>{# fin compétitions #}
+
+        </div>{# fin col-span-2 #}
 
         {# Colonne droite — performances récentes (1/3) #}
         <div class="space-y-4">
@@ -199,9 +201,17 @@
                             </div>
                             <div class="text-right shrink-0 ml-3">
                                 <p class="text-sm text-indigo-300 font-mono font-medium">{{ perf.formattedValue }}</p>
-                                {% if perf.isPersonalBest %}
-                                    <span class="text-xs text-yellow-400">PB</span>
-                                {% endif %}
+                                <div class="flex items-center justify-end gap-1 mt-0.5">
+                                    {% if perf.isPersonalBest %}
+                                        <span class="text-xs text-yellow-400">PB</span>
+                                    {% endif %}
+                                    {% if perfTrends[perf.id] is defined %}
+                                        {% set trend = perfTrends[perf.id] %}
+                                        <span class="text-xs font-mono font-semibold {{ trend.improved ? 'text-emerald-400' : 'text-red-400' }}">
+                                            {{ trend.diff }}
+                                        </span>
+                                    {% endif %}
+                                </div>
                             </div>
                         </a>
                         {% endfor %}

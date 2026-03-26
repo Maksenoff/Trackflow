@@ -9,6 +9,9 @@ use Doctrine\ORM\Mapping as ORM;
 #[ORM\Entity(repositoryClass: PerformanceRepository::class)]
 class Performance
 {
+    // Disciplines hors stade (route, cross) — exclues des inscriptions compétition
+    public const OFF_TRACK_DISCIPLINES = ['semi-marathon', 'marathon', 'cross'];
+
     public const DISCIPLINES = [
         '60m' => '60m',
         '100m' => '100m',
