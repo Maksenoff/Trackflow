@@ -16,8 +16,11 @@ COPY --from=composer:2 /usr/bin/composer /usr/bin/composer
 # Copy application files
 COPY . .
 
-# Install PHP dependencies
+# Install PHP dependencies (no-scripts to skip cache:clear which needs real DB)
 RUN composer install --no-dev --optimize-autoloader --no-scripts --no-interaction
+
+# Install importmap vendor assets (Alpine.js, etc.)
+RUN APP_ENV=prod APP_SECRET=buildsecret DATABASE_URL="postgresql://u:p@localhost/db?serverVersion=16" php bin/console importmap:install
 
 # Install Node dependencies
 RUN npm ci
