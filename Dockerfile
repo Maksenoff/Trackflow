@@ -16,9 +16,6 @@ RUN curl -fsSL https://deb.nodesource.com/setup_22.x | bash - \
   # Copy application files
   COPY . .
 
-  # Copy Caddyfile to the standard location FrankenPHP reads by default
-  COPY Caddyfile /etc/caddy/Caddyfile
-
   # Install PHP dependencies (no scripts to avoid cache:clear at build time)
   RUN composer install --no-dev --optimize-autoloader --no-scripts --no-interaction
 
@@ -33,4 +30,5 @@ RUN curl -fsSL https://deb.nodesource.com/setup_22.x | bash - \
 
   EXPOSE 8080
 
-  CMD ["frankenphp", "run", "--config", "/etc/caddy/Caddyfile"]
+  # SERVER_NAME is set via Railway environment variable to :8080
+  CMD ["frankenphp", "php-server", "--root", "/app/public"]
