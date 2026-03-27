@@ -32,6 +32,6 @@ RUN curl -fsSL https://deb.nodesource.com/setup_22.x | bash - \
 ENV SERVER_NAME=:8080
         EXPOSE 8080
 
-        CMD ["frankenphp", "php-server", "--root", "/app/public"]
+        CMD ["frankenphp", "run", "--config", "/app/Caddyfile"]
 
 
