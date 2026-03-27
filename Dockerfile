@@ -2,10 +2,10 @@ FROM dunglas/frankenphp
 
 WORKDIR /app
 
-# Install PostgreSQL library and PHP pdo_pgsql extension
+# Install PHP extensions
 RUN install-php-extensions pdo_pgsql opcache intl zip
 
-# Install Node.js and npm
+# Install Node.js
 RUN curl -fsSL https://deb.nodesource.com/setup_22.x | bash - \
  && apt-get install -y nodejs \
   && rm -rf /var/lib/apt/lists/*
@@ -16,19 +16,21 @@ RUN curl -fsSL https://deb.nodesource.com/setup_22.x | bash - \
   # Copy application files
   COPY . .
 
-  # Install PHP dependencies (no scripts to avoid cache:clear at build time)
+  # Install PHP dependencies
   RUN composer install --no-dev --optimize-autoloader --no-scripts --no-interaction
 
-  # Install Node dependencies and build CSS
-  RUN npm ci && php bin/console tailwind:build --minify
+  # Install Node dependencies
+  RUN npm ci
+
+  # Build Tailwind CSS with dummy env vars so Symfony can bootstrap at build time
+  RUN APP_ENV=prod APP_SECRET=buildsecret DATABASE_URL="postgresql://u:p@localhost/db" php bin/console tailwind:build --minify
 
   # Compile asset map
-  RUN php bin/console asset-map:compile 2>/dev/null || true
+  RUN APP_ENV=prod APP_SECRET=buildsecret DATABASE_URL="postgresql://u:p@localhost/db" php bin/console asset-map:compile 2>/dev/null || true
 
   # Ensure var directory exists with correct permissions
   RUN mkdir -p var/cache var/log && chmod -R 777 var
 
   EXPOSE 8080
 
-  # SERVER_NAME is set via Railway environment variable to :8080
   CMD ["frankenphp", "php-server", "--root", "/app/public"]
