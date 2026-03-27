@@ -22,15 +22,20 @@ RUN curl -fsSL https://deb.nodesource.com/setup_22.x | bash - \
   # Install Node dependencies
   RUN npm ci
 
-  # Build Tailwind CSS with dummy env vars so Symfony can bootstrap at build time
-  RUN APP_ENV=prod APP_SECRET=buildsecret DATABASE_URL="postgresql://u:p@localhost/db" php bin/console tailwind:build --minify
+  # Pre-download Tailwind CSS binary for linux/amd64 (used by symfonycasts/tailwind-bundle)
+  RUN mkdir -p var/tailwind \
+   && curl -sLo var/tailwind/tailwindcss https://github.com/tailwindlabs/tailwindcss/releases/latest/download/tailwindcss-linux-x64 \
+    && chmod +x var/tailwind/tailwindcss
 
-  # Compile asset map
-  RUN APP_ENV=prod APP_SECRET=buildsecret DATABASE_URL="postgresql://u:p@localhost/db" php bin/console asset-map:compile 2>/dev/null || true
+    # Build Tailwind CSS with dummy env vars so Symfony can bootstrap at build time
+    RUN APP_ENV=prod APP_SECRET=buildsecret DATABASE_URL="postgresql://u:p@localhost/db" php bin/console tailwind:build --minify
 
-  # Ensure var directory exists with correct permissions
-  RUN mkdir -p var/cache var/log && chmod -R 777 var
+    # Compile asset map
+    RUN APP_ENV=prod APP_SECRET=buildsecret DATABASE_URL="postgresql://u:p@localhost/db" php bin/console asset-map:compile 2>/dev/null || true
 
-  EXPOSE 8080
+    # Ensure var directory exists with correct permissions
+    RUN mkdir -p var/cache var/log && chmod -R 777 var
 
-  CMD ["frankenphp", "php-server", "--root", "/app/public"]
+    EXPOSE 8080
+
+    CMD ["frankenphp", "php-server", "--root", "/app/public"]
