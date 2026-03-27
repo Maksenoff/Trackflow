@@ -31,4 +31,6 @@ RUN curl -fsSL https://deb.nodesource.com/setup_22.x | bash - \
 
         EXPOSE 8080
 
+        CMD ["frankenphp", "php-server", "--root", "/app/public"]
+
 
