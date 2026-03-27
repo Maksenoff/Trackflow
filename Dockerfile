@@ -20,7 +20,7 @@ RUN curl -fsSL https://deb.nodesource.com/setup_22.x | bash - \
   RUN composer install --no-dev --optimize-autoloader --no-scripts --no-interaction
 
   # Install Node dependencies and build CSS
-  RUN npm ci && php bin/console tailwind:build --minify 2>/dev/null || true
+  RUN npm ci && php bin/console tailwind:build --minify
 
   # Compile asset map
   RUN php bin/console asset-map:compile 2>/dev/null || true
