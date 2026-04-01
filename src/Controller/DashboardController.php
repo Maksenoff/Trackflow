@@ -2,6 +2,7 @@
 
 namespace App\Controller;
 
+use App\Entity\Performance;
 use App\Repository\AthleteRepository;
 use App\Repository\CompetitionRepository;
 use App\Repository\PerformanceRepository;
@@ -22,42 +23,34 @@ class DashboardController extends AbstractController
         $upcomingSessions     = $sessionRepo->findUpcomingSessions(4);
         $upcomingCompetitions = $competitionRepo->findUpcomingCompetitions(4);
 
-        // Tendance comparée à la dernière perf en compétition
-        $buildTrends = function (array $performances) use ($performanceRepo): array {
+        $calcDiff = function (Performance $perf, ?Performance $prev): ?array {
+            if (!$prev) return null;
+            $curr  = (float) $perf->getValue();
+            $prevVal = (float) $prev->getValue();
+            if ($curr == $prevVal) return ['improved' => null, 'diff' => '='];
+
+            $lowerIsBetter = in_array($perf->getUnit(), ['s', 'min:s']);
+            $improved = $lowerIsBetter ? ($curr < $prevVal) : ($curr > $prevVal);
+            $diff     = abs($curr - $prevVal);
+            $sign     = $improved ? ($lowerIsBetter ? '-' : '+') : ($lowerIsBetter ? '+' : '-');
+
+            $diffStr = $lowerIsBetter
+                ? $sign . ($diff >= 60
+                    ? sprintf('%d:%05.2f', (int)($diff / 60), fmod($diff, 60))
+                    : number_format($diff, 2) . 's')
+                : $sign . number_format($diff, 2) . ' ' . $perf->getUnit();
+
+            return ['improved' => $improved, 'diff' => $diffStr];
+        };
+
+        $buildTrends = function (array $performances) use ($performanceRepo, $calcDiff): array {
             $trends = [];
             foreach ($performances as $perf) {
-                $prev = $performanceRepo->findLastCompetitionBefore(
-                    $perf->getAthlete(),
-                    $perf->getDiscipline(),
-                    $perf->getRecordedAt()
+                $prev = $performanceRepo->findLastBefore(
+                    $perf->getAthlete(), $perf->getDiscipline(), $perf->getRecordedAt(), $perf->getId()
                 );
-                if (!$prev) continue;
-
-                $curr          = (float) $perf->getValue();
-                $prevVal       = (float) $prev->getValue();
-                if ($curr == $prevVal) continue;
-
-                $lowerIsBetter = in_array($perf->getUnit(), ['s', 'min:s']);
-                $improved      = $lowerIsBetter ? ($curr < $prevVal) : ($curr > $prevVal);
-                $diff          = abs($curr - $prevVal);
-
-                // Signe : pour le temps on affiche -diff si amélioration (on enlève du temps)
-                // Pour les autres disciplines on affiche +diff si amélioration
-                $sign = $improved ? '-' : '+';
-                if (!$lowerIsBetter) $sign = $improved ? '+' : '-';
-
-                if ($lowerIsBetter) {
-                    $diffStr = $sign . ($diff >= 60
-                        ? sprintf('%d:%05.2f', (int)($diff / 60), fmod($diff, 60))
-                        : number_format($diff, 2) . 's');
-                } else {
-                    $diffStr = $sign . number_format($diff, 2) . ' ' . $perf->getUnit();
-                }
-
-                $trends[$perf->getId()] = [
-                    'improved' => $improved,
-                    'diff'     => $diffStr,
-                ];
+                $result = $calcDiff($perf, $prev);
+                if ($result) $trends[$perf->getId()] = $result;
             }
             return $trends;
         };
@@ -92,11 +85,25 @@ class DashboardController extends AbstractController
         // Vue coach / admin
         $this->denyAccessUnlessGranted('ROLE_COACH');
 
-        $coachPerfs = $performanceRepo->findRecentPerformances(10);
+        $coachPerfs    = $performanceRepo->findRecentPerformances(10);
+        $linkedAthlete = $this->getUser()->getLinkedAthlete();
+        $myPerfs       = $linkedAthlete ? $performanceRepo->findRecentByAthlete($linkedAthlete, 10) : [];
+        $seasonBests   = $linkedAthlete ? $performanceRepo->findSeasonBestsByAthlete($linkedAthlete) : [];
+
+        // Map id => isSB
+        $sbIds = [];
+        foreach ($seasonBests as $disc => $sbPerf) {
+            $sbIds[$sbPerf->getId()] = true;
+        }
+
         return $this->render('dashboard/coach.html.twig', [
             'totalAthletes'         => $athleteRepo->count([]),
             'recentPerformances'    => $coachPerfs,
             'perfTrends'            => $buildTrends($coachPerfs),
+            'myPerformances'        => $myPerfs,
+            'myPerfTrends'          => $buildTrends($myPerfs),
+            'myPerfSBIds'           => $sbIds,
+            'linkedAthlete'         => $linkedAthlete,
             'upcomingSessions'      => $upcomingSessions,
             'nextSession'           => $upcomingSessions[0] ?? null,
             'upcomingCompetitions'  => $upcomingCompetitions,

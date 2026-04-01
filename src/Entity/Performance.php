@@ -54,7 +54,7 @@ class Performance
     #[ORM\JoinColumn(nullable: false)]
     private ?Athlete $athlete = null;
 
-    #[ORM\ManyToOne(targetEntity: Session::class, inversedBy: 'performances')]
+    #[ORM\ManyToOne(targetEntity: Session::class)]
     #[ORM\JoinColumn(nullable: true, onDelete: 'SET NULL')]
     private ?Session $session = null;
 

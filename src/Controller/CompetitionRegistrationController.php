@@ -29,20 +29,16 @@ class CompetitionRegistrationController extends AbstractController
 
         $athlete = $this->getUser()->getLinkedAthlete();
         if (!$athlete) {
-            $this->addFlash('error', 'Aucun profil athlète lié à votre compte.');
-            return $this->redirectToRoute('app_competition_show', ['id' => $id]);
+            return $this->ajaxOrFlash($request, 'error', 'Aucun profil athlète lié.', $id);
         }
 
         if (!$this->isCsrfTokenValid('register-competition-' . $id, $request->getPayload()->get('_token'))) {
             throw $this->createAccessDeniedException();
         }
 
-        $disciplines = $request->getPayload()->all('disciplines') ?? [];
-        $disciplines = array_values(array_filter($disciplines));
-
+        $disciplines = array_values(array_filter($request->getPayload()->all('disciplines') ?? []));
         if (empty($disciplines)) {
-            $this->addFlash('error', 'Sélectionne au moins une discipline.');
-            return $this->redirectToRoute('app_competition_show', ['id' => $id]);
+            return $this->ajaxOrFlash($request, 'error', 'Sélectionne au moins une discipline.', $id);
         }
 
         $registration = $registrationRepo->findByAthleteAndCompetition($athlete, $competition)
@@ -52,31 +48,16 @@ class CompetitionRegistrationController extends AbstractController
         $em->persist($registration);
         $em->flush();
 
+        if ($this->isAjax($request)) {
+            return $this->json($this->buildPayload(
+                $registrationRepo->findByCompetition($competition),
+                $registration,
+                $this->isGranted('ROLE_COACH'),
+                $this->container->get('security.csrf.token_manager'),
+            ));
+        }
+
         $this->addFlash('success', 'Inscription enregistrée.');
-        return $this->redirectToRoute('app_competition_show', ['id' => $id]);
-    }
-
-    #[Route('/annuler/{registrationId}', name: 'app_competition_unregister_any', methods: ['POST'])]
-    public function unregisterAny(
-        int $id,
-        int $registrationId,
-        Request $request,
-        CompetitionRegistrationRepository $registrationRepo,
-        EntityManagerInterface $em,
-    ): Response {
-        $this->denyAccessUnlessGranted('ROLE_COACH');
-
-        if (!$this->isCsrfTokenValid('unregister-any-' . $registrationId, $request->getPayload()->get('_token'))) {
-            throw $this->createAccessDeniedException();
-        }
-
-        $registration = $registrationRepo->find($registrationId);
-        if ($registration && $registration->getCompetition()->getId() === $id) {
-            $em->remove($registration);
-            $em->flush();
-            $this->addFlash('success', 'Inscription annulée.');
-        }
-
         return $this->redirectToRoute('app_competition_show', ['id' => $id]);
     }
 
@@ -104,9 +85,93 @@ class CompetitionRegistrationController extends AbstractController
         if ($registration) {
             $em->remove($registration);
             $em->flush();
-            $this->addFlash('success', 'Inscription annulée.');
         }
 
+        if ($this->isAjax($request)) {
+            return $this->json($this->buildPayload(
+                $registrationRepo->findByCompetition($competition),
+                null,
+                $this->isGranted('ROLE_COACH'),
+                $this->container->get('security.csrf.token_manager'),
+            ));
+        }
+
+        $this->addFlash('success', 'Inscription annulée.');
         return $this->redirectToRoute('app_competition_show', ['id' => $id]);
+    }
+
+    #[Route('/annuler/{registrationId}', name: 'app_competition_unregister_any', methods: ['POST'])]
+    public function unregisterAny(
+        int $id,
+        int $registrationId,
+        Request $request,
+        CompetitionRepository $competitionRepo,
+        CompetitionRegistrationRepository $registrationRepo,
+        EntityManagerInterface $em,
+    ): Response {
+        $this->denyAccessUnlessGranted('ROLE_COACH');
+
+        if (!$this->isCsrfTokenValid('unregister-any-' . $registrationId, $request->getPayload()->get('_token'))) {
+            throw $this->createAccessDeniedException();
+        }
+
+        $competition = $competitionRepo->find($id);
+        if (!$competition) throw $this->createNotFoundException();
+
+        $registration = $registrationRepo->find($registrationId);
+        if ($registration && $registration->getCompetition()->getId() === $id) {
+            $em->remove($registration);
+            $em->flush();
+        }
+
+        $linkedAthlete  = $this->getUser()->getLinkedAthlete();
+        $myRegistration = $linkedAthlete
+            ? $registrationRepo->findByAthleteAndCompetition($linkedAthlete, $competition)
+            : null;
+
+        if ($this->isAjax($request)) {
+            return $this->json($this->buildPayload(
+                $registrationRepo->findByCompetition($competition),
+                $myRegistration,
+                true,
+                $this->container->get('security.csrf.token_manager'),
+            ));
+        }
+
+        $this->addFlash('success', 'Inscription annulée.');
+        return $this->redirectToRoute('app_competition_show', ['id' => $id]);
+    }
+
+    // ── Helpers ────────────────────────────────────────────────────────
+
+    private function isAjax(Request $request): bool
+    {
+        return $request->headers->get('X-Requested-With') === 'XMLHttpRequest';
+    }
+
+    private function ajaxOrFlash(Request $request, string $type, string $msg, int $id): Response
+    {
+        if ($this->isAjax($request)) {
+            return $this->json(['ok' => false, 'error' => $msg], 400);
+        }
+        $this->addFlash($type, $msg);
+        return $this->redirectToRoute('app_competition_show', ['id' => $id]);
+    }
+
+    private function buildPayload(array $registrations, ?CompetitionRegistration $myReg, bool $isCoach, $csrf): array
+    {
+        return [
+            'ok'             => true,
+            'myRegistration' => $myReg ? ['id' => $myReg->getId(), 'disciplines' => $myReg->getDisciplines()] : null,
+            'registrations'  => array_map(fn($reg) => [
+                'id'          => $reg->getId(),
+                'athleteName' => $reg->getAthlete()->getFullName(),
+                'athletePhoto'=> $reg->getAthlete()->getPhoto(),
+                'disciplines' => $reg->getDisciplines(),
+                'isOwn'       => $myReg && $myReg->getId() === $reg->getId(),
+                'canRemove'   => ($myReg && $myReg->getId() === $reg->getId()) || $isCoach,
+                'unregToken'  => $csrf->getToken('unregister-any-' . $reg->getId())->getValue(),
+            ], $registrations),
+        ];
     }
 }

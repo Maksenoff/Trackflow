@@ -17,7 +17,7 @@
         <h1 class="text-2xl font-bold text-white">Modifier {{ athlete.fullName }}</h1>
     </div>
     <div class="bg-gray-900 border border-gray-800 rounded-xl p-6">
-        {{ form_start(form, {attr: {class: 'space-y-5', enctype: 'multipart/form-data', novalidate: 'novalidate'}}) }}
+        {{ form_start(form, {attr: {class: 'space-y-5', enctype: 'multipart/form-data', novalidate: 'novalidate', 'data-turbo': 'false'}}) }}
         <div class="grid grid-cols-2 gap-4">
             <div>{{ form_row(form.firstName) }}</div>
             <div>{{ form_row(form.lastName) }}</div>

@@ -1,0 +1,731 @@
+{% extends 'base.html.twig' %}
+
+{% block title %}Stats avancées — {{ athlete.fullName }}{% endblock %}
+
+{% block breadcrumb %}
+    <a href="{{ path('app_athlete_show', {id: athlete.id}) }}" class="text-gray-400 hover:text-white transition-colors">{{ athlete.fullName }}</a>
+    <span class="text-gray-600 mx-2">›</span>
+    <span class="text-white font-semibold">Stats avancées</span>
+{% endblock %}
+
+{% block body %}
+<div x-data="statsPage()" x-init="init()" class="space-y-6">
+
+    {# ── Header ── #}
+    <div class="flex items-start justify-between gap-4">
+        <div>
+            <h1 class="text-2xl font-bold text-white">Stats avancées</h1>
+            <p class="text-gray-400 mt-1 text-sm">{{ athlete.fullName }}</p>
+        </div>
+        <a href="{{ path('app_athlete_show', {id: athlete.id}) }}"
+           class="flex items-center gap-2 text-sm text-gray-400 hover:text-white bg-gray-800 hover:bg-gray-700 px-4 py-2 rounded-lg transition-colors shrink-0">
+            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18"/>
+            </svg>
+            Fiche athlète
+        </a>
+    </div>
+
+    {# ── Discipline tabs ── #}
+    <div class="flex flex-wrap gap-2">
+        <template x-for="disc in disciplines" :key="disc">
+            <button @click="switchDisc(disc)"
+                    :class="activeDisc === disc
+                        ? 'bg-indigo-600 text-white border-indigo-500'
+                        : 'bg-gray-900 text-gray-400 border-gray-700 hover:border-gray-500 hover:text-white'"
+                    class="px-4 py-2 rounded-lg text-sm font-medium border transition-all">
+                <span x-text="disc"></span>
+                <span class="ml-1.5 text-xs opacity-50"
+                      x-text="'(' + stats[disc].count + ')'"></span>
+            </button>
+        </template>
+    </div>
+
+    {# ── Year filter ── #}
+    <template x-if="availableYears.length > 1">
+        <div class="flex flex-wrap gap-2 items-center">
+            <span class="text-xs text-gray-500">Année :</span>
+            <button @click="setYear('all')"
+                    :class="activeYear === 'all' ? 'bg-gray-700 text-white border-gray-500' : 'bg-gray-900 text-gray-400 border-gray-700 hover:border-gray-500 hover:text-white'"
+                    class="px-3 py-1 rounded-lg text-xs font-medium border transition-all">
+                Toutes
+            </button>
+            <template x-for="year in availableYears" :key="year">
+                <button @click="setYear(year)"
+                        :class="activeYear === year ? 'bg-gray-700 text-white border-gray-500' : 'bg-gray-900 text-gray-400 border-gray-700 hover:border-gray-500 hover:text-white'"
+                        class="px-3 py-1 rounded-lg text-xs font-medium border transition-all">
+                    <span x-text="year"></span>
+                </button>
+            </template>
+        </div>
+    </template>
+
+    {# ── Stats brutes (4 cards) ── #}
+    <div class="grid grid-cols-2 lg:grid-cols-4 gap-4">
+
+        {# Progression totale #}
+        <div class="bg-gray-900 border border-gray-800 rounded-xl p-5">
+            <p class="text-[10px] text-gray-500 uppercase tracking-widest mb-3">Progression totale</p>
+            <template x-if="d.progression.formatted && d.progression.improved !== null">
+                <div>
+                    <p class="text-2xl font-bold font-mono leading-none"
+                       :class="d.progression.improved ? 'text-emerald-400' : 'text-red-400'"
+                       x-text="(d.progression.improved ? '−' : '+') + d.progression.formatted"></p>
+                    <p class="text-xs text-gray-500 mt-2" x-text="'en ' + d.progression.months + ' mois'"></p>
+                </div>
+            </template>
+            <template x-if="!d.progression.formatted">
+                <p class="text-2xl font-bold text-gray-600">—</p>
+            </template>
+        </div>
+
+        {# Record personnel #}
+        <div class="bg-gray-900 border border-gray-800 rounded-xl p-5">
+            <div class="flex items-center gap-2 mb-3">
+                <p class="text-[10px] text-gray-500 uppercase tracking-widest">Record personnel</p>
+                <span class="text-[9px] font-bold text-yellow-400 bg-yellow-400/10 border border-yellow-400/20 px-1.5 py-0.5 rounded leading-none">PB</span>
+            </div>
+            <p class="text-2xl font-bold font-mono text-yellow-400 leading-none" x-text="d.pb.formatted"></p>
+            <p class="text-xs text-gray-500 mt-2" x-text="d.pb.date"></p>
+        </div>
+
+        {# Meilleure amélioration en 1 séance #}
+        <div class="bg-gray-900 border border-gray-800 rounded-xl p-5">
+            <p class="text-[10px] text-gray-500 uppercase tracking-widest mb-3">Meilleure séance</p>
+            <template x-if="d.bestGain">
+                <div>
+                    <p class="text-2xl font-bold font-mono text-indigo-400 leading-none"
+                       x-text="'−' + d.bestGain"></p>
+                    <p class="text-xs text-gray-500 mt-2">gain en une séance</p>
+                </div>
+            </template>
+            <template x-if="!d.bestGain">
+                <p class="text-2xl font-bold text-gray-600">—</p>
+            </template>
+        </div>
+
+        {# Régularité #}
+        <div class="bg-gray-900 border border-gray-800 rounded-xl p-5">
+            <p class="text-[10px] text-gray-500 uppercase tracking-widest mb-3">Régularité</p>
+            <p class="text-2xl font-bold font-mono leading-none"
+               :class="consistencyColor()"
+               x-text="d.consistency.score + ' / 100'"></p>
+            <p class="text-xs mt-2" :class="consistencyColor()" x-text="consistencyLabel()"></p>
+        </div>
+    </div>
+
+    {# ── Progression chart ── #}
+    <div class="bg-gray-900 border border-gray-800 rounded-xl p-6">
+        <div class="flex items-center justify-between mb-5">
+            <h2 class="text-sm font-semibold text-white">Progression</h2>
+            <div class="flex items-center gap-4 text-xs text-gray-500">
+                <span class="flex items-center gap-1.5">
+                    <span class="w-2 h-2 rounded-full bg-indigo-400 inline-block"></span> Entraînement
+                </span>
+                <span class="flex items-center gap-1.5">
+                    <span class="w-2 h-2 rounded-full bg-amber-400 inline-block"></span> Compétition
+                </span>
+                <span class="flex items-center gap-1.5">
+                    <span class="w-5 border-t border-dashed border-gray-500 inline-block"></span> Moy. mobile
+                </span>
+            </div>
+        </div>
+        <div class="relative" style="height:260px">
+            <canvas id="progressionChart"></canvas>
+        </div>
+    </div>
+
+    {# ── Consistance + Distribution ── #}
+    <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+
+        {# Consistance #}
+        <div class="bg-gray-900 border border-gray-800 rounded-xl p-6">
+            <h2 class="text-sm font-semibold text-white mb-5">Consistance</h2>
+
+            <div class="mb-5">
+                <div class="flex items-center justify-between mb-2">
+                    <span class="text-xs text-gray-400">Score de régularité</span>
+                    <span class="text-sm font-bold font-mono" :class="consistencyColor()"
+                          x-text="d.consistency.score + ' / 100'"></span>
+                </div>
+                <div class="h-2 bg-gray-800 rounded-full overflow-hidden">
+                    <div class="h-full rounded-full transition-all duration-700"
+                         :style="'width: ' + d.consistency.score + '%'"
+                         :class="{
+                             'bg-emerald-500': d.consistency.score >= 80,
+                             'bg-blue-500':    d.consistency.score >= 60 && d.consistency.score < 80,
+                             'bg-amber-500':   d.consistency.score >= 40 && d.consistency.score < 60,
+                             'bg-red-500':     d.consistency.score < 40,
+                         }"></div>
+                </div>
+                <div class="flex justify-between mt-1 text-[10px] text-gray-600">
+                    <span>Très irrégulier</span><span>Très régulier</span>
+                </div>
+            </div>
+
+            <div class="space-y-0 divide-y divide-gray-800">
+                <div class="flex justify-between items-center py-2.5">
+                    <span class="text-xs text-gray-500">Interprétation</span>
+                    <span class="text-sm font-medium" :class="consistencyColor()" x-text="consistencyLabel()"></span>
+                </div>
+                <div class="flex justify-between items-center py-2.5">
+                    <div class="flex items-center gap-1.5">
+                        <span class="text-xs text-gray-500">Écart-type</span>
+                        <span class="group relative inline-block cursor-help">
+                            <svg class="w-3 h-3 text-gray-600 hover:text-gray-400 transition-colors" fill="currentColor" viewBox="0 0 20 20">
+                                <path fill-rule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clip-rule="evenodd"/>
+                            </svg>
+                            <span class="pointer-events-none absolute bottom-full left-0 mb-2 w-64 rounded-lg bg-gray-800 border border-gray-700 px-3 py-2 text-xs text-gray-300 opacity-0 group-hover:opacity-100 transition-opacity z-10 shadow-xl leading-relaxed whitespace-normal">
+                                À quel point les perfs varient entre elles. Bas = régulier.
+                            </span>
+                        </span>
+                    </div>
+                    <span class="text-xs font-mono text-gray-300" x-text="d.consistency.stdDev + ' ' + d.unit"></span>
+                </div>
+                <div class="flex justify-between items-center py-2.5">
+                    <div class="flex items-center gap-1.5">
+                        <span class="text-xs text-gray-500">Coefficient de variation</span>
+                        <span class="group relative inline-block cursor-help">
+                            <svg class="w-3 h-3 text-gray-600 hover:text-gray-400 transition-colors" fill="currentColor" viewBox="0 0 20 20">
+                                <path fill-rule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clip-rule="evenodd"/>
+                            </svg>
+                            <span class="pointer-events-none absolute bottom-full left-0 mb-2 w-64 rounded-lg bg-gray-800 border border-gray-700 px-3 py-2 text-xs text-gray-300 opacity-0 group-hover:opacity-100 transition-opacity z-10 shadow-xl leading-relaxed whitespace-normal">
+                                Variabilité relative en %. Moins c'est élevé, plus l'athlète est constant.
+                            </span>
+                        </span>
+                    </div>
+                    <span class="text-xs font-mono text-gray-300" x-text="d.consistency.cv + ' %'"></span>
+                </div>
+                <div class="flex justify-between items-center py-2.5">
+                    <div class="flex items-center gap-1.5">
+                        <span class="text-xs text-gray-500">Score de régularité</span>
+                        <span class="group relative inline-block cursor-help">
+                            <svg class="w-3 h-3 text-gray-600 hover:text-gray-400 transition-colors" fill="currentColor" viewBox="0 0 20 20">
+                                <path fill-rule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clip-rule="evenodd"/>
+                            </svg>
+                            <span class="pointer-events-none absolute bottom-full left-0 mb-2 w-64 rounded-lg bg-gray-800 border border-gray-700 px-3 py-2 text-xs text-gray-300 opacity-0 group-hover:opacity-100 transition-opacity z-10 shadow-xl leading-relaxed whitespace-normal">
+                                Note sur 100. 80+ = très régulier, 60-80 = régulier, sous 40 = résultats imprévisibles.
+                            </span>
+                        </span>
+                    </div>
+                    <span class="text-xs font-mono" :class="consistencyColor()" x-text="d.consistency.score + ' / 100'"></span>
+                </div>
+                <div class="flex justify-between items-center py-2.5">
+                    <span class="text-xs text-gray-500">Nombre de performances</span>
+                    <span class="text-xs font-mono text-gray-300" x-text="d.count"></span>
+                </div>
+                <div class="flex justify-between items-center py-2.5">
+                    <span class="text-xs text-gray-500">Première perf</span>
+                    <span class="text-xs font-mono text-gray-300"
+                          x-text="d.first.formatted + '  · ' + d.first.date"></span>
+                </div>
+                <div class="flex justify-between items-center py-2.5">
+                    <span class="text-xs text-gray-500">Dernière perf</span>
+                    <span class="text-xs font-mono text-gray-300"
+                          x-text="d.last.formatted + '  · ' + d.last.date"></span>
+                </div>
+            </div>
+        </div>
+
+        {# Distribution des résultats #}
+        <div class="bg-gray-900 border border-gray-800 rounded-xl p-6">
+            <h2 class="text-sm font-semibold text-white mb-5">Distribution des résultats</h2>
+            <div x-show="d.bins && d.bins.length > 0" class="relative" style="height:200px">
+                <canvas id="distributionChart"></canvas>
+            </div>
+            <div x-show="!d.bins || d.bins.length === 0"
+                 class="flex items-center justify-center text-gray-600 text-sm" style="height:200px">
+                Pas assez de données (minimum 3 perfs)
+            </div>
+        </div>
+    </div>
+
+    {# ── Impact du vent ── #}
+    <div x-show="d.wind && d.wind.length >= 2" class="bg-gray-900 border border-gray-800 rounded-xl p-6">
+            <h2 class="text-sm font-semibold text-white mb-5">Impact du vent</h2>
+
+            <div class="grid grid-cols-2 lg:grid-cols-4 gap-3 mb-6">
+                <div class="bg-gray-800/60 rounded-lg p-4">
+                    <p class="text-[10px] text-gray-500 uppercase tracking-wider mb-2">Perfs relevées</p>
+                    <p class="text-2xl font-bold font-mono text-white" x-text="d.wind.length"></p>
+                </div>
+                <div class="bg-gray-800/60 rounded-lg p-4">
+                    <p class="text-[10px] text-gray-500 uppercase tracking-wider mb-2">Meilleure légale (≤2.0)</p>
+                    <template x-if="d.bestLegal">
+                        <div>
+                            <p class="text-2xl font-bold font-mono text-emerald-400" x-text="d.bestLegal.formatted"></p>
+                            <p class="text-xs text-gray-500 mt-1"
+                               x-text="d.bestLegal.wind + ' m/s · ' + d.bestLegal.date"></p>
+                        </div>
+                    </template>
+                    <template x-if="!d.bestLegal">
+                        <p class="text-2xl font-bold text-gray-600">—</p>
+                    </template>
+                </div>
+                <div class="bg-gray-800/60 rounded-lg p-4">
+                    <p class="text-[10px] text-gray-500 uppercase tracking-wider mb-2">Vent moyen</p>
+                    <p class="text-2xl font-bold font-mono text-gray-300"
+                       x-text="(d.wind.reduce((s,w) => s + w.wind, 0) / d.wind.length).toFixed(1) + ' m/s'"></p>
+                </div>
+                <div class="bg-gray-800/60 rounded-lg p-4">
+                    <p class="text-[10px] text-gray-500 uppercase tracking-wider mb-2">Vent max</p>
+                    <p class="text-2xl font-bold font-mono text-gray-300"
+                       x-text="Math.max(...d.wind.map(w => w.wind)).toFixed(1) + ' m/s'"></p>
+                </div>
+            </div>
+
+            <div class="relative" style="height:220px">
+                <canvas id="windChart"></canvas>
+            </div>
+            <p class="text-xs text-gray-600 mt-1 text-center">
+                Ligne grise = 0 · Lignes jaunes pointillées = limites légales ±2.0 m/s
+            </p>
+        </div>
+    </div>
+
+</div>
+
+<script>
+function statsPage() {
+    const stats = {{ statsData|json_encode|raw }};
+    const disciplines = {{ disciplines|json_encode|raw }};
+
+    return {
+        stats,
+        disciplines,
+        activeDisc: disciplines[0] ?? null,
+        activeYear: 'all',
+        _charts: {},
+        _version: 0,
+
+        get availableYears() {
+            const raw = (this.stats[this.activeDisc] ?? {}).rawPerfs ?? [];
+            return [...new Set(raw.map(p => p.year))].sort((a, b) => b - a);
+        },
+
+        get d() {
+            if (this.activeYear === 'all') return this.stats[this.activeDisc] ?? {};
+            const base = this.stats[this.activeDisc] ?? {};
+            const perfs = (base.rawPerfs ?? []).filter(p => p.year === this.activeYear);
+            return perfs.length > 0 ? (this._computeStats(perfs, base.unit, base.lower) ?? base) : base;
+        },
+
+        init() {
+            this.$nextTick(() => this._buildCharts());
+            const rebuild = () => {
+                this._destroyCharts();
+                const v = ++this._version;
+                this.$nextTick(() => { if (this._version === v) this._buildCharts(); });
+            };
+            this.$watch('activeDisc', () => { this.activeYear = 'all'; rebuild(); });
+            this.$watch('activeYear', rebuild);
+        },
+
+        switchDisc(disc) { this.activeDisc = disc; },
+        setYear(year)    { this.activeYear = year; },
+
+        _computeStats(perfs, unit, lower) {
+            const vals  = perfs.map(p => p.value);
+            const count = perfs.length;
+            const first = perfs[0];
+            const last  = perfs[count - 1];
+
+            // PB
+            const bestVal  = lower ? Math.min(...vals) : Math.max(...vals);
+            const bestPerf = perfs[vals.indexOf(bestVal)];
+
+            // Progression
+            const rawDiff = last.value - first.value;
+            const improved = lower ? rawDiff < 0 : rawDiff > 0;
+            const daysDiff = count > 1
+                ? (new Date(last.dateRaw) - new Date(first.dateRaw)) / 86400000 : 0;
+            const months = daysDiff > 0 ? Math.round(daysDiff / 30.5 * 10) / 10 : 0;
+
+            // Best single-session gain
+            let bestSingleGain = 0;
+            for (let i = 1; i < count; i++) {
+                const gain = lower
+                    ? perfs[i - 1].value - perfs[i].value
+                    : perfs[i].value - perfs[i - 1].value;
+                if (gain > bestSingleGain) bestSingleGain = gain;
+            }
+
+            // Consistency
+            const mean     = vals.reduce((a, b) => a + b, 0) / count;
+            const variance = vals.reduce((s, v) => s + (v - mean) ** 2, 0) / count;
+            const stdDev   = Math.sqrt(variance);
+            const cv       = mean > 0 ? (stdDev / mean) * 100 : 0;
+            const score    = Math.max(0, Math.min(100, Math.round(100 - cv * 15)));
+
+            // Wind — exclude indoor, keep only best at wind=0
+            const windRaw = perfs.filter(p => p.wind !== null && !p.isIndoor);
+            let bestAtZero = null;
+            const windFiltered = [];
+            for (const p of windRaw) {
+                if (p.wind === 0) {
+                    if (!bestAtZero || (lower ? p.value < bestAtZero.value : p.value > bestAtZero.value))
+                        bestAtZero = p;
+                } else {
+                    windFiltered.push(p);
+                }
+            }
+            if (bestAtZero) windFiltered.push(bestAtZero);
+            const windData = windFiltered.map(p => ({
+                wind: p.wind, value: p.value,
+                formatted: this._fmt(p.value, unit), date: p.date, isComp: p.isComp,
+            }));
+
+            // Best legal (|wind| ≤ 2.0)
+            const legalPerfs = windFiltered.filter(p => Math.abs(p.wind) <= 2.0);
+            let bestLegal = null;
+            if (legalPerfs.length) {
+                const bl = legalPerfs.reduce((b, p) =>
+                    (!b || (lower ? p.value < b.value : p.value > b.value)) ? p : b, null);
+                if (bl) bestLegal = { formatted: this._fmt(bl.value, unit), wind: bl.wind, date: bl.date };
+            }
+
+            const formatDiff = abs => {
+                if (unit === 's' || unit === 'min:s') {
+                    if (abs >= 60) {
+                        const m = Math.floor(abs / 60);
+                        return m + ':' + (abs - m * 60).toFixed(2).padStart(5, '0');
+                    }
+                    return abs.toFixed(2) + 's';
+                }
+                return abs.toFixed(2) + ' ' + unit;
+            };
+
+            return {
+                unit, lower, count,
+                first: { formatted: this._fmt(first.value, unit), date: first.date },
+                last:  { formatted: this._fmt(last.value, unit),  date: last.date  },
+                pb:    { formatted: this._fmt(bestVal, unit),      date: bestPerf.date },
+                progression: {
+                    abs: Math.abs(rawDiff),
+                    formatted: count > 1 ? formatDiff(Math.abs(rawDiff)) : null,
+                    improved:  count > 1 ? improved : null,
+                    months,
+                },
+                bestGain: bestSingleGain > 0 ? formatDiff(bestSingleGain) : null,
+                consistency: {
+                    score,
+                    stdDev: Math.round(stdDev * 1000) / 1000,
+                    cv:     Math.round(cv * 100) / 100,
+                },
+                wind: windData, bestLegal,
+                bins: this._computeBins(vals, unit),
+                chart: {
+                    labels: perfs.map(p => p.dateRaw),
+                    values: vals,
+                    isComp: perfs.map(p => p.isComp),
+                },
+            };
+        },
+
+        _computeBins(vals, unit) {
+            if (vals.length < 3) return [];
+            const minV = Math.min(...vals), maxV = Math.max(...vals);
+            if (maxV <= minV) return [];
+            let baseStep = (unit === 's' || unit === 'min:s') ? 0.1
+                         : unit === 'm'   ? 0.1
+                         : unit === 'kg'  ? 1.0
+                         : unit === 'pts' ? 50.0
+                         : (maxV - minV) / 8;
+            let step = baseStep;
+            while ((maxV - minV) / step > 14) step *= 2;
+            const dec = step < 1 ? 2 : (step < 10 ? 1 : 0);
+            const lo0 = Math.floor(minV / step) * step;
+            const sfx = (unit === 's' || unit === 'min:s') ? 's' : (unit === 'm' ? 'm' : '');
+            const bins = [];
+            for (let b = 0; ; b++) {
+                const lo = Math.round((lo0 + b * step) * 1e6) / 1e6;
+                const hi = Math.round((lo + step)      * 1e6) / 1e6;
+                if (lo > maxV) break;
+                const isLast = hi > maxV;
+                const n = vals.filter(v => v >= lo && (isLast ? v <= maxV : v < hi)).length;
+                bins.push({ label: lo.toFixed(dec) + sfx, count: n });
+            }
+            while (bins.length && bins[0].count === 0) bins.shift();
+            while (bins.length && bins[bins.length - 1].count === 0) bins.pop();
+            return bins;
+        },
+
+        _destroyCharts() {
+            Object.values(this._charts).forEach(c => c.destroy());
+            this._charts = {};
+            // Remplace les canvas pour éviter les artefacts Chart.js
+            ['progressionChart', 'distributionChart', 'windChart'].forEach(id => {
+                const el = document.getElementById(id);
+                if (el) {
+                    const fresh = document.createElement('canvas');
+                    fresh.id = id;
+                    el.replaceWith(fresh);
+                }
+            });
+        },
+
+        consistencyLabel() {
+            const s = this.d.consistency?.score ?? 0;
+            if (s >= 80) return 'Très régulier';
+            if (s >= 60) return 'Régulier';
+            if (s >= 40) return 'Irrégulier';
+            return 'Très irrégulier';
+        },
+
+        consistencyColor() {
+            const s = this.d.consistency?.score ?? 0;
+            if (s >= 80) return 'text-emerald-400';
+            if (s >= 60) return 'text-blue-400';
+            if (s >= 40) return 'text-amber-400';
+            return 'text-red-400';
+        },
+
+        _fmt(v, unit) {
+            if (unit === 's' || unit === 'min:s') {
+                if (v >= 60) {
+                    const m = Math.floor(v / 60);
+                    const s = (v - m * 60).toFixed(2).padStart(5, '0');
+                    return m + ':' + s;
+                }
+                return v.toFixed(2) + 's';
+            }
+            return v.toFixed(2) + ' ' + unit;
+        },
+
+        _buildCharts() {
+            this._buildProgression();
+            if (this.d.bins && this.d.bins.length > 0) {
+                this.$nextTick(() => this._buildDistribution());
+            }
+            if (this.d.wind && this.d.wind.length >= 2) {
+                this.$nextTick(() => this._buildWind());
+            }
+        },
+
+        _buildProgression() {
+            const ctx = document.getElementById('progressionChart');
+            if (!ctx || this._charts.progression) return;
+            const d = this.d;
+            const unit = d.unit;
+            const lower = d.lower;
+            const vals = d.chart.values;
+
+            // Moving average (window 3)
+            const ma = vals.map((_, i) => {
+                const from = Math.max(0, i - 2);
+                const slice = vals.slice(from, i + 1);
+                return slice.reduce((a, b) => a + b, 0) / slice.length;
+            });
+
+            this._charts.progression = new Chart(ctx, {
+                type: 'line',
+                data: {
+                    labels: d.chart.labels,
+                    datasets: [
+                        {
+                            label: 'Performances',
+                            data: vals,
+                            borderColor: '#6366f1',
+                            backgroundColor: 'transparent',
+                            pointBackgroundColor: d.chart.isComp.map(c => c ? '#fbbf24' : '#818cf8'),
+                            pointBorderColor:     d.chart.isComp.map(c => c ? '#f59e0b' : '#6366f1'),
+                            pointRadius: 5,
+                            pointHoverRadius: 7,
+                            borderWidth: 1.5,
+                            tension: 0.35,
+                            fill: false,
+                        },
+                        {
+                            label: 'Moyenne mobile',
+                            data: ma,
+                            borderColor: 'rgba(148,163,184,0.5)',
+                            backgroundColor: 'transparent',
+                            pointRadius: 0,
+                            borderWidth: 1.5,
+                            borderDash: [5, 4],
+                            tension: 0.4,
+                        }
+                    ]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    interaction: { mode: 'index', intersect: false },
+                    plugins: {
+                        legend: { display: false },
+                        tooltip: {
+                            backgroundColor: '#111827',
+                            borderColor: '#374151',
+                            borderWidth: 1,
+                            titleColor: '#9ca3af',
+                            bodyColor: '#f9fafb',
+                            callbacks: {
+                                label: (item) => {
+                                    if (item.datasetIndex === 1) return null;
+                                    const c = d.chart.isComp[item.dataIndex];
+                                    return (c ? '🏆 ' : '·  ') + this._fmt(item.parsed.y, unit);
+                                }
+                            }
+                        }
+                    },
+                    scales: {
+                        x: { grid: { color: '#1f2937' }, ticks: { color: '#6b7280', maxTicksLimit: 8, font: { size: 11 } } },
+                        y: {
+                            reverse: lower,
+                            grid: { color: '#1f2937' },
+                            ticks: { color: '#6b7280', font: { size: 11 }, callback: v => this._fmt(v, unit) }
+                        }
+                    }
+                }
+            });
+        },
+
+        _buildDistribution() {
+            const ctx = document.getElementById('distributionChart');
+            if (!ctx || this._charts.distribution) return;
+            const bins = this.d.bins;
+            const maxN = Math.max(...bins.map(b => b.count));
+
+            this._charts.distribution = new Chart(ctx, {
+                type: 'bar',
+                data: {
+                    labels: bins.map(b => b.label),
+                    datasets: [{
+                        data: bins.map(b => b.count),
+                        backgroundColor: bins.map(b => `rgba(99,102,241,${0.25 + (b.count / maxN) * 0.65})`),
+                        borderColor: '#6366f1',
+                        borderWidth: 1,
+                        borderRadius: 4,
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: { display: false },
+                        tooltip: {
+                            backgroundColor: '#111827',
+                            borderColor: '#374151',
+                            borderWidth: 1,
+                            callbacks: {
+                                label: i => i.raw + ' perf' + (i.raw > 1 ? 's' : '')
+                            }
+                        }
+                    },
+                    scales: {
+                        x: { grid: { display: false }, ticks: { color: '#6b7280', font: { size: 10 }, maxRotation: 35 } },
+                        y: { grid: { color: '#1f2937' }, ticks: { color: '#6b7280', font: { size: 11 }, stepSize: 1 } }
+                    }
+                }
+            });
+        },
+
+        _buildWind() {
+            const ctx = document.getElementById('windChart');
+            if (!ctx || this._charts.wind) return;
+            const wind = this.d.wind;
+            const unit = this.d.unit;
+            const lower = this.d.lower;
+
+            // Plugin local (pas Chart.register) pour ne pas écraser les tooltips natifs
+            const windRefPlugin = {
+                id: 'windRefs',
+                afterDatasetsDraw(chart) {
+                    const { ctx, scales: { x, y } } = chart;
+                    const refs = [
+                        { val: 0,    color: 'rgba(226,232,240,0.7)',  dash: [],      label: '0',    labelColor: '#e2e8f0', bgColor: 'rgba(226,232,240,0.06)' },
+                        { val: 2.0,  color: 'rgba(251,191,36,0.6)',   dash: [5, 4],  label: '+2.0', labelColor: '#fbbf24' },
+                        { val: -2.0, color: 'rgba(251,191,36,0.6)',   dash: [5, 4],  label: '−2.0', labelColor: '#fbbf24' },
+                    ];
+                    ctx.save();
+                    refs.forEach(({ val, color, dash, label, labelColor, bgColor }) => {
+                        const xPx = x.getPixelForValue(val);
+                        if (xPx < x.left || xPx > x.right) return;
+                        if (bgColor) {
+                            ctx.fillStyle = bgColor;
+                            ctx.fillRect(xPx - 1, y.top, 2, y.bottom - y.top);
+                        }
+                        ctx.strokeStyle = color;
+                        ctx.lineWidth = val === 0 ? 2 : 1.5;
+                        ctx.setLineDash(dash);
+                        ctx.beginPath();
+                        ctx.moveTo(xPx, y.top);
+                        ctx.lineTo(xPx, y.bottom);
+                        ctx.stroke();
+                        ctx.setLineDash([]);
+                        ctx.font = 'bold 10px monospace';
+                        ctx.textAlign = 'center';
+                        const tw = ctx.measureText(label).width + 8;
+                        const ty = y.bottom + 16;
+                        ctx.fillStyle = val === 0 ? 'rgba(226,232,240,0.12)' : 'rgba(251,191,36,0.12)';
+                        ctx.beginPath();
+                        ctx.roundRect(xPx - tw / 2, ty - 10, tw, 13, 3);
+                        ctx.fill();
+                        ctx.fillStyle = labelColor;
+                        ctx.fillText(label, xPx, ty);
+                    });
+                    ctx.restore();
+                }
+            };
+
+            this._charts.wind = new Chart(ctx, {
+                type: 'scatter',
+                plugins: [windRefPlugin],
+                data: {
+                    datasets: [{
+                        data: wind.map(w => ({ x: w.wind, y: w.value, ...w })),
+                        backgroundColor: wind.map(w => w.isComp ? 'rgba(251,191,36,0.85)' : 'rgba(129,140,248,0.85)'),
+                        pointRadius: 7,
+                        pointHoverRadius: 10,
+                        hitRadius: 10,
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    layout: { padding: { bottom: 18 } },
+                    interaction: { mode: 'nearest', intersect: false },
+                    plugins: {
+                        legend: { display: false },
+                        tooltip: {
+                            backgroundColor: '#111827',
+                            borderColor: '#374151',
+                            borderWidth: 1,
+                            titleColor: '#9ca3af',
+                            bodyColor: '#f9fafb',
+                            padding: 10,
+                            displayColors: false,
+                            callbacks: {
+                                title: items => wind[items[0].dataIndex]?.date ?? '',
+                                label: item => {
+                                    const w = wind[item.dataIndex];
+                                    if (!w) return '';
+                                    const sign = w.wind >= 0 ? '+' : '';
+                                    return [
+                                        (w.isComp ? '🏆 ' : '· ') + this._fmt(w.value, unit),
+                                        'Vent : ' + sign + w.wind.toFixed(1) + ' m/s',
+                                    ];
+                                }
+                            }
+                        }
+                    },
+                    scales: {
+                        x: {
+                            title: { display: true, text: 'Vent (m/s)', color: '#6b7280', font: { size: 11 } },
+                            grid: { color: '#1f2937' },
+                            ticks: { color: '#6b7280', font: { size: 11 } }
+                        },
+                        y: {
+                            reverse: lower,
+                            title: { display: true, text: 'Performance', color: '#6b7280', font: { size: 11 } },
+                            grid: { color: '#1f2937' },
+                            ticks: { color: '#6b7280', font: { size: 11 }, callback: v => this._fmt(v, unit) }
+                        }
+                    }
+                }
+            });
+        },
+    };
+}
+</script>
+{% endblock %}

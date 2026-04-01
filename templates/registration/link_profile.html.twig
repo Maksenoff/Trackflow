@@ -110,7 +110,7 @@
             </span>
         </div>
 
-        {{ form_start(form, {attr: {class: 'space-y-5', enctype: 'multipart/form-data', novalidate: 'novalidate'}}) }}
+        {{ form_start(form, {attr: {class: 'space-y-5', enctype: 'multipart/form-data', novalidate: 'novalidate', 'data-turbo': 'false'}}) }}
 
         {{ form_row(form.ffaProfileUrl) }}
 

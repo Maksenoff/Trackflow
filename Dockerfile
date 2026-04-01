@@ -39,6 +39,10 @@ RUN APP_ENV=prod APP_SECRET=buildsecret DATABASE_URL="postgresql://u:p@localhost
 # Ensure var directory exists with correct permissions
 RUN mkdir -p var/cache var/log && chmod -R 777 var
 
+# Entrypoint : migrate puis démarrer FrankenPHP
+COPY docker-entrypoint.sh /usr/local/bin/docker-entrypoint.sh
+RUN chmod +x /usr/local/bin/docker-entrypoint.sh
+
 EXPOSE 8080
 
-CMD ["frankenphp", "php-server", "--root", "/app/public"]
+ENTRYPOINT ["docker-entrypoint.sh"]

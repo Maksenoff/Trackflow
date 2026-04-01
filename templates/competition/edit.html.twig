@@ -15,7 +15,7 @@
         <h1 class="text-2xl font-bold text-white">Modifier la compétition</h1>
     </div>
     <div class="bg-gray-900 border border-gray-800 rounded-xl p-6">
-        {{ form_start(form, {attr: {class: 'space-y-5', enctype: 'multipart/form-data'}}) }}
+        {{ form_start(form, {attr: {class: 'space-y-5', enctype: 'multipart/form-data', 'data-turbo': 'false'}}) }}
         {{ form_row(form.title) }}
         <div class="grid grid-cols-2 gap-4">
             <div>{{ form_row(form.date) }}</div>

@@ -45,7 +45,7 @@
                         {% if athlete.gender %}
                             <span>{{ athlete.gender == 'M' ? 'Homme' : (athlete.gender == 'F' ? 'Femme' : 'Autre') }}</span>
                         {% endif %}
-                        <span>Suivi depuis {{ athlete.createdAt|date('F Y') }}</span>
+                        <span>Suivi depuis {{ athlete.createdAt|date_fr('F Y') }}</span>
                     </div>
                 </div>
             </div>
@@ -187,8 +187,15 @@
                 <span class="text-xs bg-gray-800 text-gray-400 px-2 py-0.5 rounded-full"
                       x-text="filtered.length + ' résultat' + (filtered.length > 1 ? 's' : '')"></span>
             </div>
-            {% if canEdit %}
             <div class="flex items-center gap-2">
+                <a href="{{ path('app_athlete_stats', {id: athlete.id}) }}"
+                   class="flex items-center gap-1.5 bg-gray-800 hover:bg-gray-700 text-gray-300 hover:text-white px-3 py-2 rounded-lg text-sm transition-colors border border-gray-700 hover:border-gray-600">
+                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"/>
+                    </svg>
+                    Stats avancées
+                </a>
+                {% if canEdit %}
                 {% if athlete.ffaProfileUrl %}
                 <button id="manual-sync-btn" @click="triggerSync()"
                         :disabled="syncing"
@@ -206,8 +213,8 @@
                     </svg>
                     Ajouter
                 </a>
+                {% endif %}
             </div>
-            {% endif %}
         </div>
 
         <template x-if="allPerfs.length === 0">
@@ -507,7 +514,7 @@
                             <div class="flex items-center gap-5">
                                 <div class="text-center shrink-0">
                                     <p class="text-2xl font-bold text-white leading-none">{{ next.date|date('d') }}</p>
-                                    <p class="text-xs text-gray-400 uppercase mt-0.5">{{ next.date|date('M Y') }}</p>
+                                    <p class="text-xs text-gray-400 uppercase mt-0.5">{{ next.date|date_fr('M Y') }}</p>
                                 </div>
                                 <div class="w-px h-8 bg-gray-700"></div>
                                 <div>
@@ -560,7 +567,7 @@
                                         <div class="flex items-center gap-2">
                                             <div class="text-center shrink-0">
                                                 <p class="text-lg font-bold text-white leading-none">{{ session.date|date('d') }}</p>
-                                                <p class="text-[10px] text-gray-500 uppercase">{{ session.date|date('M') }}</p>
+                                                <p class="text-[10px] text-gray-500 uppercase">{{ session.date|date_fr('M') }}</p>
                                             </div>
                                         </div>
                                         <a href="{{ path('app_athlete_session_log', {athleteId: athlete.id, sessionId: session.id}) }}"
@@ -606,7 +613,7 @@
                                     <div class="flex items-start justify-between gap-1">
                                         <div class="text-center shrink-0">
                                             <p class="text-lg font-bold text-white leading-none">{{ s.date|date('d') }}</p>
-                                            <p class="text-[10px] text-gray-500 uppercase">{{ s.date|date('M') }}</p>
+                                            <p class="text-[10px] text-gray-500 uppercase">{{ s.date|date_fr('M') }}</p>
                                         </div>
                                         <div class="flex gap-0.5 shrink-0">
                                             <a href="{{ path('app_athlete_session_edit', {athleteId: athlete.id, id: as.id}) }}"

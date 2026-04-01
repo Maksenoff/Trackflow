@@ -1,4 +1,6 @@
+import './stimulus_bootstrap.js';
 import './styles/app.css';
+import '@hotwired/turbo';
 import Alpine from 'alpinejs';
 import Chart from 'chart.js/auto';
 
@@ -6,8 +8,12 @@ window.Alpine = Alpine;
 window.Chart  = Chart;
 Alpine.start();
 
-document.addEventListener('DOMContentLoaded', () => {
+function initCharts() {
     document.querySelectorAll('.performance-chart').forEach(canvas => {
+        // Détruire le chart existant si on revient sur la page (cache Turbo)
+        const existing = Chart.getChart(canvas);
+        if (existing) existing.destroy();
+
         const labels = JSON.parse(canvas.dataset.labels || '[]');
         const values = JSON.parse(canvas.dataset.values || '[]');
         const unit = canvas.dataset.unit || '';
@@ -57,4 +63,16 @@ document.addEventListener('DOMContentLoaded', () => {
             }
         });
     });
+}
+
+// Détruire les charts avant que Turbo mette la page en cache
+// pour éviter les erreurs "canvas already in use" lors de la restauration
+document.addEventListener('turbo:before-cache', () => {
+    document.querySelectorAll('.performance-chart').forEach(canvas => {
+        const chart = Chart.getChart(canvas);
+        if (chart) chart.destroy();
+    });
 });
+
+// Initialiser les charts à chaque navigation Turbo (remplace DOMContentLoaded)
+document.addEventListener('turbo:load', initCharts);

@@ -181,16 +181,14 @@
                                 <p class="text-xs text-gray-500">{{ perf.recordedAt|date('d/m/Y') }}</p>
                             </div>
                             <div class="text-right shrink-0 ml-3">
-                                <p class="text-sm text-indigo-300 font-mono font-medium">{{ perf.formattedValue }}</p>
-                                <div class="flex items-center justify-end gap-1 mt-0.5">
+                                <p class="text-sm text-indigo-300 font-mono font-semibold">{{ perf.formattedValue }}</p>
+                                <div class="flex items-center justify-end gap-2 mt-0.5">
                                     {% if perf.isPersonalBest %}
-                                        <span class="text-xs text-yellow-400">PB</span>
+                                        <span class="text-[9px] text-yellow-400 leading-none">PB</span>
                                     {% endif %}
                                     {% if perfTrends[perf.id] is defined %}
                                         {% set trend = perfTrends[perf.id] %}
-                                        <span class="text-xs font-mono font-semibold {{ trend.improved ? 'text-emerald-400' : 'text-red-400' }}">
-                                            {{ trend.diff }}
-                                        </span>
+                                        <span class="text-xs font-mono font-semibold leading-none {% if trend.improved is null %}text-gray-500{% elseif trend.improved %}text-emerald-400{% else %}text-red-400{% endif %}">{{ trend.diff }}</span>
                                     {% endif %}
                                 </div>
                             </div>

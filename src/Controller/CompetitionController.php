@@ -59,11 +59,25 @@ class CompetitionController extends AbstractController
             'Autre'         => ['autre'],
         ];
 
+        $isCoach = $this->isGranted('ROLE_COACH');
+        $csrf    = $this->container->get('security.csrf.token_manager');
+
+        $registrationsData = array_map(fn($reg) => [
+            'id'          => $reg->getId(),
+            'athleteName' => $reg->getAthlete()->getFullName(),
+            'athletePhoto'=> $reg->getAthlete()->getPhoto(),
+            'disciplines' => $reg->getDisciplines(),
+            'isOwn'       => $myRegistration && $myRegistration->getId() === $reg->getId(),
+            'canRemove'   => ($myRegistration && $myRegistration->getId() === $reg->getId()) || $isCoach,
+            'unregToken'  => $csrf->getToken('unregister-any-' . $reg->getId())->getValue(),
+        ], $registrations);
+
         return $this->render('competition/show.html.twig', [
             'competition'        => $competition,
-            'canEdit'            => $this->isGranted('ROLE_COACH'),
-            'canRegister'        => !$competition->isPast() && ($linkedAthlete !== null || $this->isGranted('ROLE_COACH')),
+            'canEdit'            => $isCoach,
+            'canRegister'        => !$competition->isPast() && $linkedAthlete !== null,
             'registrations'      => $registrations,
+            'registrationsData'  => $registrationsData,
             'myRegistration'     => $myRegistration,
             'athleteDisciplines' => $athleteDisciplines,
             'disciplineLabels'   => $disciplineLabels,

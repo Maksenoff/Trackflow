@@ -7,7 +7,48 @@
 {% endblock %}
 
 {% block body %}
-<div class="space-y-8">
+
+{# Sérialise les deux datasets pour Alpine #}
+{% set allPerfsJson = [] %}
+{% for perf in recentPerformances %}
+    {% set trend = perfTrends[perf.id] is defined ? perfTrends[perf.id] : null %}
+    {% set allPerfsJson = allPerfsJson|merge([{
+        athleteId:    perf.athlete.id,
+        athleteName:  perf.athlete.fullName,
+        discipline:   perf.discipline,
+        date:         perf.recordedAt|date('d/m/Y'),
+        value:        perf.formattedValue,
+        isPB:         perf.isPersonalBest,
+        trend:        trend,
+    }]) %}
+{% endfor %}
+
+{% set myPerfsJson = [] %}
+{% for perf in myPerformances %}
+    {% set trend = myPerfTrends[perf.id] is defined ? myPerfTrends[perf.id] : null %}
+    {% set isSB = myPerfSBIds[perf.id] is defined %}
+    {% set myPerfsJson = myPerfsJson|merge([{
+        athleteId:    perf.athlete.id,
+        athleteName:  perf.athlete.fullName,
+        discipline:   perf.discipline,
+        date:         perf.recordedAt|date('d/m/Y'),
+        value:        perf.formattedValue,
+        isPB:         perf.isPersonalBest,
+        isSB:         isSB,
+        isComp:       perf.isCompetition,
+        trend:        trend,
+    }]) %}
+{% endfor %}
+
+<div class="space-y-8"
+     x-data="{
+         perfMode: 'all',
+         allPerfs: {{ allPerfsJson|json_encode }},
+         myPerfs:  {{ myPerfsJson|json_encode }},
+         hasLinked: {{ linkedAthlete ? 'true' : 'false' }},
+         get perfs() { return this.perfMode === 'mine' ? this.myPerfs : this.allPerfs; },
+         athleteUrl(id) { return '{{ path('app_athlete_show', {id: 0}) }}'.replace('/0', '/' + id); },
+     }">
 
     {# Header #}
     <div class="flex items-center justify-between">
@@ -15,15 +56,34 @@
             <h1 class="text-2xl font-bold text-white">Bonjour, {{ app.user.firstName }}</h1>
             <p class="text-gray-400 mt-1">{{ totalAthletes }} athlète{{ totalAthletes > 1 ? 's' : '' }} suivi{{ totalAthletes > 1 ? 's' : '' }}</p>
         </div>
-        {% if is_granted('ROLE_COACH') %}
-        <a href="{{ path('app_athlete_new') }}"
-           class="flex items-center gap-2 bg-indigo-600 hover:bg-indigo-500 text-white px-4 py-2 rounded-lg text-sm font-medium transition-colors">
-            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/>
-            </svg>
-            Nouvel athlète
-        </a>
-        {% endif %}
+        <div class="flex items-center gap-2">
+            {% if linkedAthlete %}
+            {# Toggle vue coach ↔ mes perfs #}
+            <div class="flex items-center gap-1 bg-gray-900 border border-gray-800 rounded-lg p-1">
+                <button @click="perfMode = 'all'"
+                        :class="perfMode === 'all' ? 'bg-gray-700 text-white' : 'text-gray-400 hover:text-white'"
+                        class="flex items-center gap-1.5 px-3 py-1.5 rounded-md text-xs font-medium transition-colors">
+                    <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0z"/></svg>
+                    Vue coach
+                </button>
+                <button @click="perfMode = 'mine'"
+                        :class="perfMode === 'mine' ? 'bg-indigo-600 text-white' : 'text-gray-400 hover:text-white'"
+                        class="flex items-center gap-1.5 px-3 py-1.5 rounded-md text-xs font-medium transition-colors">
+                    <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"/></svg>
+                    Mes perfs
+                </button>
+            </div>
+            {% endif %}
+            {% if is_granted('ROLE_COACH') %}
+            <a href="{{ path('app_athlete_new') }}"
+               class="flex items-center gap-2 bg-indigo-600 hover:bg-indigo-500 text-white px-4 py-2 rounded-lg text-sm font-medium transition-colors">
+                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/>
+                </svg>
+                Nouvel athlète
+            </a>
+            {% endif %}
+        </div>
     </div>
 
     <div class="grid grid-cols-3 gap-6">
@@ -183,44 +243,63 @@
         <div class="space-y-4">
             <div class="bg-gray-900 border border-gray-800 rounded-xl overflow-hidden">
                 <div class="px-5 py-3 border-b border-gray-800 flex items-center justify-between">
-                    <h2 class="text-sm font-semibold text-white">Performances récentes</h2>
+                    <div class="flex items-center gap-2">
+                        <h2 class="text-sm font-semibold text-white">Performances récentes</h2>
+                        <span x-show="perfMode === 'mine'"
+                              class="text-xs font-medium px-1.5 py-0.5 rounded bg-indigo-600/20 text-indigo-400 border border-indigo-500/30">
+                            Moi
+                        </span>
+                    </div>
                     <a href="{{ path('app_athlete_index') }}" class="text-xs text-indigo-400 hover:text-indigo-300">Athlètes →</a>
                 </div>
-                {% if recentPerformances is empty %}
-                    <div class="px-5 py-8 text-center text-gray-500 text-sm">
-                        Aucune performance enregistrée.
-                    </div>
-                {% else %}
-                    <div class="divide-y divide-gray-800">
-                        {% for perf in recentPerformances %}
-                        <a href="{{ path('app_athlete_show', {id: perf.athlete.id}) }}"
-                           class="flex items-center justify-between px-5 py-3 hover:bg-gray-800/50 transition-colors">
-                            <div class="min-w-0">
-                                <p class="text-sm text-white font-medium truncate">{{ perf.athlete.fullName }}</p>
-                                <p class="text-xs text-gray-500">{{ perf.discipline }} · {{ perf.recordedAt|date('d/m/Y') }}</p>
+
+                {# Liste pilotée par Alpine #}
+                <template x-if="perfs.length === 0">
+                    <div class="px-5 py-8 text-center text-gray-500 text-sm"
+                         x-text="perfMode === 'mine' ? 'Aucune performance enregistrée pour toi.' : 'Aucune performance enregistrée.'"></div>
+                </template>
+
+                <div class="divide-y divide-gray-800">
+                    <template x-for="perf in perfs" :key="perf.athleteId + '-' + perf.discipline + '-' + perf.date">
+                        <a :href="athleteUrl(perf.athleteId)"
+                           class="flex items-center justify-between px-5 py-3 hover:bg-gray-800/50 transition-colors group">
+
+                            {# Gauche : nom + discipline + date #}
+                            <div class="min-w-0 flex-1">
+                                <div class="flex items-center gap-1.5 mb-0.5">
+                                    <p class="text-sm text-white font-medium truncate" x-text="perf.athleteName"></p>
+                                    {# Badge compétition — vue coach seulement #}
+                                    <template x-if="perfMode === 'all' && perf.isComp">
+                                        <span class="shrink-0 text-[10px] font-semibold px-1 py-0.5 rounded bg-amber-900/30 text-amber-400 border border-amber-800/40">COMPÉT</span>
+                                    </template>
+                                </div>
+                                <p class="text-xs text-gray-500" x-text="perf.discipline + ' · ' + perf.date"></p>
                             </div>
-                            <div class="text-right shrink-0 ml-3">
-                                <p class="text-sm text-indigo-300 font-mono font-medium">{{ perf.formattedValue }}</p>
-                                <div class="flex items-center justify-end gap-1 mt-0.5">
-                                    {% if perf.isPersonalBest %}
-                                        <span class="text-xs text-yellow-400">PB</span>
-                                    {% endif %}
-                                    {% if perfTrends[perf.id] is defined %}
-                                        {% set trend = perfTrends[perf.id] %}
-                                        <span class="text-xs font-mono font-semibold {{ trend.improved ? 'text-emerald-400' : 'text-red-400' }}">
-                                            {{ trend.diff }}
-                                        </span>
-                                    {% endif %}
+
+                            {# Droite : valeur ligne 1, badge + diff ligne 2 #}
+                            <div class="text-right shrink-0 ml-4">
+                                <span class="text-sm text-indigo-300 font-mono font-semibold" x-text="perf.value"></span>
+                                <div class="flex items-center justify-end gap-2 mt-0.5">
+                                    <template x-if="perf.isPB">
+                                        <span class="text-[9px] text-yellow-400 leading-none">PB</span>
+                                    </template>
+                                    <template x-if="!perf.isPB && perf.isSB && perfMode === 'mine'">
+                                        <span class="text-[9px] text-green-400 leading-none">SB</span>
+                                    </template>
+                                    <template x-if="perf.trend">
+                                        <span class="text-xs font-mono font-semibold leading-none"
+                                              :class="perf.trend.improved === null ? 'text-gray-500' : (perf.trend.improved ? 'text-emerald-400' : 'text-red-400')"
+                                              x-text="perf.trend.diff"></span>
+                                    </template>
                                 </div>
                             </div>
                         </a>
-                        {% endfor %}
-                    </div>
-                {% endif %}
+                    </template>
+                </div>
             </div>
         </div>
 
     </div>
 
-</div>
+</div>{# /x-data #}
 {% endblock %}

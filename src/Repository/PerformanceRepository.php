@@ -5,6 +5,7 @@ namespace App\Repository;
 use App\Entity\Athlete;
 use App\Entity\Performance;
 use Doctrine\Bundle\DoctrineBundle\Repository\ServiceEntityRepository;
+use Doctrine\DBAL\Types\Types;
 use Doctrine\Persistence\ManagerRegistry;
 
 class PerformanceRepository extends ServiceEntityRepository
@@ -73,6 +74,24 @@ class PerformanceRepository extends ServiceEntityRepository
             ->getResult();
     }
 
+    public function findLastBefore(Athlete $athlete, string $discipline, \DateTimeInterface $before, int $excludeId = 0): ?Performance
+    {
+        return $this->createQueryBuilder('p')
+            ->andWhere('p.athlete = :athlete')
+            ->andWhere('p.discipline = :discipline')
+            ->andWhere('p.recordedAt <= :before')
+            ->andWhere('p.id != :excludeId')
+            ->setParameter('athlete', $athlete)
+            ->setParameter('discipline', $discipline)
+            ->setParameter('before', $before, Types::DATE_MUTABLE)
+            ->setParameter('excludeId', $excludeId)
+            ->orderBy('p.recordedAt', 'DESC')
+            ->addOrderBy('p.id', 'DESC')
+            ->setMaxResults(1)
+            ->getQuery()
+            ->getOneOrNullResult();
+    }
+
     public function findLastCompetitionBefore(Athlete $athlete, string $discipline, \DateTimeInterface $before): ?Performance
     {
         return $this->createQueryBuilder('p')
@@ -87,6 +106,47 @@ class PerformanceRepository extends ServiceEntityRepository
             ->setMaxResults(1)
             ->getQuery()
             ->getOneOrNullResult();
+    }
+
+    /**
+     * Retourne le meilleur résultat de la saison athlétique en cours (sept–août)
+     * pour chaque discipline de l'athlète, sous la forme [discipline => Performance].
+     */
+    public function findSeasonBestsByAthlete(Athlete $athlete): array
+    {
+        $now   = new \DateTime();
+        $month = (int) $now->format('n');
+        $year  = (int) $now->format('Y');
+        $seasonStart = new \DateTime(($month >= 9 ? $year : $year - 1) . '-09-01');
+
+        $perfs = $this->createQueryBuilder('p')
+            ->andWhere('p.athlete = :athlete')
+            ->andWhere('p.recordedAt >= :seasonStart')
+            ->setParameter('athlete', $athlete)
+            ->setParameter('seasonStart', $seasonStart)
+            ->orderBy('p.recordedAt', 'DESC')
+            ->getQuery()
+            ->getResult();
+
+        // Unité détermine si lower = better
+        $lowerIsBetter = fn(string $unit): bool => in_array($unit, ['s', 'min:s']);
+
+        $bests = [];
+        foreach ($perfs as $perf) {
+            $disc = $perf->getDiscipline();
+            if (!isset($bests[$disc])) {
+                $bests[$disc] = $perf;
+                continue;
+            }
+            $curr = (float) $perf->getValue();
+            $best = (float) $bests[$disc]->getValue();
+            $improved = $lowerIsBetter($perf->getUnit()) ? $curr < $best : $curr > $best;
+            if ($improved) {
+                $bests[$disc] = $perf;
+            }
+        }
+
+        return $bests; // [discipline => Performance]
     }
 
     public function findByAthleteGroupedByDiscipline(Athlete $athlete): array
