@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace DoctrineMigrations;
 
+use Doctrine\DBAL\Platforms\PostgreSQLPlatform;
 use Doctrine\DBAL\Schema\Schema;
 use Doctrine\Migrations\AbstractMigration;
 
@@ -20,11 +21,9 @@ final class Version20260401000001 extends AbstractMigration
 
     public function up(Schema $schema): void
     {
-              $platform = $this->connection->getDatabasePlatform()->getName();
-
-            if ($platform !== 'postgresql') {
-                          return;
-            }
+              if (!($this->connection->getDatabasePlatform() instanceof PostgreSQLPlatform)) {
+                            return;
+              }
 
             $this->addSql('CREATE TABLE IF NOT EXISTS training_type (id SERIAL PRIMARY KEY, name VARCHAR(80) NOT NULL, color VARCHAR(7) NOT NULL DEFAULT \'#6366f1\')');
               $this->addSql('CREATE TABLE IF NOT EXISTS competition_type (id SERIAL PRIMARY KEY, name VARCHAR(80) NOT NULL, color VARCHAR(7) NOT NULL DEFAULT \'#f59e0b\')');
@@ -55,8 +54,7 @@ final class Version20260401000001 extends AbstractMigration
 
     public function down(Schema $schema): void
     {
-              $platform = $this->connection->getDatabasePlatform()->getName();
-              if ($platform !== 'postgresql') {
+              if (!($this->connection->getDatabasePlatform() instanceof PostgreSQLPlatform)) {
                             return;
               }
 
