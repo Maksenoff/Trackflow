@@ -220,9 +220,6 @@
                         <div style="flex:1;min-width:0;">
                             <div style="display:flex;align-items:center;gap:6px;margin-bottom:2px;">
                                 <span class="list-item-title truncate" x-text="perf.athleteName"></span>
-                                <template x-if="perfMode === 'all' && perf.isComp">
-                                    <span style="font-size:9px;font-weight:700;padding:1px 5px;border-radius:3px;background:var(--warning-bg);color:var(--warning);flex-shrink:0;">COMPÉT</span>
-                                </template>
                             </div>
                             <div class="list-item-sub" x-text="perf.discipline + ' · ' + perf.date"></div>
                         </div>
@@ -230,10 +227,10 @@
                             <div style="font-size:13.5px;font-weight:700;color:var(--accent-hover);font-family:monospace;" x-text="perf.value"></div>
                             <div style="display:flex;align-items:center;justify-content:flex-end;gap:4px;margin-top:2px;">
                                 <template x-if="perf.isPB">
-                                    <span style="font-size:9px;font-weight:700;color:var(--warning);">PB</span>
+                                    <span style="font-size:9px;font-weight:700;color:#FFD700;">PB</span>
                                 </template>
                                 <template x-if="!perf.isPB && perf.isSB && perfMode === 'mine'">
-                                    <span style="font-size:9px;font-weight:700;color:var(--success);">SB</span>
+                                    <span style="font-size:9px;font-weight:700;color:#C0C0C0;">SB</span>
                                 </template>
                                 <template x-if="perf.trend">
                                     <span style="font-size:11px;font-weight:600;font-family:monospace;"

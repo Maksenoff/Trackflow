@@ -144,10 +144,10 @@
                             <div class="list-item-sub">{{ perf.discipline }}</div>
                         </div>
                         <div style="text-align:right;flex-shrink:0;">
-                            <div style="font-size:14px;font-weight:700;{% if perf.isPersonalBest %}color:var(--warning);{% else %}color:var(--text-1);{% endif %}">
+                            <div class="{% if perf.isPersonalBest %}pb-val{% endif %}" style="font-size:14px;font-weight:700;{% if not perf.isPersonalBest %}color:var(--text-1);{% endif %}">
                                 {{ perf.formattedValue }}
                                 {% if perf.isPersonalBest %}
-                                    <span style="font-size:10px;background:var(--warning-bg);color:var(--warning);padding:1px 5px;border-radius:4px;margin-left:3px;">PB</span>
+                                    <span style="font-size:10px;background:rgba(255,215,0,.12);color:#FFD700;padding:1px 5px;border-radius:4px;margin-left:3px;">PB</span>
                                 {% endif %}
                             </div>
                             <div style="font-size:11px;color:var(--text-3);">{{ perf.recordedAt|date('d/m/Y') }}</div>

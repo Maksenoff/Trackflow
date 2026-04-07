@@ -13,36 +13,56 @@ class Performance
     public const OFF_TRACK_DISCIPLINES = ['semi-marathon', 'marathon', 'cross'];
 
     public const DISCIPLINES = [
-        '60m' => '60m',
-        '100m' => '100m',
-        '200m' => '200m',
-        '400m' => '400m',
-        '800m' => '800m',
-        '1500m' => '1500m',
-        '3000m' => '3000m',
-        '5000m' => '5000m',
-        '10000m' => '10000m',
-        'Semi-marathon' => 'semi-marathon',
-        'Marathon' => 'marathon',
-        '60m haies' => '60m-haies',
-        '110m haies' => '110m-haies',
-        '400m haies' => '400m-haies',
+        // Sprints / demi-fond / fond — distances adultes
+        '60m'            => '60m',
+        '100m'           => '100m',
+        '200m'           => '200m',
+        '400m'           => '400m',
+        '800m'           => '800m',
+        '1500m'          => '1500m',
+        '3000m'          => '3000m',
+        '5000m'          => '5000m',
+        '10000m'         => '10000m',
+        'Semi-marathon'  => 'semi-marathon',
+        'Marathon'       => 'marathon',
+        // Distances jeunes (ne pas fusionner avec les adultes)
+        '50m'            => '50m',
+        '80m'            => '80m',
+        '150m'           => '150m',
+        '300m'           => '300m',
+        '600m'           => '600m',
+        '1000m'          => '1000m',
+        '2000m'          => '2000m',
+        // Haies adultes
+        '60m haies'      => '60m-haies',
+        '100m haies (F)' => '100m-haies',
+        '110m haies (H)' => '110m-haies',
+        '400m haies'     => '400m-haies',
+        // Haies jeunes
+        '50m haies'      => '50m-haies',
+        '80m haies'      => '80m-haies',
+        // Sauts
         'Saut en longueur' => 'longueur',
-        'Saut en hauteur' => 'hauteur',
-        'Triple saut' => 'triple',
+        'Saut en hauteur'  => 'hauteur',
+        'Triple saut'      => 'triple',
         'Saut à la perche' => 'perche',
-        'Lancer du poids' => 'poids',
-        'Lancer du disque' => 'disque',
+        // Lancers
+        'Lancer du poids'   => 'poids',
+        'Lancer du disque'  => 'disque',
         'Lancer du javelot' => 'javelot',
         'Lancer du marteau' => 'marteau',
-        'Décathlon' => 'decathlon',
-        'Heptathlon' => 'heptathlon',
+        // Épreuves combinées
+        'Décathlon'   => 'decathlon',
+        'Heptathlon'  => 'heptathlon',
+        'Pentathlon'  => 'pentathlon',
+        'Triathlon'   => 'triathlon',
+        // Autres
         'Cross country' => 'cross',
-        'Marche' => 'marche',
+        'Marche'        => 'marche',
         'Relais 4x100m' => '4x100m',
         'Relais 4x200m' => '4x200m',
         'Relais 4x400m' => '4x400m',
-        'Autre' => 'autre',
+        'Autre'         => 'autre',
     ];
 
     #[ORM\Id]

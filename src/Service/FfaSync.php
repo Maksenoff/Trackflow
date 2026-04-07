@@ -16,65 +16,71 @@ class FfaSync
 
     /** [regex, discipline, unit] — checked against both raw and space-compacted discipline string */
     private const DISCIPLINE_PATTERNS = [
-        // Hurdles (before plain sprints to avoid wrong match)
-        ['/^50\s*m\s*(haies?|h\.?)\b/i',              '60m-haies',    's'],
+        // ── Haies (avant les courses plates pour éviter les faux matchs) ──────
+        // Haies jeunes
+        ['/^50\s*m\s*(haies?|h\.?)\b/i',              '50m-haies',    's'],
+        ['/^80\s*m\s*(haies?|h\.?)\b/i',              '80m-haies',    's'],
+        // Haies adultes
         ['/^60\s*m\s*(haies?|h\.?)\b/i',              '60m-haies',    's'],
-        ['/^110\s*m\s*(haies?|h\.?)\b/i',              '110m-haies',   's'],
-        ['/^100\s*m\s*(haies?|h\.?)\b/i',              '110m-haies',   's'],
-        ['/^400\s*m\s*(haies?|h\.?)\b/i',              '400m-haies',   's'],
-        // Sprints / middle / long distance
-        ['/^50\s*m\b/i',                               '60m',          's'],
-        ['/^60\s*m\b/i',                               '60m',          's'],
-        ['/^80\s*m\b/i',                               '100m',         's'],
-        ['/^100\s*m\b/i',                              '100m',         's'],
-        ['/^150\s*m\b/i',                              '200m',         's'],
-        ['/^200\s*m\b/i',                              '200m',         's'],
-        ['/^300\s*m\b/i',                              '400m',         's'],
-        ['/^400\s*m\b/i',                              '400m',         's'],
-        ['/^600\s*m\b/i',                              '800m',         's'],
-        ['/^800\s*m\b/i',                              '800m',         's'],
-        ['/^1\s*000\s*m\b/i',                          '1500m',        's'],
-        ['/^1\s*500\s*m\b/i',                          '1500m',        's'],
-        ['/\bmile\b/i',                                '1500m',        's'],
-        ['/^2\s*000\s*m\b/i',                          '3000m',        's'],
-        ['/^3\s*000\s*m\b/i',                          '3000m',        's'],
-        ['/^5\s*000\s*m\b/i',                          '5000m',        's'],
-        ['/^10\s*000\s*m\b/i',                         '10000m',       's'],
-        ['/^10\s*km\b/i',                              '10000m',       's'],
-        ['/semi.?marathon/i',                           'semi-marathon','s'],
-        ['/^marathon\b/i',                              'marathon',     's'],
-        // Race walking (before "marteau" to ensure priority; won't match "marteau" — see mapDiscipline)
-        ['/march[e]?\b/iu',                             'marche',       's'],
-        // Cross-country (all variants incl. "tcm/tcf/tcx" suffix markers)
-        ['/^cross\b/i',                                'cross',        's'],
-        ['/course\s+des\s+as/i',                       'cross',        's'],
-        ['/cross\s+des\s+as/i',                        'cross',        's'],
-        ['/\btc[mfx]\b/i',                             'cross',        's'],
-        // Field events
-        ['/longueur/i',                                'longueur',     'm'],
-        ['/hauteur/i',                                 'hauteur',      'm'],
-        ['/triple/i',                                  'triple',       'm'],
-        ['/perche/i',                                  'perche',       'm'],
-        ['/poids/i',                                   'poids',        'm'],
+        ['/^100\s*m\s*(haies?|h\.?)\b/i',             '100m-haies',   's'],  // femmes
+        ['/^110\s*m\s*(haies?|h\.?)\b/i',             '110m-haies',   's'],  // hommes
+        ['/^400\s*m\s*(haies?|h\.?)\b/i',             '400m-haies',   's'],
+        // ── Courses plates — distances adultes ────────────────────────────────
+        ['/^60\s*m\b/i',                              '60m',          's'],
+        ['/^100\s*m\b/i',                             '100m',         's'],
+        ['/^200\s*m\b/i',                             '200m',         's'],
+        ['/^400\s*m\b/i',                             '400m',         's'],
+        ['/^800\s*m\b/i',                             '800m',         's'],
+        ['/^1\s*500\s*m\b/i',                         '1500m',        's'],
+        ['/\bmile\b/i',                               '1500m',        's'],
+        ['/^3\s*000\s*m\s*(st[eé]pple|steeplechase)\b/i', '3000m',   's'],  // steeple → 3000m
+        ['/^3\s*000\s*m\b/i',                         '3000m',        's'],
+        ['/^5\s*000\s*m\b/i',                         '5000m',        's'],
+        ['/^10\s*000\s*m\b/i',                        '10000m',       's'],
+        ['/^10\s*km\b/i',                             '10000m',       's'],
+        ['/semi.?marathon/i',                          'semi-marathon','s'],
+        ['/^marathon\b/i',                             'marathon',     's'],
+        // ── Courses plates — distances jeunes (NE PAS fusionner avec adultes) ─
+        ['/^50\s*m\b/i',                              '50m',          's'],
+        ['/^80\s*m\b/i',                              '80m',          's'],
+        ['/^150\s*m\b/i',                             '150m',         's'],
+        ['/^300\s*m\b/i',                             '300m',         's'],
+        ['/^600\s*m\b/i',                             '600m',         's'],
+        ['/^1\s*000\s*m\b/i',                         '1000m',        's'],
+        ['/^2\s*000\s*m\b/i',                         '2000m',        's'],
+        // ── Marche (avant "marteau") ───────────────────────────────────────────
+        ['/march[e]?\b/iu',                            'marche',       's'],
+        // ── Cross ─────────────────────────────────────────────────────────────
+        ['/^cross\b/i',                               'cross',        's'],
+        ['/course\s+des\s+as/i',                      'cross',        's'],
+        ['/cross\s+des\s+as/i',                       'cross',        's'],
+        ['/\btc[mfx]\b/i',                            'cross',        's'],
+        // ── Sauts ─────────────────────────────────────────────────────────────
+        ['/longueur/i',                               'longueur',     'm'],
+        ['/hauteur/i',                                'hauteur',      'm'],
+        ['/triple/i',                                 'triple',       'm'],
+        ['/perche/i',                                 'perche',       'm'],
+        // ── Lancers ───────────────────────────────────────────────────────────
+        ['/poids/i',                                  'poids',        'm'],
         ['/disque/i',                                  'disque',       'm'],
-        ['/javelot/i',                                 'javelot',      'm'],
-        ['/marteau/i',                                 'marteau',      'm'],
-        // Combined
-        ['/d[ée]cathlon/i',                            'decathlon',    'pts'],
-        ['/heptathlon/i',                              'heptathlon',   'pts'],
-        ['/pentathlon/i',                              'heptathlon',   'pts'],
-        ['/triathlon/i',                               'heptathlon',   'pts'],
-        // Relays
-        ['/^4\s*[xX×]\s*60/i',                         '4x100m',       's'],
-        ['/^4\s*[xX×]\s*1\s*00/i',                    '4x100m',       's'],
-        ['/^4\s*[xX×]\s*2\s*00/i',                    '4x200m',       's'],
-        ['/^4\s*[xX×]\s*4\s*00/i',                    '4x400m',       's'],
-        ['/^relais\b/i',                               'autre',        's'],
-        ['/^ekiden\b/i',                               'autre',        's'],
-        // Trail / road races at non-standard distances → autre
-        ['/^trail\b/i',                                'autre',        's'],
-        ['/\d+\s*km\b/i',                              'autre',        's'],
-        ['/\d+\s*miles?\b/i',                          'autre',        's'],
+        ['/javelot/i',                                'javelot',      'm'],
+        ['/marteau/i',                                'marteau',      'm'],
+        // ── Épreuves combinées (chacune dans son propre bucket) ───────────────
+        ['/d[ée]cathlon/i',                           'decathlon',    'pts'],
+        ['/heptathlon/i',                             'heptathlon',   'pts'],
+        ['/pentathlon/i',                             'pentathlon',   'pts'],
+        ['/triathlon/i',                              'triathlon',    'pts'],
+        // ── Relais ────────────────────────────────────────────────────────────
+        ['/^4\s*[xX×]\s*60/i',                        '4x100m',       's'],
+        ['/^4\s*[xX×]\s*1\s*00/i',                   '4x100m',       's'],
+        ['/^4\s*[xX×]\s*2\s*00/i',                   '4x200m',       's'],
+        ['/^4\s*[xX×]\s*4\s*00/i',                   '4x400m',       's'],
+        ['/^relais\b/i',                              'autre',        's'],
+        ['/^ekiden\b/i',                              'autre',        's'],
+        // ── Trail / route hors distances standards ────────────────────────────
+        ['/^trail\b/i',                               'autre',        's'],
+        ['/\d+\s*km\b/i',                             'autre',        's'],
+        ['/\d+\s*miles?\b/i',                         'autre',        's'],
     ];
 
     public function __construct(
@@ -102,7 +108,7 @@ class FfaSync
             ];
         }
 
-        [$html, $cookie] = $this->fetchWithCookie(sprintf(self::ATHLETE_PAGE_URL, $athleteId));
+        [$html] = $this->fetchWithCookie(sprintf(self::ATHLETE_PAGE_URL, $athleteId));
         if ($html === null) {
             return [
                 'firstName' => null, 'lastName' => null, 'birthDate' => null,
@@ -143,6 +149,27 @@ class FfaSync
             $years = range($currentYear, max(2010, $currentYear - 5));
         }
 
+        // Refresh athlete profile fields (gender, licenseNumber) — never touch name/birthDate/disciplines
+        // Les disciplines sont gérées manuellement par l'utilisateur et ne doivent pas être écrasées par la FFA
+        $profile = $this->parseProfile($html);
+        $profileChanged = false;
+        if (!empty($profile['gender']) && $athlete->getGender() !== $profile['gender']) {
+            $athlete->setGender($profile['gender']);
+            $profileChanged = true;
+        }
+        if (!empty($profile['licenseNumber']) && $athlete->getLicenseNumber() !== $profile['licenseNumber']) {
+            $athlete->setLicenseNumber($profile['licenseNumber']);
+            $profileChanged = true;
+        }
+        // Disciplines FFA uniquement si l'athlète n'en a pas encore défini manuellement
+        if (empty($athlete->getDisciplines()) && !empty($profile['discipline'])) {
+            $athlete->setDisciplines($profile['discipline']);
+            $profileChanged = true;
+        }
+        if ($profileChanged) {
+            $this->em->flush();
+        }
+
         $imported = 0;
         $skipped  = 0;
         $updated  = 0;
@@ -161,19 +188,29 @@ class FfaSync
                 ]);
 
                 if ($existing) {
-                    // Always refresh level + levelPoints + wind on existing rows
+                    // Always refresh all fields that may have been missing on first import
+                    $changed = false;
                     if ($level !== null && $existing->getLevel() !== $level) {
                         $existing->setLevel($level);
-                        $updated++;
+                        $changed = true;
                     }
                     if ($levelPts !== null && $existing->getLevelPoints() !== $levelPts) {
                         $existing->setLevelPoints($levelPts);
-                        $updated++;
+                        $changed = true;
                     }
                     if ($wind !== null && $existing->getWind() !== $wind) {
                         $existing->setWind($wind);
-                        $updated++;
+                        $changed = true;
                     }
+                    if ($venue !== null && $existing->getVenue() !== $venue) {
+                        $existing->setVenue($venue);
+                        $changed = true;
+                    }
+                    if ($existing->getIsIndoor() !== $isIndoor) {
+                        $existing->setIsIndoor($isIndoor);
+                        $changed = true;
+                    }
+                    if ($changed) $updated++;
                     $skipped++;
                     continue;
                 }

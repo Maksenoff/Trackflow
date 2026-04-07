@@ -18,7 +18,7 @@
         <div style="display:flex;flex-direction:column;gap:16px;">
         <div style="display:flex;flex-wrap:wrap;align-items:flex-start;justify-content:space-between;gap:16px;">
             <div style="display:flex;align-items:center;gap:18px;">
-                <div class="avatar avatar-lg avatar-sq">
+                <div class="avatar avatar-lg">
                     {% if athlete.photo %}
                         <img src="/uploads/athletes/{{ athlete.photo }}" alt="{{ athlete.fullName }}">
                     {% else %}
@@ -343,18 +343,18 @@
                                     {# PB #}
                                     <div style="width:80px">
                                         <template x-if="disc.pb">
-                                            <div style="border-left:2px solid rgba(251,191,36,.7);padding-left:10px;">
+                                            <div style="border-left:2px solid rgba(255,215,0,.7);padding-left:10px;">
                                                 <div style="font-size:9px;font-weight:600;color:var(--text-2);text-transform:uppercase;letter-spacing:.12em;">PB</div>
-                                                <div style="font-size:13px;font-family:monospace;font-weight:700;color:#fbbf24;line-height:1.2;" x-text="disc.pb"></div>
+                                                <div class="pb-val" style="font-size:13px;font-family:monospace;font-weight:700;line-height:1.2;" x-text="disc.pb"></div>
                                             </div>
                                         </template>
                                     </div>
                                     {# SB #}
                                     <div style="width:80px">
                                         <template x-if="disc.sb">
-                                            <div style="border-left:2px solid rgba(52,211,153,.7);padding-left:10px;">
+                                            <div style="border-left:2px solid rgba(192,192,192,.7);padding-left:10px;">
                                                 <div style="font-size:9px;font-weight:600;color:var(--text-2);text-transform:uppercase;letter-spacing:.12em;">SB</div>
-                                                <div style="font-size:13px;font-family:monospace;font-weight:700;color:#34d399;line-height:1.2;" x-text="disc.sb"></div>
+                                                <div class="sb-val" style="font-size:13px;font-family:monospace;font-weight:700;line-height:1.2;" x-text="disc.sb"></div>
                                             </div>
                                         </template>
                                     </div>
@@ -400,9 +400,9 @@
                                                 <td style="padding:8px 16px;">
                                                     <div style="display:flex;align-items:center;gap:6px;">
                                                         <span style="width:12px;flex-shrink:0;text-align:center;font-size:12px;line-height:1;"
-                                                              :style="p.isPersonalBest ? 'color:#fbbf24' : 'opacity:0'"
+                                                              :style="p.isPersonalBest ? 'color:#FFD700' : 'opacity:0'"
                                                               title="Record personnel">★</span>
-                                                        <span :style="p.isPersonalBest ? 'color:#fde68a;font-weight:700;' : 'color:var(--text-1);font-weight:500;'"
+                                                        <span :class="p.isPersonalBest ? 'pb-val' : ''" :style="p.isPersonalBest ? 'font-weight:700;' : 'color:var(--text-1);font-weight:500;'"
                                                               x-text="p.formattedValue"></span>
                                                         <template x-if="p.isIndoor === true">
                                                             <span style="font-size:10px;font-weight:500;color:#a5b4fc;background:rgba(99,102,241,.1);padding:1px 5px;border-radius:4px;" title="Indoor">IN</span>
@@ -2310,7 +2310,7 @@ function perfTab(data, specialties) {
                                         const m = Math.floor(v / 60), s = (v - m * 60).toFixed(2);
                                         return m + ':' + s.padStart(5, '0');
                                     }
-                                    return v + (unit ? ' ' + unit : '');
+                                    return parseFloat(v).toFixed(2) + (unit ? ' ' + unit : '');
                                 },
                             },
                         },
@@ -2329,7 +2329,7 @@ function perfTab(data, specialties) {
                                         const m = Math.floor(v / 60), s = (v - m * 60).toFixed(0);
                                         return m + ':' + String(s).padStart(2, '0');
                                     }
-                                    return v;
+                                    return parseFloat(v).toFixed(2);
                                 },
                             },
                             grid: { color: 'rgba(255,255,255,0.05)' },

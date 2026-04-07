@@ -86,7 +86,7 @@ class AthleteController extends AbstractController
         if ($form->isSubmitted() && $form->isValid()) {
             $disciplinesRaw = $request->request->get('disciplines_raw', '[]');
             $athlete->setDisciplines(json_decode($disciplinesRaw, true) ?: []);
-            $this->handlePhotoUpload($form, $athlete, $slugger);
+            $this->handlePhotoUpload($form, $athlete, $slugger, $request);
             $em->persist($athlete);
             $em->flush();
             $this->addFlash('success', 'Athlète ajouté avec succès.');
@@ -426,7 +426,7 @@ class AthleteController extends AbstractController
         if ($form->isSubmitted() && $form->isValid()) {
             $disciplinesRaw = $request->request->get('disciplines_raw', '[]');
             $athlete->setDisciplines(json_decode($disciplinesRaw, true) ?: []);
-            $this->handlePhotoUpload($form, $athlete, $slugger);
+            $this->handlePhotoUpload($form, $athlete, $slugger, $request);
             $em->flush();
             $this->addFlash('success', 'Profil mis à jour.');
             return $this->redirectToRoute('app_athlete_show', ['id' => $athlete->getId()]);
@@ -481,18 +481,31 @@ class AthleteController extends AbstractController
         return $this->redirectToRoute('app_athlete_index');
     }
 
-    private function handlePhotoUpload($form, Athlete $athlete, SluggerInterface $slugger): void
+    private function handlePhotoUpload($form, Athlete $athlete, SluggerInterface $slugger, Request $request = null): void
     {
+        $uploadDir = $this->getParameter('kernel.project_dir') . '/public/uploads/athletes';
+        if (!is_dir($uploadDir)) {
+            mkdir($uploadDir, 0755, true);
+        }
+
+        // Priorité : image recadrée envoyée en base64
+        $croppedData = $request?->request->get('cropped_photo_data');
+        if ($croppedData && preg_match('/^data:image\/(jpeg|png|webp);base64,(.+)$/s', $croppedData, $m)) {
+            $imageData = base64_decode($m[2]);
+            if ($imageData !== false) {
+                $newFilename = uniqid('photo-', true) . '.jpg';
+                file_put_contents($uploadDir . '/' . $newFilename, $imageData);
+                $athlete->setPhoto($newFilename);
+                return;
+            }
+        }
+
+        // Fallback : upload classique sans crop
         $photoFile = $form->get('photoFile')->getData();
         if ($photoFile) {
             $originalFilename = pathinfo($photoFile->getClientOriginalName(), PATHINFO_FILENAME);
             $safeFilename = $slugger->slug($originalFilename);
             $newFilename = $safeFilename . '-' . uniqid() . '.' . $photoFile->guessExtension();
-
-            $uploadDir = $this->getParameter('kernel.project_dir') . '/public/uploads/athletes';
-            if (!is_dir($uploadDir)) {
-                mkdir($uploadDir, 0755, true);
-            }
 
             try {
                 $photoFile->move($uploadDir, $newFilename);

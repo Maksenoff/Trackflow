@@ -9,6 +9,13 @@
 {% endblock %}
 
 {% block body %}
+<style>
+@keyframes tf-val-reveal {
+    from { opacity: 0; filter: blur(6px); transform: translateY(5px); }
+    to   { opacity: 1; filter: blur(0);   transform: translateY(0); }
+}
+[data-stat-val] { animation: tf-val-reveal 0.4s ease both; }
+</style>
 <div x-data="statsPage()" x-init="init()" style="display:flex;flex-direction:column;gap:24px;">
 
     {# ── Header ── #}
@@ -57,14 +64,14 @@
     </template>
 
     {# ── Stats brutes (4 cards sur une ligne) ── #}
-    <div style="display:grid;grid-template-columns:repeat(2,1fr);gap:12px;" class="lg-grid-4">
+    <div id="tf-stats-grid" style="display:grid;grid-template-columns:repeat(2,1fr);gap:12px;" class="lg-grid-4">
 
         {# Card vs PB #}
         <div class="card card-body">
             <p style="font-size:10px;color:var(--text-3);text-transform:uppercase;letter-spacing:.08em;margin:0 0 12px;">vs PB</p>
             <template x-if="d.vsPB">
                 <div>
-                    <p style="font-size:22px;font-weight:700;font-family:monospace;line-height:1;margin:0;"
+                    <p data-stat-val style="font-size:22px;font-weight:700;font-family:monospace;line-height:1;margin:0;"
                        :style="d.vsPB.improved ? 'color:#34d399' : 'color:#f87171'"
                        x-text="(d.lower ? (d.vsPB.improved ? '−' : '+') : (d.vsPB.improved ? '+' : '−')) + d.vsPB.formatted"></p>
                     <p style="font-size:11px;color:var(--text-3);margin:8px 0 0;"
@@ -72,16 +79,16 @@
                 </div>
             </template>
             <template x-if="!d.vsPB">
-                <p style="font-size:13px;color:var(--text-3);margin:0;">Sélectionne une année.</p>
+                <p style="font-size:13px;color:var(--text-3);margin:0;" x-text="activeYear === 'all' ? 'Sélectionne une année.' : 'Première année — pas d\'historique.'"></p>
             </template>
         </div>
 
-        {# Card vs SB N-1 #}
+        {# Card vs SB #}
         <div class="card card-body">
-            <p style="font-size:10px;color:var(--text-3);text-transform:uppercase;letter-spacing:.08em;margin:0 0 12px;">vs SB N−1</p>
+            <p style="font-size:10px;color:var(--text-3);text-transform:uppercase;letter-spacing:.08em;margin:0 0 12px;">vs SB</p>
             <template x-if="d.vsSbPrevYear">
                 <div>
-                    <p style="font-size:22px;font-weight:700;font-family:monospace;line-height:1;margin:0;"
+                    <p data-stat-val style="font-size:22px;font-weight:700;font-family:monospace;line-height:1;margin:0;"
                        :style="d.vsSbPrevYear.improved ? 'color:#34d399' : 'color:#f87171'"
                        x-text="(d.lower ? (d.vsSbPrevYear.improved ? '−' : '+') : (d.vsSbPrevYear.improved ? '+' : '−')) + d.vsSbPrevYear.formatted"></p>
                     <p style="font-size:11px;color:var(--text-3);margin:8px 0 0;"
@@ -89,24 +96,50 @@
                 </div>
             </template>
             <template x-if="!d.vsSbPrevYear">
-                <p style="font-size:13px;color:var(--text-3);margin:0;">Sélectionne une année.</p>
+                <p style="font-size:13px;color:var(--text-3);margin:0;" x-text="activeYear === 'all' ? 'Sélectionne une année.' : 'Pas de SB année précédente.'"></p>
             </template>
         </div>
 
-        {# Record personnel #}
+        {# SB & PB #}
         <div class="card card-body">
-            <p style="font-size:10px;color:var(--text-3);text-transform:uppercase;letter-spacing:.08em;margin:0 0 12px;">Record personnel</p>
-            <p style="font-size:22px;font-weight:700;font-family:monospace;color:#fbbf24;line-height:1;margin:0;" x-text="d.pb.formatted"></p>
-            <p style="font-size:11px;color:var(--text-3);margin:8px 0 0;" x-text="d.pb.date"></p>
+            <p style="font-size:10px;color:var(--text-3);text-transform:uppercase;letter-spacing:.08em;margin:0 0 12px;">SB & PB</p>
+            <template x-if="activeYear !== 'all'">
+                <div>
+                    <div style="display:flex;align-items:baseline;gap:8px;margin-bottom:4px;">
+                        <span style="font-size:10px;font-weight:600;color:var(--text-3);text-transform:uppercase;letter-spacing:.06em;min-width:20px;">SB</span>
+                        <span data-stat-val class="sb-val" style="font-size:22px;font-weight:700;font-family:monospace;line-height:1;" x-text="d.pb.formatted"></span>
+                    </div>
+                    <div style="display:flex;align-items:baseline;gap:8px;margin-top:10px;">
+                        <span style="font-size:10px;font-weight:600;color:var(--text-3);text-transform:uppercase;letter-spacing:.06em;min-width:20px;">PB</span>
+                        <template x-if="d.vsPB && d.vsPB.isNewPB">
+                            <span data-stat-val class="pb-val" style="font-size:22px;font-weight:700;font-family:monospace;line-height:1;" x-text="d.pb.formatted + ' ★'"></span>
+                        </template>
+                        <template x-if="d.vsPB && !d.vsPB.isNewPB">
+                            <span data-stat-val class="pb-val" style="font-size:22px;font-weight:700;font-family:monospace;line-height:1;" x-text="d.vsPB.refFormatted"></span>
+                        </template>
+                        <template x-if="!d.vsPB">
+                            <span data-stat-val class="pb-val" style="font-size:22px;font-weight:700;font-family:monospace;line-height:1;" x-text="d.pb.formatted"></span>
+                        </template>
+                    </div>
+                </div>
+            </template>
+            <template x-if="activeYear === 'all'">
+                <div>
+                    <div style="display:flex;align-items:baseline;gap:8px;">
+                        <span style="font-size:10px;font-weight:600;color:var(--text-3);text-transform:uppercase;letter-spacing:.06em;min-width:20px;">PB</span>
+                        <span data-stat-val class="pb-val" style="font-size:22px;font-weight:700;font-family:monospace;line-height:1;" x-text="d.pb.formatted"></span>
+                    </div>
+                </div>
+            </template>
         </div>
 
         {# Régularité #}
         <div class="card card-body">
             <p style="font-size:10px;color:var(--text-3);text-transform:uppercase;letter-spacing:.08em;margin:0 0 12px;">Régularité</p>
-            <p style="font-size:22px;font-weight:700;font-family:monospace;line-height:1;margin:0;"
+            <p data-stat-val style="font-size:22px;font-weight:700;font-family:monospace;line-height:1;margin:0;"
                :style="consistencyStyle()"
                x-text="d.consistency.score + ' / 100'"></p>
-            <p style="font-size:11px;margin:8px 0 0;" :style="consistencyStyle()" x-text="consistencyLabel()"></p>
+            <p data-stat-val style="font-size:11px;margin:8px 0 0;" :style="consistencyStyle()" x-text="consistencyLabel()"></p>
         </div>
     </div>
 
@@ -141,16 +174,16 @@
             <h2 style="font-size:13px;font-weight:600;color:var(--text-1);margin:0 0 20px;">Consistance</h2>
 
             <div style="margin-bottom:20px;">
-                <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px;">
+                <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px;">
                     <span style="font-size:12px;color:var(--text-2);">Score de régularité</span>
                     <span style="font-size:13px;font-weight:700;font-family:monospace;" :style="consistencyStyle()"
                           x-text="d.consistency.score + ' / 100'"></span>
                 </div>
-                <div style="height:6px;background:var(--border-2);border-radius:99px;overflow:hidden;">
-                    <div style="height:100%;border-radius:99px;transition:width .7s ease;"
-                         :style="'width:' + d.consistency.score + '%;' + consistencyBgStyle()"></div>
+                <div style="height:10px;background:var(--border-2);border-radius:99px;overflow:hidden;">
+                    <div style="height:100%;border-radius:99px;transition:width .8s cubic-bezier(.4,0,.2,1);"
+                         :style="{ width: (d.consistency?.score ?? 0) + '%', background: consistencyBarGrad() }"></div>
                 </div>
-                <div style="display:flex;justify-content:space-between;margin-top:4px;font-size:10px;color:var(--text-3);">
+                <div style="display:flex;justify-content:space-between;margin-top:6px;font-size:10px;color:var(--text-3);">
                     <span>Très irrégulier</span><span>Très régulier</span>
                 </div>
             </div>
@@ -262,6 +295,7 @@ function statsPage() {
         activeYear: 'all',
         _charts: {},
         _rebuildTimer: null,
+        _buildGen: 0,
 
         get availableYears() {
             const raw = (this.stats[this.activeDisc] ?? {}).rawPerfs ?? [];
@@ -291,24 +325,19 @@ function statsPage() {
 
             const yearVals  = perfs.map(p => p.value);
             const yearBest  = _best(yearVals);
-            const allVals   = allRaw.map(p => p.value);
-            const allTimePB = _best(allVals);
 
-            // vs PB
+            // vs PB progressif : SB de l'année vs meilleur PB des ANNÉES PRÉCÉDENTES uniquement
+            // (les années futures n'influencent pas la progression des années passées)
+            const prevYearPerfs = allRaw.filter(p => p.year < this.activeYear);
+            const prevYearsVals = prevYearPerfs.map(p => p.value);
             let vsPB = null;
-            if (_cmp(yearBest, allTimePB)) {
-                // Cette année contient le PB → compare vs ancien PB (hors cette année)
-                const otherVals = allRaw.filter(p => p.year !== this.activeYear).map(p => p.value);
-                if (otherVals.length) {
-                    const prevPBVal = _best(otherVals);
-                    const diff      = yearBest - prevPBVal;
-                    const imp       = lower ? diff < 0 : diff > 0;
-                    vsPB = { isNewPB: true, formatted: this._fmtDiff(Math.abs(diff), base.unit), improved: imp, refFormatted: this._fmt(prevPBVal, base.unit) };
-                }
-            } else {
-                // Écart au PB all-time
-                const diff = Math.abs(yearBest - allTimePB);
-                vsPB = { isNewPB: false, formatted: this._fmtDiff(diff, base.unit), improved: false, refFormatted: this._fmt(allTimePB, base.unit) };
+            if (prevYearsVals.length) {
+                const prevPB     = _best(prevYearsVals);
+                const prevPBPerf = prevYearPerfs.find(p => p.value === prevPB);
+                const diff       = yearBest - prevPB;
+                const imp        = lower ? diff < 0 : diff > 0;
+                const isNewPB    = _cmp(yearBest, prevPB);
+                vsPB = { isNewPB, formatted: this._fmtDiff(Math.abs(diff), base.unit), improved: imp, refFormatted: this._fmt(prevPB, base.unit), refDate: prevPBPerf?.date ?? '' };
             }
 
             // vs SB année précédente (calendaire)
@@ -328,16 +357,23 @@ function statsPage() {
         init() {
             const rebuild = () => {
                 clearTimeout(this._rebuildTimer);
+                const gen = ++this._buildGen;
+                this._hideStats();
                 this._rebuildTimer = setTimeout(() => {
-                    this._destroyCharts();
-                    this.$nextTick(() => {
-                        this._buildProgression();
-                        if (this.d.bins && this.d.bins.length > 0) this._buildDistribution();
-                        if (this.d.wind && this.d.wind.length >= 2) this._buildWind();
-                    });
-                }, 80);
+                    if (gen !== this._buildGen) return;
+                    this._buildProgression();
+                    if (this.d.bins && this.d.bins.length > 0) this._buildDistribution();
+                    if (this.d.wind && this.d.wind.length >= 2) this._buildWind();
+                    this.$nextTick(() => { if (gen === this._buildGen) this._animateStats(); });
+                }, 150);
             };
-            this.$watch('activeDisc', () => { this.activeYear = 'all'; rebuild(); });
+            this.$watch('activeDisc', (disc) => {
+                const years = [...new Set((this.stats[disc]?.rawPerfs ?? []).map(p => Number(p.year)))];
+                if (this.activeYear !== 'all' && !years.includes(Number(this.activeYear))) {
+                    this.activeYear = 'all';
+                }
+                rebuild();
+            });
             this.$watch('activeYear', rebuild);
             this.$nextTick(() => {
                 this._buildProgression();
@@ -346,8 +382,14 @@ function statsPage() {
             });
         },
 
-        switchDisc(disc) { this.activeDisc = disc; },
-        setYear(year)    { this.activeYear = year; },
+        switchDisc(disc) {
+            this.activeDisc = disc;
+            const years = [...new Set((this.stats[disc]?.rawPerfs ?? []).map(p => Number(p.year)))];
+            if (this.activeYear !== 'all' && !years.includes(Number(this.activeYear))) {
+                this.activeYear = 'all';
+            }
+        },
+        setYear(year)    { this.activeYear = year === 'all' ? 'all' : Number(year); },
 
         _computeStats(perfs, unit, lower) {
             perfs = [...perfs].sort((a, b) => new Date(a.dateRaw) - new Date(b.dateRaw));
@@ -476,17 +518,17 @@ function statsPage() {
             return bins;
         },
 
-        _destroyCharts() {
-            Object.values(this._charts).forEach(c => c.destroy());
-            this._charts = {};
-            // Remplace les canvas pour éviter les artefacts Chart.js
-            ['progressionChart', 'distributionChart', 'windChart'].forEach(id => {
-                const el = document.getElementById(id);
-                if (el) {
-                    const fresh = document.createElement('canvas');
-                    fresh.id = id;
-                    el.replaceWith(fresh);
-                }
+        _hideStats() {
+            document.querySelectorAll('#tf-stats-grid [data-stat-val]').forEach(el => {
+                el.style.animation = 'none';
+                el.style.opacity = '0';
+            });
+        },
+
+        _animateStats() {
+            document.querySelectorAll('#tf-stats-grid [data-stat-val]').forEach((el, i) => {
+                el.style.opacity = '';
+                el.style.animation = `tf-val-reveal 0.4s ease ${i * 0.07}s both`;
             });
         },
 
@@ -522,6 +564,24 @@ function statsPage() {
             return 'background:#f87171';
         },
 
+        consistencyBarStyle() {
+            const s = this.d.consistency?.score ?? 0;
+            let grad;
+            if      (s >= 80) grad = 'linear-gradient(90deg, #059669 0%, #34d399 100%)';
+            else if (s >= 60) grad = 'linear-gradient(90deg, #1d4ed8 0%, #60a5fa 100%)';
+            else if (s >= 40) grad = 'linear-gradient(90deg, #b45309 0%, #fbbf24 100%)';
+            else              grad = 'linear-gradient(90deg, #991b1b 0%, #f87171 100%)';
+            return `width:${s}%;background:${grad};`;
+        },
+
+        consistencyBarGrad() {
+            const s = this.d.consistency?.score ?? 0;
+            if      (s >= 80) return 'linear-gradient(90deg, #059669 0%, #34d399 100%)';
+            else if (s >= 60) return 'linear-gradient(90deg, #1d4ed8 0%, #60a5fa 100%)';
+            else if (s >= 40) return 'linear-gradient(90deg, #b45309 0%, #fbbf24 100%)';
+            else              return 'linear-gradient(90deg, #991b1b 0%, #f87171 100%)';
+        },
+
         _fmt(v, unit) {
             if (unit === 's' || unit === 'min:s') {
                 if (v >= 60) {
@@ -547,21 +607,22 @@ function statsPage() {
 
 
         _buildProgression() {
-            const ctx = document.getElementById('progressionChart');
-            if (!ctx || this._charts.progression) return;
+            const canvas = document.getElementById('progressionChart');
+            if (!canvas) return;
             const d = this.d;
             const unit = d.unit;
             const lower = d.lower;
             const vals = d.chart.values;
-
-            // Moving average (window 3)
             const ma = vals.map((_, i) => {
                 const from = Math.max(0, i - 2);
                 const slice = vals.slice(from, i + 1);
                 return slice.reduce((a, b) => a + b, 0) / slice.length;
             });
 
-            this._charts.progression = new Chart(ctx, {
+            const existingP = Chart.getChart(canvas);
+            if (existingP) existingP.destroy();
+
+            this._charts.progression = new Chart(canvas, {
                 type: 'line',
                 data: {
                     labels: d.chart.labels,
@@ -571,8 +632,8 @@ function statsPage() {
                             data: vals,
                             borderColor: '#6366f1',
                             backgroundColor: 'transparent',
-                            pointBackgroundColor: d.chart.isComp.map(c => c ? '#fbbf24' : '#818cf8'),
-                            pointBorderColor:     d.chart.isComp.map(c => c ? '#f59e0b' : '#6366f1'),
+                            pointBackgroundColor: d.chart.isComp.map(x => x ? '#fbbf24' : '#818cf8'),
+                            pointBorderColor:     d.chart.isComp.map(x => x ? '#f59e0b' : '#6366f1'),
                             pointRadius: 5,
                             pointHoverRadius: 7,
                             borderWidth: 1.5,
@@ -625,12 +686,15 @@ function statsPage() {
         },
 
         _buildDistribution() {
-            const ctx = document.getElementById('distributionChart');
-            if (!ctx || this._charts.distribution) return;
+            const canvas = document.getElementById('distributionChart');
+            if (!canvas) return;
             const bins = this.d.bins;
             const maxN = Math.max(...bins.map(b => b.count));
 
-            this._charts.distribution = new Chart(ctx, {
+            const existingD = Chart.getChart(canvas);
+            if (existingD) existingD.destroy();
+
+            this._charts.distribution = new Chart(canvas, {
                 type: 'bar',
                 data: {
                     labels: bins.map(b => b.label),
@@ -665,11 +729,16 @@ function statsPage() {
         },
 
         _buildWind() {
-            const ctx = document.getElementById('windChart');
-            if (!ctx || this._charts.wind) return;
+            const canvas = document.getElementById('windChart');
+            if (!canvas) return;
             const wind = this.d.wind;
             const unit = this.d.unit;
             const lower = this.d.lower;
+
+            const existingW = Chart.getChart(canvas);
+            if (existingW) existingW.destroy();
+
+            const ctx = canvas;
 
             // Plugin local (pas Chart.register) pour ne pas écraser les tooltips natifs
             const windRefPlugin = {
@@ -712,7 +781,7 @@ function statsPage() {
                 }
             };
 
-            this._charts.wind = new Chart(ctx, {
+            this._charts.wind = new Chart(canvas, {
                 type: 'scatter',
                 plugins: [windRefPlugin],
                 data: {

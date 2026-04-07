@@ -1,6 +1,11 @@
 {% extends 'base.html.twig' %}
 {% block title %}Modifier {{ athlete.fullName }}{% endblock %}
 
+{% block stylesheets %}
+    {{ parent() }}
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/cropperjs@1.6.2/dist/cropper.min.css">
+{% endblock %}
+
 {% block breadcrumb %}
     <a href="{{ path('app_dashboard') }}">Tableau de bord</a>
     <span class="sep">/</span>
@@ -45,14 +50,33 @@
                 {% endfor %}
             </div>
         </div>
-        {{ form_row(form.notes) }}
-        {% if athlete.photo %}
-            <div class="form-group">
-                <label class="form-label">Photo actuelle</label>
-                <img src="/uploads/athletes/{{ athlete.photo }}" style="width:64px;height:64px;border-radius:var(--radius-sm);object-fit:cover;">
+        {# ── Photo avec recadrage ─────────────────────────────────────────── #}
+        <div class="form-group">
+            <label class="form-label">Photo de profil</label>
+            <div style="display:flex;align-items:center;gap:16px;margin-bottom:10px;">
+                <div id="photo-preview-wrap" style="width:80px;height:80px;border-radius:50%;overflow:hidden;background:var(--surface-2);flex-shrink:0;display:flex;align-items:center;justify-content:center;">
+                    {% if athlete.photo %}
+                        <img id="photo-preview" src="/uploads/athletes/{{ athlete.photo }}" style="width:100%;height:100%;object-fit:cover;">
+                    {% else %}
+                        <img id="photo-preview" src="" style="width:100%;height:100%;object-fit:cover;display:none;">
+                        <svg id="photo-placeholder" xmlns="http://www.w3.org/2000/svg" width="36" height="36" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" style="color:var(--text-3)"><circle cx="12" cy="8" r="4"/><path d="M4 20c0-4 3.6-7 8-7s8 3 8 7"/></svg>
+                    {% endif %}
+                </div>
+                <div>
+                    <button type="button" id="pick-photo-btn" class="btn btn-secondary btn-sm">Choisir une photo</button>
+                    {% if athlete.photo %}
+                        <p style="font-size:12px;color:var(--text-3);margin-top:4px;">Une nouvelle photo remplacera l'actuelle.</p>
+                    {% endif %}
+                </div>
             </div>
-        {% endif %}
-        {{ form_row(form.photoFile) }}
+            {# input file caché — déclenché par JS #}
+            <input type="file" id="real-photo-input" accept="image/jpeg,image/png,image/webp" style="display:none">
+            {# base64 du crop envoyé au serveur #}
+            <input type="hidden" id="cropped-photo-data" name="cropped_photo_data">
+            {# Empêche form_end() de re-rendre le champ photoFile automatiquement #}
+            {% do form.photoFile.setRendered() %}
+        </div>
+
         <div style="display:flex;gap:10px;padding-top:8px;">
             <button type="submit" class="btn btn-primary">Enregistrer</button>
             <a href="{{ path('app_athlete_show', {id: athlete.id}) }}" class="btn btn-secondary">Annuler</a>
@@ -61,24 +85,149 @@
     </div>
 </div>
 
+{# ── Modal de recadrage ──────────────────────────────────────────────────── #}
+<div id="crop-overlay" style="display:none;position:fixed;inset:0;z-index:1000;background:rgba(0,0,0,.75);align-items:center;justify-content:center;">
+    <div style="background:var(--surface-1);border-radius:var(--radius);width:min(520px,96vw);max-height:92vh;display:flex;flex-direction:column;overflow:hidden;box-shadow:0 24px 64px rgba(0,0,0,.5);">
+        {# header #}
+        <div style="display:flex;align-items:center;justify-content:space-between;padding:16px 20px;border-bottom:1px solid var(--border);">
+            <span style="font-weight:600;font-size:15px;">Recadrer la photo</span>
+            <button type="button" id="crop-cancel" style="background:none;border:none;cursor:pointer;color:var(--text-2);font-size:20px;line-height:1;">&#x2715;</button>
+        </div>
+        {# cropper area #}
+        <div style="flex:1;overflow:auto;padding:16px;display:flex;align-items:center;justify-content:center;min-height:0;">
+            <div style="max-height:52vh;width:100%;display:flex;align-items:center;justify-content:center;">
+                <img id="crop-image" style="max-width:100%;max-height:52vh;display:block;">
+            </div>
+        </div>
+        {# toolbar #}
+        <div style="padding:12px 20px;border-top:1px solid var(--border);display:flex;align-items:center;gap:8px;flex-wrap:wrap;">
+            <button type="button" class="crop-tool btn btn-secondary btn-sm" data-action="rotate-left"  title="Rotation gauche">↺ -90°</button>
+            <button type="button" class="crop-tool btn btn-secondary btn-sm" data-action="rotate-right" title="Rotation droite">↻ +90°</button>
+            <button type="button" class="crop-tool btn btn-secondary btn-sm" data-action="flip-h"       title="Miroir horizontal">⇄ H</button>
+            <button type="button" class="crop-tool btn btn-secondary btn-sm" data-action="flip-v"       title="Miroir vertical">⇅ V</button>
+            <button type="button" class="crop-tool btn btn-secondary btn-sm" data-action="reset"        title="Réinitialiser">⟳ Reset</button>
+            <div style="flex:1;min-width:80px;">
+                <input type="range" id="crop-zoom" min="-1" max="3" step="0.01" value="0" style="width:100%;accent-color:var(--accent);">
+            </div>
+            <button type="button" id="crop-confirm" class="btn btn-primary btn-sm">Valider</button>
+        </div>
+    </div>
+</div>
+
 <style>
 .disc-pill.active { background: linear-gradient(135deg, var(--accent), #8b5cf6) !important; color: white !important; border-color: var(--accent) !important; }
+/* fix cropper inside overflow:hidden */
+.cropper-container { max-width: 100% !important; }
 </style>
+
+<script src="https://cdn.jsdelivr.net/npm/cropperjs@1.6.2/dist/cropper.min.js"></script>
 <script>
+/* ── Disciplines ── */
 function discPillToggle(btn) {
     var hiddenInput = document.getElementById(btn.dataset.hidden);
     if (!hiddenInput) return;
     var selected = JSON.parse(hiddenInput.value || '[]');
     var val = btn.dataset.value;
     var idx = selected.indexOf(val);
-    if (idx === -1) {
-        selected.push(val);
-        btn.classList.add('active');
-    } else {
-        selected.splice(idx, 1);
-        btn.classList.remove('active');
-    }
+    if (idx === -1) { selected.push(val); btn.classList.add('active'); }
+    else            { selected.splice(idx, 1); btn.classList.remove('active'); }
     hiddenInput.value = JSON.stringify(selected);
 }
+
+/* ── Photo + Cropper.js ── */
+(function () {
+    var fileInput   = document.getElementById('real-photo-input');
+    var pickBtn     = document.getElementById('pick-photo-btn');
+    var overlay     = document.getElementById('crop-overlay');
+    var cropImg     = document.getElementById('crop-image');
+    var cancelBtn   = document.getElementById('crop-cancel');
+    var confirmBtn  = document.getElementById('crop-confirm');
+    var zoomRange   = document.getElementById('crop-zoom');
+    var preview     = document.getElementById('photo-preview');
+    var placeholder = document.getElementById('photo-placeholder');
+    var cropper     = null;
+    var flipX       = 1;
+    var flipY       = 1;
+
+    pickBtn.addEventListener('click', function () { fileInput.click(); });
+
+    fileInput.addEventListener('change', function () {
+        var file = fileInput.files[0];
+        if (!file) return;
+        var reader = new FileReader();
+        reader.onload = function (e) { openCropper(e.target.result); };
+        reader.readAsDataURL(file);
+    });
+
+    function openCropper(src) {
+        cropImg.src = src;
+        flipX = 1; flipY = 1;
+        overlay.style.display = 'flex';
+        // destroy previous instance
+        if (cropper) { cropper.destroy(); cropper = null; }
+        cropper = new Cropper(cropImg, {
+            aspectRatio:  1,
+            viewMode:     1,
+            dragMode:     'move',
+            autoCropArea: 0.9,
+            restore:      false,
+            guides:       true,
+            center:       true,
+            highlight:    false,
+            cropBoxMovable:   true,
+            cropBoxResizable: true,
+            toggleDragModeOnDblclick: false,
+            zoom: function (e) {
+                // keep slider in sync when user scrolls/pinches
+                zoomRange.value = e.detail.ratio;
+            },
+        });
+    }
+
+    function closeCropper() {
+        overlay.style.display = 'none';
+        if (cropper) { cropper.destroy(); cropper = null; }
+        // clear file input so the same file can be re-selected
+        fileInput.value = '';
+    }
+
+    cancelBtn.addEventListener('click', closeCropper);
+    overlay.addEventListener('click', function (e) { if (e.target === overlay) closeCropper(); });
+
+    /* toolbar actions */
+    document.querySelectorAll('.crop-tool').forEach(function (btn) {
+        btn.addEventListener('click', function () {
+            if (!cropper) return;
+            switch (btn.dataset.action) {
+                case 'rotate-left':  cropper.rotate(-90); break;
+                case 'rotate-right': cropper.rotate(90);  break;
+                case 'flip-h': flipX *= -1; cropper.scaleX(flipX); break;
+                case 'flip-v': flipY *= -1; cropper.scaleY(flipY); break;
+                case 'reset':  flipX = 1; flipY = 1; cropper.reset(); zoomRange.value = 0; break;
+            }
+        });
+    });
+
+    zoomRange.addEventListener('input', function () {
+        if (cropper) cropper.zoomTo(parseFloat(this.value));
+    });
+
+    /* confirm: export canvas → base64 dans le hidden input */
+    confirmBtn.addEventListener('click', function () {
+        if (!cropper) return;
+        var canvas = cropper.getCroppedCanvas({ width: 512, height: 512, imageSmoothingQuality: 'high' });
+        var dataUrl = canvas.toDataURL('image/jpeg', 0.92);
+
+        /* mettre à jour l'aperçu */
+        preview.src = dataUrl;
+        preview.style.display = 'block';
+        if (placeholder) placeholder.style.display = 'none';
+
+        /* écrire le base64 dans le hidden input → envoyé au serveur */
+        document.getElementById('cropped-photo-data').value = dataUrl;
+
+        closeCropper();
+    });
+}());
 </script>
 {% endblock %}
