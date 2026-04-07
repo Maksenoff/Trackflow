@@ -56,54 +56,54 @@
         </div>
     </template>
 
-    {# ── Stats brutes (4 cards) ── #}
-    <div style="display:grid;grid-template-columns:repeat(2,1fr);gap:16px;" class="lg-grid-4">
+    {# ── Stats brutes (4 cards sur une ligne) ── #}
+    <div style="display:grid;grid-template-columns:repeat(2,1fr);gap:12px;" class="lg-grid-4">
 
-        {# Progression totale #}
+        {# Card vs PB #}
         <div class="card card-body">
-            <p style="font-size:10px;color:var(--text-3);text-transform:uppercase;letter-spacing:.08em;margin:0 0 12px;">Progression totale</p>
-            <template x-if="d.progression.formatted && d.progression.improved !== null">
+            <p style="font-size:10px;color:var(--text-3);text-transform:uppercase;letter-spacing:.08em;margin:0 0 12px;">vs PB</p>
+            <template x-if="d.vsPB">
                 <div>
-                    <p style="font-size:24px;font-weight:700;font-family:monospace;line-height:1;margin:0;"
-                       :style="d.progression.improved ? 'color:#34d399' : 'color:#f87171'"
-                       x-text="(d.progression.improved ? '−' : '+') + d.progression.formatted"></p>
-                    <p style="font-size:11px;color:var(--text-3);margin:8px 0 0;" x-text="'en ' + d.progression.months + ' mois'"></p>
+                    <p style="font-size:22px;font-weight:700;font-family:monospace;line-height:1;margin:0;"
+                       :style="d.vsPB.improved ? 'color:#34d399' : 'color:#f87171'"
+                       x-text="(d.lower ? (d.vsPB.improved ? '−' : '+') : (d.vsPB.improved ? '+' : '−')) + d.vsPB.formatted"></p>
+                    <p style="font-size:11px;color:var(--text-3);margin:8px 0 0;"
+                       x-text="d.vsPB.isNewPB ? '★ Nouveau PB · vs ancien (' + d.vsPB.refFormatted + ')' : 'écart au PB · (' + d.vsPB.refFormatted + ')'"></p>
                 </div>
             </template>
-            <template x-if="!d.progression.formatted">
-                <p style="font-size:24px;font-weight:700;color:var(--border-2);margin:0;">—</p>
+            <template x-if="!d.vsPB">
+                <p style="font-size:13px;color:var(--text-3);margin:0;">Sélectionne une année.</p>
+            </template>
+        </div>
+
+        {# Card vs SB N-1 #}
+        <div class="card card-body">
+            <p style="font-size:10px;color:var(--text-3);text-transform:uppercase;letter-spacing:.08em;margin:0 0 12px;">vs SB N−1</p>
+            <template x-if="d.vsSbPrevYear">
+                <div>
+                    <p style="font-size:22px;font-weight:700;font-family:monospace;line-height:1;margin:0;"
+                       :style="d.vsSbPrevYear.improved ? 'color:#34d399' : 'color:#f87171'"
+                       x-text="(d.lower ? (d.vsSbPrevYear.improved ? '−' : '+') : (d.vsSbPrevYear.improved ? '+' : '−')) + d.vsSbPrevYear.formatted"></p>
+                    <p style="font-size:11px;color:var(--text-3);margin:8px 0 0;"
+                       x-text="'vs SB ' + d.vsSbPrevYear.prevYear + ' · (' + d.vsSbPrevYear.prevFormatted + ')'"></p>
+                </div>
+            </template>
+            <template x-if="!d.vsSbPrevYear">
+                <p style="font-size:13px;color:var(--text-3);margin:0;">Sélectionne une année.</p>
             </template>
         </div>
 
         {# Record personnel #}
         <div class="card card-body">
-            <div style="display:flex;align-items:center;gap:8px;margin-bottom:12px;">
-                <p style="font-size:10px;color:var(--text-3);text-transform:uppercase;letter-spacing:.08em;margin:0;">Record personnel</p>
-                <span style="font-size:9px;font-weight:700;color:#fbbf24;background:rgba(251,191,36,.1);border:1px solid rgba(251,191,36,.2);padding:2px 6px;border-radius:4px;line-height:1.4;">PB</span>
-            </div>
-            <p style="font-size:24px;font-weight:700;font-family:monospace;color:#fbbf24;line-height:1;margin:0;" x-text="d.pb.formatted"></p>
+            <p style="font-size:10px;color:var(--text-3);text-transform:uppercase;letter-spacing:.08em;margin:0 0 12px;">Record personnel</p>
+            <p style="font-size:22px;font-weight:700;font-family:monospace;color:#fbbf24;line-height:1;margin:0;" x-text="d.pb.formatted"></p>
             <p style="font-size:11px;color:var(--text-3);margin:8px 0 0;" x-text="d.pb.date"></p>
-        </div>
-
-        {# Meilleure amélioration en 1 séance #}
-        <div class="card card-body">
-            <p style="font-size:10px;color:var(--text-3);text-transform:uppercase;letter-spacing:.08em;margin:0 0 12px;">Meilleure séance</p>
-            <template x-if="d.bestGain">
-                <div>
-                    <p style="font-size:24px;font-weight:700;font-family:monospace;color:var(--accent);line-height:1;margin:0;"
-                       x-text="'−' + d.bestGain"></p>
-                    <p style="font-size:11px;color:var(--text-3);margin:8px 0 0;">gain en une séance</p>
-                </div>
-            </template>
-            <template x-if="!d.bestGain">
-                <p style="font-size:24px;font-weight:700;color:var(--border-2);margin:0;">—</p>
-            </template>
         </div>
 
         {# Régularité #}
         <div class="card card-body">
             <p style="font-size:10px;color:var(--text-3);text-transform:uppercase;letter-spacing:.08em;margin:0 0 12px;">Régularité</p>
-            <p style="font-size:24px;font-weight:700;font-family:monospace;line-height:1;margin:0;"
+            <p style="font-size:22px;font-weight:700;font-family:monospace;line-height:1;margin:0;"
                :style="consistencyStyle()"
                x-text="d.consistency.score + ' / 100'"></p>
             <p style="font-size:11px;margin:8px 0 0;" :style="consistencyStyle()" x-text="consistencyLabel()"></p>
@@ -115,9 +115,11 @@
         <div style="display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:12px;margin-bottom:20px;">
             <h2 style="font-size:13px;font-weight:600;color:var(--text-1);margin:0;">Progression</h2>
             <div style="display:flex;flex-wrap:wrap;align-items:center;gap:12px;font-size:11px;color:var(--text-3);">
-                <span style="display:flex;align-items:center;gap:6px;">
-                    <span style="width:8px;height:8px;border-radius:50%;background:#818cf8;display:inline-block;"></span> Entraînement
-                </span>
+                <template x-if="d.chart.isComp.some(c => !c)">
+                    <span style="display:flex;align-items:center;gap:6px;">
+                        <span style="width:8px;height:8px;border-radius:50%;background:#818cf8;display:inline-block;"></span> Entraînement
+                    </span>
+                </template>
                 <span style="display:flex;align-items:center;gap:6px;">
                     <span style="width:8px;height:8px;border-radius:50%;background:#fbbf24;display:inline-block;"></span> Compétition
                 </span>
@@ -245,7 +247,7 @@
 </div>
 
 <style>
-@media(min-width:1024px){.lg-grid-4{grid-template-columns:repeat(4,1fr)!important}.lg-grid-2{grid-template-columns:repeat(2,1fr)!important}}
+@media(min-width:1024px){.lg-grid-4{grid-template-columns:repeat(4,1fr)!important}.lg-grid-3{grid-template-columns:repeat(3,1fr)!important}.lg-grid-2{grid-template-columns:repeat(2,1fr)!important}}
 </style>
 
 <script>
@@ -267,10 +269,60 @@ function statsPage() {
         },
 
         get d() {
-            if (this.activeYear === 'all') return this.stats[this.activeDisc] ?? {};
-            const base = this.stats[this.activeDisc] ?? {};
-            const perfs = (base.rawPerfs ?? []).filter(p => p.year === this.activeYear);
-            return perfs.length > 0 ? (this._computeStats(perfs, base.unit, base.lower) ?? base) : base;
+            const base   = this.stats[this.activeDisc] ?? {};
+            const allRaw = base.rawPerfs ?? [];
+            const lower  = base.lower;
+
+            const _cmp = (a, b) => lower ? a <= b + 1e-9 : a >= b - 1e-9;
+            const _best = vals => lower ? Math.min(...vals) : Math.max(...vals);
+
+            if (this.activeYear === 'all') {
+                // Pour "Toutes", vsPB = null (le PB card affiche "—")
+                // vsSbPrevYear = null → message "Sélectionne une année"
+                return base;
+            }
+
+            const perfs = allRaw
+                .filter(p => p.year === this.activeYear)
+                .sort((a, b) => new Date(a.dateRaw) - new Date(b.dateRaw));
+            if (!perfs.length) return base;
+
+            const computed = this._computeStats(perfs, base.unit, lower) ?? base;
+
+            const yearVals  = perfs.map(p => p.value);
+            const yearBest  = _best(yearVals);
+            const allVals   = allRaw.map(p => p.value);
+            const allTimePB = _best(allVals);
+
+            // vs PB
+            let vsPB = null;
+            if (_cmp(yearBest, allTimePB)) {
+                // Cette année contient le PB → compare vs ancien PB (hors cette année)
+                const otherVals = allRaw.filter(p => p.year !== this.activeYear).map(p => p.value);
+                if (otherVals.length) {
+                    const prevPBVal = _best(otherVals);
+                    const diff      = yearBest - prevPBVal;
+                    const imp       = lower ? diff < 0 : diff > 0;
+                    vsPB = { isNewPB: true, formatted: this._fmtDiff(Math.abs(diff), base.unit), improved: imp, refFormatted: this._fmt(prevPBVal, base.unit) };
+                }
+            } else {
+                // Écart au PB all-time
+                const diff = Math.abs(yearBest - allTimePB);
+                vsPB = { isNewPB: false, formatted: this._fmtDiff(diff, base.unit), improved: false, refFormatted: this._fmt(allTimePB, base.unit) };
+            }
+
+            // vs SB année précédente (calendaire)
+            const prevYear     = this.activeYear - 1;
+            const prevYearVals = allRaw.filter(p => p.year === prevYear).map(p => p.value);
+            let vsSbPrevYear   = null;
+            if (prevYearVals.length) {
+                const prevSB  = _best(prevYearVals);
+                const diff    = yearBest - prevSB;
+                const imp     = lower ? diff < 0 : diff > 0;
+                vsSbPrevYear = { formatted: this._fmtDiff(Math.abs(diff), base.unit), improved: imp, prevFormatted: this._fmt(prevSB, base.unit), prevYear };
+            }
+
+            return { ...computed, vsPB, vsSbPrevYear };
         },
 
         init() {
@@ -298,6 +350,7 @@ function statsPage() {
         setYear(year)    { this.activeYear = year; },
 
         _computeStats(perfs, unit, lower) {
+            perfs = [...perfs].sort((a, b) => new Date(a.dateRaw) - new Date(b.dateRaw));
             const vals  = perfs.map(p => p.value);
             const count = perfs.length;
             const first = perfs[0];
@@ -307,11 +360,11 @@ function statsPage() {
             const bestVal  = lower ? Math.min(...vals) : Math.max(...vals);
             const bestPerf = perfs[vals.indexOf(bestVal)];
 
-            // Progression
-            const rawDiff = last.value - first.value;
+            // Progression first → PB (et non first → last)
+            const rawDiff = bestVal - first.value;
             const improved = lower ? rawDiff < 0 : rawDiff > 0;
             const daysDiff = count > 1
-                ? (new Date(last.dateRaw) - new Date(first.dateRaw)) / 86400000 : 0;
+                ? (new Date(bestPerf.dateRaw) - new Date(first.dateRaw)) / 86400000 : 0;
             const months = daysDiff > 0 ? Math.round(daysDiff / 30.5 * 10) / 10 : 0;
 
             // Best single-session gain
@@ -479,6 +532,17 @@ function statsPage() {
                 return v.toFixed(2) + 's';
             }
             return v.toFixed(2) + ' ' + unit;
+        },
+
+        _fmtDiff(abs, unit) {
+            if (unit === 's' || unit === 'min:s') {
+                if (abs >= 60) {
+                    const m = Math.floor(abs / 60);
+                    return m + ':' + (abs - m * 60).toFixed(2).padStart(5, '0');
+                }
+                return abs.toFixed(2) + 's';
+            }
+            return abs.toFixed(2) + ' ' + unit;
         },
 
 

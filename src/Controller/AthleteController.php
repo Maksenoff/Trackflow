@@ -3,6 +3,7 @@
 namespace App\Controller;
 
 use App\Entity\Athlete;
+use App\Entity\User;
 use App\Form\AthleteType;
 use App\Repository\AthleteRepository;
 use App\Repository\AthleteSessionRepository;
@@ -236,11 +237,34 @@ class AthleteController extends AbstractController
             $bestIdx   = array_search($bestValue, $values);
             $bestPerf  = $perfs[$bestIdx];
 
-            // Total progression: first → last
-            $rawDiff  = (float)$last->getValue() - (float)$first->getValue();
+            // Total progression: first → PB (plus représentatif que first → last)
+            $rawDiff  = $bestValue - (float)$first->getValue();
             $improved = $lower ? $rawDiff < 0 : $rawDiff > 0;
-            $days     = $count > 1 ? $first->getRecordedAt()->diff($last->getRecordedAt())->days : 0;
+            $days     = $count > 1 ? $first->getRecordedAt()->diff($bestPerf->getRecordedAt())->days : 0;
             $months   = $days > 0 ? round($days / 30.5, 1) : 0;
+
+            // SB saison passée → PB actuel
+            $now              = new \DateTimeImmutable();
+            $curSeasonStart   = (int)$now->format('n') >= 9 ? (int)$now->format('Y') : (int)$now->format('Y') - 1;
+            $prevSeasonStart  = $curSeasonStart - 1;
+            $prevSeasonPerfs  = array_filter($perfs, function ($p) use ($prevSeasonStart) {
+                $y = (int)$p->getRecordedAt()->format('Y');
+                $m = (int)$p->getRecordedAt()->format('n');
+                return ($m >= 9 ? $y : $y - 1) === $prevSeasonStart;
+            });
+            $sbLastSeason = null;
+            if ($prevSeasonPerfs) {
+                $prevVals     = array_map(fn($p) => (float)$p->getValue(), $prevSeasonPerfs);
+                $sbValue      = $lower ? min($prevVals) : max($prevVals);
+                $sbRawDiff    = $bestValue - $sbValue;
+                $sbImproved   = $lower ? $sbRawDiff < 0 : $sbRawDiff > 0;
+                $sbLastSeason = [
+                    'formatted' => $formatDiff(abs($sbRawDiff), $unit),
+                    'improved'  => $sbImproved,
+                    'sbFormatted' => $formatDiff($sbValue, $unit),
+                    'season'    => $prevSeasonStart . '-' . ($prevSeasonStart + 1),
+                ];
+            }
 
             // Best single-session improvement
             $bestSingleGain = 0.0;
@@ -350,10 +374,11 @@ class AthleteController extends AbstractController
                 'last'         => ['formatted' => $last->getFormattedValue(),  'date' => $last->getRecordedAt()->format('d/m/Y')],
                 'pb'           => ['formatted' => $bestPerf->getFormattedValue(), 'date' => $bestPerf->getRecordedAt()->format('d/m/Y')],
                 'progression'  => [
-                    'abs'      => abs($rawDiff),
-                    'formatted'=> $count > 1 ? $formatDiff(abs($rawDiff), $unit) : null,
-                    'improved' => $count > 1 ? $improved : null,
-                    'months'   => $months,
+                    'abs'         => abs($rawDiff),
+                    'formatted'   => $count > 1 ? $formatDiff(abs($rawDiff), $unit) : null,
+                    'improved'    => $count > 1 ? $improved : null,
+                    'months'      => $months,
+                    'sbLastSeason'=> $sbLastSeason,
                 ],
                 'bestGain'     => $bestSingleGain > 0 ? $formatDiff($bestSingleGain, $unit) : null,
                 'consistency'  => [
@@ -443,6 +468,12 @@ class AthleteController extends AbstractController
     public function delete(Request $request, Athlete $athlete, EntityManagerInterface $em): Response
     {
         if ($this->isCsrfTokenValid('delete' . $athlete->getId(), $request->getPayload()->get('_token'))) {
+            // Nullify any user linked to this athlete before deleting
+            // (SQLite doesn't enforce onDelete="SET NULL" without PRAGMA foreign_keys=ON)
+            $linkedUsers = $em->getRepository(User::class)->findBy(['linkedAthlete' => $athlete]);
+            foreach ($linkedUsers as $u) {
+                $u->setLinkedAthlete(null);
+            }
             $em->remove($athlete);
             $em->flush();
             $this->addFlash('success', 'Athlète supprimé.');

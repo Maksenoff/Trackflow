@@ -100,6 +100,87 @@ class CompetitionRegistrationController extends AbstractController
         return $this->redirectToRoute('app_competition_show', ['id' => $id]);
     }
 
+    #[IsGranted('ROLE_COACH')]
+    #[Route('/{registrationId}/update', name: 'app_competition_update_any', methods: ['POST'])]
+    public function updateAny(
+        int $id,
+        int $registrationId,
+        Request $request,
+        CompetitionRepository $competitionRepo,
+        CompetitionRegistrationRepository $registrationRepo,
+        EntityManagerInterface $em,
+    ): Response {
+        if (!$this->isCsrfTokenValid('update-any-' . $registrationId, $request->getPayload()->get('_token'))) {
+            throw $this->createAccessDeniedException();
+        }
+
+        $competition = $competitionRepo->find($id);
+        if (!$competition) throw $this->createNotFoundException();
+
+        $registration = $registrationRepo->find($registrationId);
+        if (!$registration || $registration->getCompetition()->getId() !== $id) {
+            return $this->json(['ok' => false], 404);
+        }
+
+        $disciplines = array_values(array_filter($request->getPayload()->all('disciplines') ?? []));
+        if (empty($disciplines)) {
+            return $this->json(['ok' => false, 'error' => 'Sélectionne au moins une discipline.'], 400);
+        }
+
+        $registration->setDisciplines($disciplines);
+        $em->flush();
+
+        $linkedAthlete  = $this->getUser()->getLinkedAthlete();
+        $myRegistration = $linkedAthlete
+            ? $registrationRepo->findByAthleteAndCompetition($linkedAthlete, $competition)
+            : null;
+
+        return $this->json($this->buildPayload(
+            $registrationRepo->findByCompetition($competition),
+            $myRegistration,
+            true,
+            $this->container->get('security.csrf.token_manager'),
+        ));
+    }
+
+    #[IsGranted('ROLE_COACH')]
+    #[Route('/{registrationId}/toggle-ffa', name: 'app_competition_toggle_ffa', methods: ['POST'])]
+    public function toggleFfa(
+        int $id,
+        int $registrationId,
+        Request $request,
+        CompetitionRepository $competitionRepo,
+        CompetitionRegistrationRepository $registrationRepo,
+        EntityManagerInterface $em,
+    ): Response {
+        if (!$this->isCsrfTokenValid('ffa-toggle-' . $registrationId, $request->getPayload()->get('_token'))) {
+            throw $this->createAccessDeniedException();
+        }
+
+        $competition  = $competitionRepo->find($id);
+        if (!$competition) throw $this->createNotFoundException();
+
+        $registration = $registrationRepo->find($registrationId);
+        if (!$registration || $registration->getCompetition()->getId() !== $id) {
+            return $this->json(['ok' => false], 404);
+        }
+
+        $registration->setFfaRegistered(!$registration->isFfaRegistered());
+        $em->flush();
+
+        $linkedAthlete  = $this->getUser()->getLinkedAthlete();
+        $myRegistration = $linkedAthlete
+            ? $registrationRepo->findByAthleteAndCompetition($linkedAthlete, $competition)
+            : null;
+
+        return $this->json($this->buildPayload(
+            $registrationRepo->findByCompetition($competition),
+            $myRegistration,
+            true,
+            $this->container->get('security.csrf.token_manager'),
+        ));
+    }
+
     #[Route('/annuler/{registrationId}', name: 'app_competition_unregister_any', methods: ['POST'])]
     public function unregisterAny(
         int $id,
@@ -164,13 +245,18 @@ class CompetitionRegistrationController extends AbstractController
             'ok'             => true,
             'myRegistration' => $myReg ? ['id' => $myReg->getId(), 'disciplines' => $myReg->getDisciplines()] : null,
             'registrations'  => array_map(fn($reg) => [
-                'id'          => $reg->getId(),
-                'athleteName' => $reg->getAthlete()->getFullName(),
-                'athletePhoto'=> $reg->getAthlete()->getPhoto(),
-                'disciplines' => $reg->getDisciplines(),
-                'isOwn'       => $myReg && $myReg->getId() === $reg->getId(),
-                'canRemove'   => ($myReg && $myReg->getId() === $reg->getId()) || $isCoach,
-                'unregToken'  => $csrf->getToken('unregister-any-' . $reg->getId())->getValue(),
+                'id'            => $reg->getId(),
+                'athleteName'   => $reg->getAthlete()->getFullName(),
+                'athletePhoto'  => $reg->getAthlete()->getPhoto(),
+                'licenseNumber' => $reg->getAthlete()->getLicenseNumber(),
+                'disciplines'   => $reg->getDisciplines(),
+                'ffaRegistered' => $reg->isFfaRegistered(),
+                'isOwn'         => $myReg && $myReg->getId() === $reg->getId(),
+                'canRemove'     => ($myReg && $myReg->getId() === $reg->getId()) || $isCoach,
+                'canManage'     => $isCoach,
+                'unregToken'    => $csrf->getToken('unregister-any-' . $reg->getId())->getValue(),
+                'ffaToken'      => $csrf->getToken('ffa-toggle-' . $reg->getId())->getValue(),
+                'updateToken'   => $csrf->getToken('update-any-' . $reg->getId())->getValue(),
             ], $registrations),
         ];
     }

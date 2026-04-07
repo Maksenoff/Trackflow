@@ -559,6 +559,41 @@ class FfaSync
         } catch (\Throwable) {}
         $birthDate = $birthDate ?? $birthYear;
 
+        // License number
+        $licenseNumber = null;
+        try {
+            // 1. JSON-LD: "identifier" field
+            if (preg_match_all('/<script[^>]+type=["\']application\/ld\+json["\'][^>]*>(.*?)<\/script>/si', $html, $ldM)) {
+                foreach ($ldM[1] as $json) {
+                    try {
+                        $ld = json_decode($json, true, 512, \JSON_THROW_ON_ERROR);
+                        foreach (['identifier', 'membershipNumber', 'licenseNumber'] as $key) {
+                            if (!empty($ld[$key]) && preg_match('/^\d{6,10}$/', trim((string)$ld[$key]))) {
+                                $licenseNumber = trim((string)$ld[$key]);
+                                break 2;
+                            }
+                        }
+                    } catch (\Throwable) {}
+                }
+            }
+            // 2. Text scan for "Licence : XXXXXXXX" or "N° : XXXXXXXX"
+            if ($licenseNumber === null) {
+                $crawler->filter('p, span, div, td, li, dt, dd')->each(function (Crawler $node) use (&$licenseNumber) {
+                    if ($licenseNumber !== null) return;
+                    $text = trim($node->text());
+                    if (preg_match('/licen[cs]e?\s*[:\-n°#]?\s*(\d{6,10})\b/iu', $text, $m)) {
+                        $licenseNumber = $m[1];
+                    } elseif (preg_match('/\bn[°o]\s*(?:de\s+)?licen[cs]e?\s*[:\-]?\s*(\d{6,10})\b/iu', $text, $m)) {
+                        $licenseNumber = $m[1];
+                    }
+                });
+            }
+            // 3. Fallback: meta tag
+            if ($licenseNumber === null && preg_match('/content=["\'](\d{6,10})["\'][^>]*licen/i', $html, $m)) {
+                $licenseNumber = $m[1];
+            }
+        } catch (\Throwable) {}
+
         // Dominant discipline from any td text on the page
         $discipline = null;
         $counts     = [];
@@ -573,12 +608,13 @@ class FfaSync
         if ($counts) { arsort($counts); $discipline = array_key_first($counts); }
 
         return [
-            'firstName'  => $firstName,
-            'lastName'   => $lastName,
-            'birthDate'  => $birthDate,
-            'gender'     => $gender,
-            'discipline' => $discipline ? [$discipline] : [],
-            'error'      => (!$firstName && !$lastName)
+            'firstName'     => $firstName,
+            'lastName'      => $lastName,
+            'birthDate'     => $birthDate,
+            'gender'        => $gender,
+            'discipline'    => $discipline ? [$discipline] : [],
+            'licenseNumber' => $licenseNumber,
+            'error'         => (!$firstName && !$lastName)
                 ? 'Nom introuvable. Vérifiez l\'URL (format : https://www.athle.fr/athletes/XXXXX/resultats).'
                 : null,
         ];

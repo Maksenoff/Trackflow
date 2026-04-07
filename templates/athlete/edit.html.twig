@@ -26,6 +26,10 @@
             <div>{{ form_row(form.birthDate) }}</div>
             <div>{{ form_row(form.gender) }}</div>
         </div>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;">
+            <div>{{ form_row(form.licenseNumber) }}</div>
+            <div>{{ form_row(form.ffaProfileUrl) }}</div>
+        </div>
         <div class="form-group">
             <label class="form-label">Spécialités</label>
             <input type="hidden" name="disciplines_raw" id="disciplines_raw_edit" value="{{ athlete.disciplines | json_encode }}">

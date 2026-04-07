@@ -8,7 +8,7 @@
 {% endblock %}
 
 {% block body %}
-<div style="max-width:640px;margin:0 auto;display:flex;flex-direction:column;gap:24px;">
+<div style="max-width:560px;margin:0 auto;display:flex;flex-direction:column;gap:24px;">
 
     <div>
         <h1 class="section-title">Types de compétitions</h1>
@@ -16,98 +16,114 @@
     </div>
 
     {# Liste des types existants #}
-    <div class="card" style="overflow:hidden">
+    <div class="card" style="overflow:hidden;">
         {% if types is empty %}
-            <div class="empty-state" style="padding:40px">
-                <svg width="32" height="32" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M7 7h.01M7 3h5c.512 0 1.024.195 1.414.586l7 7a2 2 0 010 2.828l-7 7a2 2 0 01-2.828 0l-7-7A2 2 0 013 12V7a2 2 0 012-2z"/></svg>
-                <p>Aucun type créé. Commencez par en ajouter un ci-dessous.</p>
+            <div class="empty-state" style="padding:48px;">
+                <svg width="32" height="32" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M9 12l2 2 4-4M7.835 4.697a3.42 3.42 0 001.946-.806 3.42 3.42 0 014.438 0 3.42 3.42 0 001.946.806 3.42 3.42 0 013.138 3.138 3.42 3.42 0 00.806 1.946 3.42 3.42 0 010 4.438 3.42 3.42 0 00-.806 1.946 3.42 3.42 0 01-3.138 3.138 3.42 3.42 0 00-1.946.806 3.42 3.42 0 01-4.438 0 3.42 3.42 0 00-1.946-.806 3.42 3.42 0 01-3.138-3.138 3.42 3.42 0 00-.806-1.946 3.42 3.42 0 010-4.438 3.42 3.42 0 00.806-1.946 3.42 3.42 0 013.138-3.138z"/></svg>
+                <p>Aucun type créé.</p>
             </div>
         {% else %}
             {% for type in types %}
-                <div class="list-item"
-                     x-data="{
+                <div x-data="{
                         editing: false,
+                        color: '{{ type.color }}',
+                        palette: ['#ef4444','#f97316','#f59e0b','#eab308','#84cc16','#22c55e','#10b981','#14b8a6','#06b6d4','#3b82f6','#6366f1','#8b5cf6','#a855f7','#ec4899','#f43f5e','#64748b'],
                         async deleteType() {
-                            const msg = '{{ ('Supprimer le type "' ~ type.name ~ '" ?')|e('js') }}{% if type.competitions|length > 0 %} Les {{ type.competitions|length }} compétitions associées n\'auront plus de type.{% endif %}';
-                            if (!confirm(msg)) return;
+                            if (!confirm('{{ ('Supprimer "' ~ type.name ~ '" ?')|e('js') }}')) return;
                             const res = await fetch('{{ path('app_competition_type_delete', {id: type.id}) }}', {
                                 method: 'POST',
                                 headers: { 'Content-Type': 'application/x-www-form-urlencoded', 'X-Requested-With': 'XMLHttpRequest' },
                                 body: '_token={{ csrf_token('delete-ct' ~ type.id)|url_encode }}'
                             });
                             if (res.ok) {
-                                $el.style.opacity = '0';
-                                $el.style.transition = 'opacity .2s';
-                                setTimeout(() => $el.remove(), 200);
+                                $el.style.transition = 'opacity .2s, transform .2s';
+                                $el.style.opacity = '0'; $el.style.transform = 'translateX(10px)';
+                                setTimeout(() => $el.remove(), 220);
                             }
                         }
-                     }">
+                     }"
+                     style="border-bottom:1px solid var(--border);">
 
                     {# Display mode #}
-                    <div style="display:flex;align-items:center;gap:12px;flex:1;" x-show="!editing">
-                        <span style="width:18px;height:18px;border-radius:50%;flex-shrink:0;border:2px solid rgba(255,255,255,.15);background:{{ type.color }}"></span>
-                        <span style="font-weight:500;color:var(--text-1);font-size:14px;">{{ type.name }}</span>
-                        <span style="font-size:11px;color:var(--text-3);font-family:monospace;">{{ type.color }}</span>
-                        {% if type.competitions|length > 0 %}
-                            <span style="font-size:12px;color:var(--text-3);">{{ type.competitions|length }} compétition{% if type.competitions|length > 1 %}s{% endif %}</span>
-                        {% endif %}
+                    <div :style="{ display: editing ? 'none' : 'flex', alignItems: 'stretch' }">
+                        <span style="width:5px;flex-shrink:0;" :style="{ background: color }"></span>
+                        <div style="display:flex;align-items:center;flex:1;padding:13px 16px 13px 20px;">
+                            <span style="font-weight:600;font-size:14px;flex:1;" :style="{ color: color }">{{ type.name }}</span>
+                            <div style="display:flex;align-items:center;gap:4px;flex-shrink:0;">
+                                <button @click="editing = true" class="btn-icon-subtle">
+                                    <svg width="15" height="15" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"/></svg>
+                                </button>
+                                <button @click="deleteType()" class="btn-icon-subtle danger">
+                                    <svg width="15" height="15" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/></svg>
+                                </button>
+                            </div>
+                        </div>
                     </div>
 
-                    {# Inline edit form #}
-                    <form action="{{ path('app_competition_type_edit', {id: type.id}) }}" method="post"
-                          style="display:flex;align-items:center;gap:8px;flex:1;margin-right:16px;" x-show="editing">
-                        <input type="text" name="competition_type[name]" value="{{ type.name }}"
-                               class="form-input" style="flex:1;padding:6px 10px;font-size:13px;">
-                        <input type="color" name="competition_type[color]" value="{{ type.color }}"
-                               style="width:36px;height:32px;border-radius:8px;cursor:pointer;background:transparent;border:1px solid var(--border);padding:2px;">
-                        <input type="hidden" name="competition_type[_token]" value="{{ csrf_token('competition_type') }}">
-                        <button type="submit" class="btn btn-primary btn-sm">OK</button>
-                        <button type="button" @click="editing = false" class="btn btn-ghost btn-sm">Annuler</button>
-                    </form>
-
-                    <div style="display:flex;align-items:center;gap:6px;flex-shrink:0;">
-                        <button @click="editing = !editing" x-show="!editing"
-                                style="background:none;border:none;padding:6px;border-radius:8px;cursor:pointer;color:var(--text-3);transition:color .15s,background .15s;"
-                                onmouseover="this.style.color='var(--accent)';this.style.background='rgba(var(--accent-rgb),.1)'"
-                                onmouseout="this.style.color='var(--text-3)';this.style.background='none'">
-                            <svg width="14" height="14" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"/>
-                            </svg>
-                        </button>
-                        <button type="button" @click="deleteType()"
-                                style="background:none;border:none;padding:6px;border-radius:8px;cursor:pointer;color:var(--text-3);transition:color .15s,background .15s;"
-                                onmouseover="this.style.color='var(--danger)';this.style.background='rgba(239,68,68,.1)'"
-                                onmouseout="this.style.color='var(--text-3)';this.style.background='none'">
-                            <svg width="14" height="14" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/>
-                            </svg>
-                        </button>
+                    {# Edit mode #}
+                    <div :style="{ display: editing ? 'block' : 'none' }" style="padding:16px;background:var(--bg-2);">
+                        <form action="{{ path('app_competition_type_edit', {id: type.id}) }}" method="post"
+                              style="display:flex;flex-direction:column;gap:14px;">
+                            <input type="hidden" name="competition_type[_token]" value="{{ csrf_token('competition_type') }}">
+                            <input type="hidden" name="competition_type[color]" :value="color">
+                            <input type="text" name="competition_type[name]" value="{{ type.name }}" class="form-input">
+                            <div>
+                                <p style="font-size:11px;font-weight:600;color:var(--text-3);text-transform:uppercase;letter-spacing:.07em;margin-bottom:10px;">Couleur</p>
+                                <div style="display:grid;grid-template-columns:repeat(8,1fr);gap:8px;">
+                                    <template x-for="c in palette" :key="c">
+                                        <button type="button" @click="color = c"
+                                                :style="'aspect-ratio:1;border-radius:8px;cursor:pointer;border:none;background:' + c + ';opacity:' + (color === c ? '1' : '.55') + ';transform:' + (color === c ? 'scale(1.15)' : 'scale(1)') + ';box-shadow:' + (color === c ? '0 0 0 3px var(--bg-2), 0 0 0 5px ' + c : 'none') + ';transition:all .15s;'">
+                                        </button>
+                                    </template>
+                                </div>
+                                <div style="display:flex;align-items:center;gap:8px;margin-top:12px;">
+                                    <span style="width:24px;height:24px;border-radius:6px;flex-shrink:0;" :style="'background:' + color + ';box-shadow:0 0 8px ' + color + '60'"></span>
+                                    <span style="font-size:12px;font-family:monospace;color:var(--text-2);" x-text="color"></span>
+                                </div>
+                            </div>
+                            <div style="display:flex;gap:8px;">
+                                <button type="submit" class="btn btn-primary btn-sm">Enregistrer</button>
+                                <button type="button" @click="editing = false; color = '{{ type.color }}'" class="btn btn-ghost btn-sm">Annuler</button>
+                            </div>
+                        </form>
                     </div>
+
                 </div>
             {% endfor %}
         {% endif %}
     </div>
 
     {# Créer un nouveau type #}
-    <div class="card card-body">
-        <h2 style="font-size:14px;font-weight:600;color:var(--text-1);margin:0 0 16px;text-transform:uppercase;letter-spacing:.05em;">Nouveau type</h2>
-        {{ form_start(form, {attr: {style: 'display:flex;align-items:flex-end;gap:12px;flex-wrap:wrap;'}}) }}
-        <div style="flex:1;min-width:160px;">
-            {{ form_row(form.name) }}
-        </div>
-        <div style="padding-bottom:2px;">
-            <p class="form-label">Couleur</p>
-            {{ form_widget(form.color, {attr: {style: 'width:44px;height:38px;border-radius:8px;cursor:pointer;background:transparent;border:1px solid var(--border);padding:2px;'}}) }}
+    <div class="card card-body"
+         x-data="{
+             color: '#6366f1',
+             palette: ['#ef4444','#f97316','#f59e0b','#eab308','#84cc16','#22c55e','#10b981','#14b8a6','#06b6d4','#3b82f6','#6366f1','#8b5cf6','#a855f7','#ec4899','#f43f5e','#64748b']
+         }">
+        <h2 style="font-size:12px;font-weight:600;color:var(--text-3);margin:0 0 20px;text-transform:uppercase;letter-spacing:.07em;">Nouveau type</h2>
+        {{ form_start(form, {attr: {style: 'display:flex;flex-direction:column;gap:16px;'}}) }}
+            <input type="hidden" name="competition_type[color]" :value="color">
             {% do form.color.setRendered() %}
-        </div>
-        <div style="padding-bottom:2px;">
-            <button type="submit" class="btn btn-primary">
-                <svg width="14" height="14" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/>
-                </svg>
-                Ajouter
-            </button>
-        </div>
+            {{ form_row(form.name) }}
+            <div>
+                <p class="form-label">Couleur</p>
+                <div style="display:grid;grid-template-columns:repeat(8,1fr);gap:8px;">
+                    <template x-for="c in palette" :key="c">
+                        <button type="button" @click="color = c"
+                                :style="'aspect-ratio:1;border-radius:8px;cursor:pointer;border:none;background:' + c + ';opacity:' + (color === c ? '1' : '.55') + ';transform:' + (color === c ? 'scale(1.15)' : 'scale(1)') + ';box-shadow:' + (color === c ? '0 0 0 3px var(--bg-card-solid), 0 0 0 5px ' + c : 'none') + ';transition:all .15s;'">
+                        </button>
+                    </template>
+                </div>
+                <div style="display:flex;align-items:center;gap:8px;margin-top:12px;">
+                    <span style="width:24px;height:24px;border-radius:6px;flex-shrink:0;" :style="'background:' + color + ';box-shadow:0 0 8px ' + color + '60'"></span>
+                    <span style="font-size:12px;font-family:monospace;color:var(--text-2);" x-text="color"></span>
+                </div>
+            </div>
+            <div>
+                <button type="submit" class="btn btn-primary">
+                    <svg width="14" height="14" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/></svg>
+                    Ajouter
+                </button>
+            </div>
         {{ form_end(form) }}
     </div>
 

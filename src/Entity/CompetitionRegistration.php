@@ -15,7 +15,7 @@ class CompetitionRegistration
     #[ORM\Column]
     private ?int $id = null;
 
-    #[ORM\ManyToOne(targetEntity: Athlete::class)]
+    #[ORM\ManyToOne(targetEntity: Athlete::class, inversedBy: 'competitionRegistrations')]
     #[ORM\JoinColumn(nullable: false, onDelete: 'CASCADE')]
     private ?Athlete $athlete = null;
 
@@ -28,6 +28,9 @@ class CompetitionRegistration
 
     #[ORM\Column(type: Types::DATETIME_MUTABLE)]
     private \DateTimeInterface $registeredAt;
+
+    #[ORM\Column(type: 'boolean')]
+    private bool $ffaRegistered = false;
 
     public function __construct()
     {
@@ -46,4 +49,7 @@ class CompetitionRegistration
     public function setDisciplines(array $disciplines): static { $this->disciplines = $disciplines; return $this; }
 
     public function getRegisteredAt(): \DateTimeInterface { return $this->registeredAt; }
+
+    public function isFfaRegistered(): bool { return $this->ffaRegistered; }
+    public function setFfaRegistered(bool $ffaRegistered): static { $this->ffaRegistered = $ffaRegistered; return $this; }
 }

@@ -8,18 +8,32 @@
 {% endblock %}
 
 {% block body %}
-<div>
+<div x-data="{ search: '' }">
     <div class="page-header">
         <div>
             <h1 class="section-title">Athlètes</h1>
             <p class="section-subtitle">{{ athletes|length }} athlète{% if athletes|length > 1 %}s{% endif %} suivi{% if athletes|length > 1 %}s{% endif %}</p>
         </div>
-        {% if is_granted('ROLE_ADMIN') %}
-        <a href="{{ path('app_athlete_new') }}" class="btn btn-primary">
-            <svg fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M12 4v16m8-8H4"/></svg>
-            Nouvel athlète
-        </a>
-        {% endif %}
+        <div style="display:flex;align-items:center;gap:10px;">
+            {% if athletes|length > 0 %}
+            <div style="position:relative;">
+                <svg width="15" height="15" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2"
+                     style="position:absolute;left:11px;top:50%;transform:translateY(-50%);color:var(--text-3);pointer-events:none;">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/>
+                </svg>
+                <input type="text" x-model="search" placeholder="Rechercher un athlète…"
+                       style="padding:8px 12px 8px 34px;border-radius:var(--radius-sm);border:1px solid var(--border);background:var(--bg-card-solid);color:var(--text-1);font-size:13px;width:220px;outline:none;transition:border-color var(--transition),box-shadow var(--transition);"
+                       onfocus="this.style.borderColor='var(--accent)';this.style.boxShadow='0 0 0 3px var(--accent-subtle)'"
+                       onblur="this.style.borderColor='var(--border)';this.style.boxShadow='none'">
+            </div>
+            {% endif %}
+            {% if is_granted('ROLE_ADMIN') %}
+            <a href="{{ path('app_athlete_new') }}" class="btn btn-primary">
+                <svg fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M12 4v16m8-8H4"/></svg>
+                Nouvel athlète
+            </a>
+            {% endif %}
+        </div>
     </div>
 
     {% if athletes is empty %}
@@ -36,9 +50,10 @@
     {% else %}
         <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:16px;" data-stagger>
             {% for athlete in athletes %}
+                <div x-show="search === '' || '{{ athlete.fullName|lower|replace({"'": "\\'"}) }}'.includes(search.toLowerCase())" style="height:100%;">
                 <a href="{{ path('app_athlete_show', {id: athlete.id}) }}"
                    class="card card-hover card-accent-hover"
-                   style="display:block;text-decoration:none;padding:20px;cursor:pointer;">
+                   style="display:flex;flex-direction:column;text-decoration:none;padding:20px;cursor:pointer;height:100%;box-sizing:border-box;">
                     <div style="display:flex;align-items:flex-start;gap:14px;">
                         <div class="avatar avatar-md avatar-sq">
                             {% if athlete.photo %}
@@ -60,7 +75,7 @@
                         </div>
                     </div>
 
-                    <div style="display:flex;gap:20px;margin-top:16px;padding-top:14px;border-top:1px solid var(--border);">
+                    <div style="display:flex;gap:20px;margin-top:auto;padding-top:14px;border-top:1px solid var(--border);">
                         <div style="text-align:center;">
                             <div style="font-size:18px;font-weight:800;color:var(--text-1);" data-count="{{ athlete.athleteSessions|length }}">{{ athlete.athleteSessions|length }}</div>
                             <div style="font-size:11px;color:var(--text-3);">séances</div>
@@ -75,8 +90,10 @@
                         </div>
                     </div>
                 </a>
+                </div>
             {% endfor %}
         </div>
+
     {% endif %}
 </div>
 {% endblock %}

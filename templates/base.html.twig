@@ -47,29 +47,29 @@
 
     /* ── CSS Variables — Light ── */
     [data-theme="light"] {
-        --bg:            #f0f4ff;
-        --bg-2:          #e8edff;
-        --bg-card:       rgba(255,255,255,0.9);
+        --bg:            #eef1f8;
+        --bg-2:          #e2e7f3;
+        --bg-card:       rgba(255,255,255,0.95);
         --bg-card-solid: #ffffff;
-        --bg-hover:      rgba(99,102,241,0.05);
-        --border:        rgba(0,0,0,0.07);
-        --border-strong: rgba(0,0,0,0.13);
+        --bg-hover:      rgba(79,70,229,0.06);
+        --border:        rgba(0,0,0,0.11);
+        --border-strong: rgba(0,0,0,0.20);
         --text-1:        #0f172a;
-        --text-2:        #475569;
-        --text-3:        #94a3b8;
+        --text-2:        #3d4a63;
+        --text-3:        #7c8da8;
         --accent:        #4f46e5;
         --accent-2:      #0891b2;
         --accent-hover:  #4338ca;
-        --accent-glow:   rgba(79,70,229,0.2);
-        --accent-subtle: rgba(79,70,229,0.08);
+        --accent-glow:   rgba(79,70,229,0.25);
+        --accent-subtle: rgba(79,70,229,0.10);
         --success:       #059669;
-        --success-bg:    rgba(5,150,105,0.08);
+        --success-bg:    rgba(5,150,105,0.10);
         --warning:       #d97706;
-        --warning-bg:    rgba(217,119,6,0.08);
+        --warning-bg:    rgba(217,119,6,0.10);
         --danger:        #dc2626;
-        --danger-bg:     rgba(220,38,38,0.08);
-        --shadow-card:   0 2px 16px rgba(0,0,0,0.08);
-        --shadow-glow:   0 0 30px rgba(79,70,229,0.1);
+        --danger-bg:     rgba(220,38,38,0.10);
+        --shadow-card:   0 1px 4px rgba(0,0,0,0.07), 0 4px 16px rgba(0,0,0,0.06);
+        --shadow-glow:   0 0 30px rgba(79,70,229,0.12);
     }
 
     /* ── Reset & Base ── */
@@ -85,19 +85,50 @@
         transition: background var(--transition), color var(--transition);
     }
 
-    /* ── Page transition ── */
+    /* ── Page transition — top progress bar ── */
     #tf-transition {
         position: fixed;
-        inset: 0;
-        background: var(--accent);
+        top: 0; left: 0; right: 0;
+        height: 3px;
+        background: linear-gradient(90deg, var(--accent), var(--accent-2), var(--accent));
+        background-size: 200% 100%;
+        box-shadow: 0 0 14px var(--accent-glow), 0 0 6px var(--accent-glow);
         z-index: 9999;
         pointer-events: none;
-        transform: scaleX(0);
         transform-origin: left;
-        transition: transform 0.35s cubic-bezier(0.4,0,0.2,1);
+        transform: scaleX(0);
+        opacity: 1;
+        transition: transform 0.5s cubic-bezier(0.4,0,0.2,1), opacity 0.3s ease;
     }
-    #tf-transition.enter  { transform: scaleX(1); transform-origin: left; }
-    #tf-transition.leave  { transform: scaleX(0); transform-origin: right; }
+    #tf-transition.loading {
+        transform: scaleX(0.75);
+        transition: transform 0.6s cubic-bezier(0.1,0,0.4,1);
+        animation: tf-bar-shimmer 1.2s linear infinite;
+    }
+    #tf-transition.complete {
+        transform: scaleX(1);
+        opacity: 0;
+        animation: none;
+        transition: transform 0.15s ease, opacity 0.3s ease 0.08s;
+    }
+    @keyframes tf-bar-shimmer {
+        0%   { background-position: 100% 0; }
+        100% { background-position: -100% 0; }
+    }
+
+    /* ── Content entry / exit ── */
+    @keyframes tf-page-in {
+        from { opacity: 0; transform: translateY(10px) scale(0.995); filter: blur(3px); }
+        to   { opacity: 1; transform: translateY(0)   scale(1);     filter: blur(0);   }
+    }
+    #tf-content { animation: tf-page-in 0.42s cubic-bezier(0.22,1,0.36,1) both; }
+    #tf-content.exiting {
+        animation: none !important;
+        opacity: 0 !important;
+        transform: translateY(-6px) scale(1.004) !important;
+        filter: blur(3px) !important;
+        transition: opacity 0.26s ease, transform 0.26s ease, filter 0.26s ease;
+    }
 
     /* ── Sidebar ── */
     #tf-sidebar {
@@ -502,6 +533,16 @@
     .btn-sm svg { width: 13px; height: 13px; }
     .btn-lg { padding: 12px 28px; font-size: 15px; border-radius: 10px; }
     .btn-icon { padding: 8px; border-radius: var(--radius-sm); }
+    .btn-icon-subtle {
+        display: inline-flex; align-items: center; justify-content: center;
+        width: 34px; height: 34px; border-radius: 8px;
+        border: none; background: transparent;
+        color: var(--text-3); cursor: pointer;
+        transition: color var(--transition), background var(--transition);
+    }
+    .btn-icon-subtle:hover { color: var(--accent); background: var(--accent-subtle); }
+    .btn-icon-subtle.active { color: var(--accent); background: var(--accent-subtle); }
+    .btn-icon-subtle.danger:hover { color: var(--danger); background: var(--danger-bg); }
     .btn-icon svg { width: 16px; height: 16px; }
 
     /* ── Stat cards ── */
@@ -707,6 +748,77 @@
     .tf-tab:hover { color: var(--text-1); background: var(--bg-hover); }
     .tf-tab.active { background: var(--bg-card-solid); color: var(--text-1); font-weight: 600; box-shadow: 0 1px 4px rgba(0,0,0,0.15); }
     .tf-tab svg { width: 15px; height: 15px; }
+
+    /* ── Season pills (filter) ── */
+    .season-pill {
+        display: inline-flex; align-items: center; gap: 5px;
+        padding: 6px 14px;
+        border-radius: var(--radius-pill);
+        font-size: 13px; font-weight: 500;
+        border: 1px solid var(--border);
+        background: var(--bg-card);
+        color: var(--text-2);
+        cursor: pointer;
+        transition: all var(--transition);
+        white-space: nowrap;
+    }
+    .season-pill:hover { border-color: var(--border-strong); color: var(--text-1); background: var(--bg-hover); }
+    .season-pill.active { background: var(--accent); color: #fff; border-color: transparent; box-shadow: 0 0 0 1px var(--accent); }
+    .season-pill .pill-count { opacity: .65; font-size: 11px; }
+
+    /* ── Filter chips (cat / indoor) ── */
+    .filter-chip {
+        display: inline-flex; align-items: center;
+        padding: 5px 12px;
+        border-radius: var(--radius-pill);
+        font-size: 12px; font-weight: 500;
+        border: 1px solid var(--border);
+        background: transparent;
+        color: var(--text-3);
+        cursor: pointer;
+        transition: all var(--transition);
+        white-space: nowrap;
+    }
+    .filter-chip:hover { border-color: var(--border-strong); color: var(--text-2); }
+    .filter-chip.active { background: var(--accent-subtle); color: var(--accent-hover); border-color: rgba(99,102,241,.35); }
+    .filter-chip.indoor { background: rgba(99,102,241,.15); color: #a5b4fc; border-color: rgba(99,102,241,.4); }
+    .filter-chip.outdoor { background: rgba(251,191,36,.1); color: #fbbf24; border-color: rgba(251,191,36,.3); }
+
+    /* ── User edit grid ── */
+    .user-edit-grid {
+        display: grid;
+        grid-template-columns: 1fr 320px;
+        gap: 20px;
+        align-items: stretch;
+    }
+    @media (max-width: 860px) {
+        .user-edit-grid { grid-template-columns: 1fr; }
+    }
+
+    /* ── Segmented control (indoor/outdoor) ── */
+    .filter-seg {
+        display: inline-flex;
+        border: 1px solid var(--border-strong);
+        border-radius: var(--radius-pill);
+        overflow: hidden;
+        background: var(--bg-card);
+    }
+    .seg-btn {
+        display: inline-flex; align-items: center; gap: 5px;
+        padding: 6px 14px;
+        font-size: 12px; font-weight: 500;
+        border: none; background: transparent;
+        color: var(--text-3);
+        cursor: pointer;
+        transition: all var(--transition);
+        white-space: nowrap;
+        border-right: 1px solid var(--border);
+    }
+    .seg-btn:last-child { border-right: none; }
+    .seg-btn:hover { background: var(--bg-hover); color: var(--text-1); }
+    .seg-btn.active { background: var(--accent-subtle); color: var(--accent-hover); }
+    .seg-btn.active.indoor  { background: rgba(99,102,241,.18); color: #a5b4fc; }
+    .seg-btn.active.outdoor { background: rgba(251,191,36,.12); color: #fbbf24; }
 
     /* ── Skeleton loader ── */
     .skeleton {
@@ -949,8 +1061,7 @@
                     <div class="tf-user-role">{{ is_granted('ROLE_ADMIN') ? 'Coach' : 'Athlète' }}</div>
                 </div>
                 <svg width="14" height="14" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2"
-                     :class="open ? 'rotate-180' : ''" style="transition: transform 0.2s; color: var(--text-3);"
-                     class="r-user-info">
+                     :class="open ? 'rotate-180' : ''" style="transition: transform 0.2s; color: var(--text-3); flex-shrink: 0;">
                     <path stroke-linecap="round" stroke-linejoin="round" d="M19 9l-7 7-7-7"/>
                 </svg>
             </button>
@@ -1090,15 +1201,12 @@ const TF = {
 
     /* ── Page transitions ── */
     initTransitions() {
-        const bar = document.getElementById('tf-transition');
+        const bar     = document.getElementById('tf-transition');
+        const content = document.getElementById('tf-content');
 
-        // Animate in on page load
-        bar.classList.add('enter');
+        // Entry: complete the bar then fade it out
         requestAnimationFrame(() => {
-            requestAnimationFrame(() => {
-                bar.classList.remove('enter');
-                bar.classList.add('leave');
-            });
+            bar.classList.add('complete');
         });
 
         // Intercept internal link clicks
@@ -1115,13 +1223,20 @@ const TF = {
             } catch { return; }
 
             e.preventDefault();
+
+            // Reset & start progress bar
             bar.style.transition = 'none';
             bar.className = '';
-            bar.classList.add('enter');
+            bar.style.transform = 'scaleX(0)';
+            bar.style.opacity = '1';
             void bar.offsetWidth;
             bar.style.transition = '';
+            bar.classList.add('loading');
 
-            setTimeout(() => { window.location.href = href; }, 280);
+            // Fade out content
+            if (content) content.classList.add('exiting');
+
+            setTimeout(() => { window.location.href = href; }, 290);
         });
     },
 

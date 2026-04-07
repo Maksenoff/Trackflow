@@ -260,7 +260,7 @@
 
                                 {# Tooltip survol desktop #}
                                 <div class="cal-tooltip"
-                                     style="position:absolute;bottom:100%;{% if col >= 5 %}right:0;{% else %}left:0;{% endif %}margin-bottom:6px;z-index:50;width:208px;pointer-events:none;opacity:0;transition:opacity .15s;background:var(--bg-3);border:1px solid var(--border-2);border-radius:12px;box-shadow:0 8px 32px rgba(0,0,0,.4);overflow:hidden;">
+                                     style="position:absolute;bottom:100%;{% if col >= 5 %}right:0;{% else %}left:0;{% endif %}margin-bottom:6px;z-index:50;width:208px;pointer-events:none;opacity:0;transition:opacity .15s;background:var(--bg-card-solid);border:1px solid var(--border-strong);border-radius:12px;box-shadow:0 8px 32px rgba(0,0,0,.35);overflow:hidden;">
                                     <div style="height:3px;flex-shrink:0;background:{{ s.colorBg }};"></div>
                                     <div style="padding:12px;">
                                         {% if s.typeLabel %}
@@ -459,6 +459,47 @@
             body: JSON.stringify({date: cell.dataset.date})
         }).then(function(r) { if (!r.ok) location.reload(); }).catch(location.reload);
     });
+}());
+
+// ── Tooltips calendrier : position:fixed pour échapper à overflow:hidden ──
+(function() {
+    function initTooltips() {
+        document.querySelectorAll('.cal-pill-wrap').forEach(function(wrap) {
+            if (wrap._tipInit) return;
+            wrap._tipInit = true;
+            var tip = wrap.querySelector('.cal-tooltip');
+            if (!tip) return;
+
+            wrap.addEventListener('mouseenter', function() {
+                var r   = wrap.getBoundingClientRect();
+                var tipW = 208;
+                var tipH = tip.offsetHeight || 180;
+
+                tip.style.position = 'fixed';
+                tip.style.width    = tipW + 'px';
+                tip.style.margin   = '0';
+
+                // Horizontal
+                if (r.right + tipW > window.innerWidth - 8) {
+                    tip.style.right = (window.innerWidth - r.right) + 'px';
+                    tip.style.left  = 'auto';
+                } else {
+                    tip.style.left  = r.left + 'px';
+                    tip.style.right = 'auto';
+                }
+
+                // Vertical : au-dessus si la place le permet, sinon en-dessous
+                if (r.top > tipH + 12) {
+                    tip.style.bottom = (window.innerHeight - r.top + 6) + 'px';
+                    tip.style.top    = 'auto';
+                } else {
+                    tip.style.top    = (r.bottom + 6) + 'px';
+                    tip.style.bottom = 'auto';
+                }
+            });
+        });
+    }
+    initTooltips();
 }());
 </script>
 {% endblock %}

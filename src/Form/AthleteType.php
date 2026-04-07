@@ -33,6 +33,11 @@ class AthleteType extends AbstractType
                 'placeholder' => 'Non spécifié',
                 'attr' => ['class' => 'form-select'],
             ])
+            ->add('licenseNumber', TextType::class, [
+                'label' => 'Numéro de licence',
+                'required' => false,
+                'attr' => ['class' => 'form-input', 'placeholder' => 'Ex : 123456'],
+            ])
             ->add('ffaProfileUrl', TextType::class, [
                 'label' => 'URL profil athle.fr',
                 'required' => false,
@@ -63,3 +68,4 @@ class AthleteType extends AbstractType
         $resolver->setDefaults(['data_class' => Athlete::class]);
     }
 }
+ 

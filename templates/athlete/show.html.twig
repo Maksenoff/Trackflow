@@ -26,7 +26,12 @@
                     {% endif %}
                 </div>
                 <div>
-                    <h1 style="font-size:22px;font-weight:800;color:var(--text-1);">{{ athlete.fullName }}</h1>
+                    <div style="display:flex;align-items:baseline;gap:10px;flex-wrap:wrap;">
+                        <h1 style="font-size:22px;font-weight:800;color:var(--text-1);">{{ athlete.fullName }}</h1>
+                        {% if athlete.licenseNumber %}
+                            <span style="font-size:13px;font-weight:700;font-family:monospace;background:var(--accent-subtle);border:1px solid var(--accent);padding:2px 10px;border-radius:20px;color:var(--accent);letter-spacing:.5px;white-space:nowrap;">#{{ athlete.licenseNumber }}</span>
+                        {% endif %}
+                    </div>
                     <div style="display:flex;flex-wrap:wrap;gap:6px;margin-top:8px;">
                         {% for disc in athlete.disciplines %}
                             <span class="badge badge-indigo">
@@ -198,7 +203,7 @@
                         style="width:100%;display:flex;align-items:center;justify-content:space-between;padding:12px 16px;text-align:left;background:none;border:none;cursor:pointer;color:var(--text-1);"
                         onmouseover="this.style.background='var(--bg-hover)'" onmouseout="this.style.background='none'">
                     <div style="display:flex;align-items:center;gap:12px;flex-wrap:wrap;min-width:0;">
-                        <svg :style="_bilanOpen ? 'transform:rotate(90deg)' : ''"
+                        <svg :style="{ transform: _bilanOpen ? 'rotate(90deg)' : 'none' }"
                              style="width:16px;height:16px;color:var(--text-3);transition:transform .15s;flex-shrink:0;"
                              fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/>
@@ -265,47 +270,47 @@
         </template>
 
         <template x-if="allPerfs.length > 0">
-            <div style="display:flex;flex-direction:column;gap:12px;">
+            <div style="display:flex;flex-direction:column;gap:10px;margin-top:4px;">
 
                 {# ── Season tabs ── #}
-                <div style="display:flex;flex-wrap:wrap;gap:8px;">
+                <div style="display:flex;flex-wrap:wrap;gap:6px;">
                     <button @click="activeSeason = ''"
-                            :style="activeSeason === '' ? 'background:var(--accent);color:#fff;' : 'background:var(--bg-2);color:var(--text-3);'"
-                            style="padding:6px 12px;border-radius:8px;font-size:13px;font-weight:500;border:1px solid var(--border);cursor:pointer;transition:all .15s;">
+                            :class="activeSeason === '' ? 'season-pill active' : 'season-pill'">
                         Toutes
-                        <span style="margin-left:4px;font-size:11px;opacity:.7;" x-text="'(' + allPerfs.length + ')'"></span>
+                        <span class="pill-count" x-text="'(' + allPerfs.length + ')'"></span>
                     </button>
                     <template x-for="[s, count] in seasons" :key="s">
                         <button @click="activeSeason = s; activeCat = ''"
-                                :style="activeSeason === s ? 'background:var(--accent);color:#fff;' : 'background:var(--bg-2);color:var(--text-3);'"
-                                style="padding:6px 12px;border-radius:8px;font-size:13px;font-weight:500;border:1px solid var(--border);cursor:pointer;transition:all .15s;">
+                                :class="activeSeason === s ? 'season-pill active' : 'season-pill'">
                             <span x-text="s.replace('-20', '-')"></span>
-                            <span style="margin-left:4px;font-size:11px;opacity:.7;" x-text="'(' + count + ')'"></span>
+                            <span class="pill-count" x-text="'(' + count + ')'"></span>
                         </button>
                     </template>
                 </div>
 
                 {# ── Category + Indoor/Outdoor filters ── #}
-                <div style="display:flex;flex-wrap:wrap;gap:8px;align-items:center;">
+                <div style="display:flex;flex-wrap:wrap;gap:6px;align-items:center;">
                     <template x-if="categories.length > 1">
-                        <div style="display:flex;flex-wrap:wrap;gap:8px;align-items:center;">
-                            <span style="font-size:11px;color:var(--text-3);">Catégorie :</span>
+                        <div style="display:flex;flex-wrap:wrap;gap:6px;align-items:center;">
                             <button @click="activeCat = ''"
-                                    :style="activeCat === '' ? 'background:var(--bg-3);color:var(--text-1);' : 'background:var(--bg-2);color:var(--text-3);'"
-                                    style="padding:4px 10px;border-radius:6px;font-size:11px;font-weight:500;border:1px solid var(--border);cursor:pointer;">Toutes</button>
+                                    :class="activeCat === '' ? 'filter-chip active' : 'filter-chip'">Toutes</button>
                             <template x-for="c in categories" :key="c">
                                 <button @click="activeCat = (activeCat === c ? '' : c)"
-                                        :style="activeCat === c ? 'background:var(--bg-3);color:var(--text-1);' : 'background:var(--bg-2);color:var(--text-3);'"
-                                        style="padding:4px 10px;border-radius:6px;font-size:11px;font-weight:500;border:1px solid var(--border);cursor:pointer;"
+                                        :class="activeCat === c ? 'filter-chip active' : 'filter-chip'"
                                         x-text="c"></button>
                             </template>
+                            <span style="width:1px;height:14px;background:var(--border-strong);margin:0 2px;flex-shrink:0;align-self:center;"></span>
                         </div>
                     </template>
-                    <div style="display:flex;gap:4px;margin-left:auto;">
-                        <button @click="activeIndoor = (activeIndoor === null ? true : (activeIndoor === true ? false : null))"
-                                :style="activeIndoor === true ? 'background:rgba(99,102,241,.15);color:#a5b4fc;border-color:rgba(99,102,241,.4);' : activeIndoor === false ? 'background:rgba(251,191,36,.1);color:#fbbf24;border-color:rgba(251,191,36,.3);' : 'background:var(--bg-2);color:var(--text-3);border-color:var(--border);'"
-                                style="padding:4px 10px;border-radius:6px;font-size:11px;font-weight:500;border:1px solid;cursor:pointer;transition:all .15s;">
-                            <span x-text="activeIndoor === true ? '🏛 Indoor' : activeIndoor === false ? '🌤 Outdoor' : '🏛/🌤 Tous'"></span>
+                    <div class="filter-seg">
+                        <button @click="activeIndoor = null"   :class="activeIndoor === null  ? 'seg-btn active' : 'seg-btn'">Tous</button>
+                        <button @click="activeIndoor = true"   :class="activeIndoor === true  ? 'seg-btn active indoor' : 'seg-btn'">
+                            <svg width="12" height="12" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2" style="flex-shrink:0;"><path stroke-linecap="round" stroke-linejoin="round" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4"/></svg>
+                            Indoor
+                        </button>
+                        <button @click="activeIndoor = false"  :class="activeIndoor === false ? 'seg-btn active outdoor' : 'seg-btn'">
+                            <svg width="12" height="12" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2" style="flex-shrink:0;"><path stroke-linecap="round" stroke-linejoin="round" d="M12 3v1m0 16v1m9-9h-1M4 12H3m15.364 6.364l-.707-.707M6.343 6.343l-.707-.707m12.728 0l-.707.707M6.343 17.657l-.707.707M16 12a4 4 0 11-8 0 4 4 0 018 0z"/></svg>
+                            Outdoor
                         </button>
                     </div>
                 </div>
@@ -325,7 +330,7 @@
                                     style="width:100%;display:flex;align-items:center;justify-content:space-between;padding:12px 16px;text-align:left;background:none;border:none;cursor:pointer;color:var(--text-1);"
                                     onmouseover="this.style.background='var(--bg-hover)'" onmouseout="this.style.background='none'">
                                 <div style="display:flex;align-items:center;gap:12px;flex:1;min-width:0;">
-                                    <svg :style="isDiscOpen(disc.name) ? 'transform:rotate(90deg)' : ''"
+                                    <svg :style="{ transform: isDiscOpen(disc.name) ? 'rotate(90deg)' : 'none' }"
                                          style="width:16px;height:16px;color:var(--text-3);transition:transform .15s;flex-shrink:0;"
                                          fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/>
@@ -677,7 +682,8 @@
                                     {% endif %}
                                 </button>
                                 <div>
-                                    <p style="font-weight:500;{% if goal.isAchieved %}color:#34d399;text-decoration:line-through;{% else %}color:var(--text-1);{% endif %}">
+                                    <p style="font-weight:500;cursor:pointer;{% if goal.isAchieved %}color:#34d399;text-decoration:line-through;{% else %}color:var(--text-1);{% endif %}"
+                                       onclick="goalToggle({{ goal.id }}, '{{ path('app_goal_toggle', {athleteId: athlete.id, id: goal.id}) }}', '{{ csrf_token('toggle-goal' ~ goal.id) }}')">
                                         {{ goal.title }}
                                     </p>
                                     <div style="display:flex;align-items:center;gap:12px;margin-top:4px;font-size:12px;color:var(--text-2);">
@@ -815,7 +821,7 @@ function goalDelete(id, url, token) {
                     </svg>
                 </div>
                 <span style="font-size:14px;font-weight:500;color:var(--text-1);">Ajouter une vidéo</span>
-                <svg :style="uploadOpen ? 'transform:rotate(180deg)' : ''" style="width:16px;height:16px;color:var(--text-3);transition:transform .2s;margin-left:auto;" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <svg :style="{ transform: uploadOpen ? 'rotate(180deg)' : 'none' }" style="width:16px;height:16px;color:var(--text-3);transition:transform .2s;margin-left:auto;" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/>
                 </svg>
             </button>

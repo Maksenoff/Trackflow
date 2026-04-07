@@ -20,6 +20,8 @@
          registerUrl:      '{{ path('app_competition_register',      {id: competition.id}) }}',
          unregisterUrl:    '{{ path('app_competition_unregister',    {id: competition.id}) }}',
          unregAnyBase:     '{{ path('app_competition_unregister_any',{id: competition.id, registrationId: 0}) }}',
+         ffaToggleBase:    '{{ path('app_competition_toggle_ffa',    {id: competition.id, registrationId: 0}) }}',
+         updateAnyBase:    '{{ path('app_competition_update_any',    {id: competition.id, registrationId: 0}) }}',
          registerToken:    '{{ csrf_token('register-competition-' ~ competition.id) }}',
          unregToken:       '{{ csrf_token('unregister-competition-' ~ competition.id) }}',
          myReg:            {{ myRegInit|json_encode }},
@@ -116,14 +118,22 @@
             :class="activeTab === 'inscriptions' ? 'active' : ''">
         <svg width="14" height="14" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0z"/></svg>
         Inscriptions
-        <span style="font-size:11px;font-weight:600;padding:2px 6px;border-radius:99px;transition:background .15s,color .15s;"
-              :style="activeTab === 'inscriptions' ? 'background:rgba(255,255,255,.15);color:var(--text-1)' : 'background:var(--bg-2);color:var(--text-3)'"
-              x-text="registrations.length"></span>
+        <template x-if="registrations.length > 0">
+            <span style="font-size:11px;font-weight:700;margin-left:2px;transition:color .15s;"
+                  :style="registrations.every(r => r.ffaRegistered)
+                      ? 'color:#22c55e;'
+                      : 'color:#f87171;'"
+                  x-text="registrations.length"></span>
+        </template>
+        <template x-if="registrations.length === 0">
+            <span style="font-size:11px;font-weight:600;color:var(--text-3);margin-left:2px;">0</span>
+        </template>
     </button>
 </div>
 
 {# ── Onglet Infos ────────────────────────────────────────────────────── #}
-<div x-show="activeTab === 'infos'" x-transition style="display:flex;flex-direction:column;gap:20px;">
+<div x-show="activeTab === 'infos'" x-transition>
+<div style="display:flex;flex-direction:column;gap:20px;">
 
     {# Liens #}
     <div class="card card-body" style="display:flex;flex-direction:column;gap:20px;">
@@ -203,9 +213,11 @@
     </div>
 
 </div>
+</div>
 
 {# ── Onglet Inscriptions ─────────────────────────────────────────────── #}
-<div x-show="activeTab === 'inscriptions'" x-transition style="display:flex;flex-direction:column;gap:16px;">
+<div x-show="activeTab === 'inscriptions'" x-transition>
+<div style="display:flex;flex-direction:column;gap:16px;">
 
     {# Toast #}
     <div x-show="toast"
@@ -295,123 +307,331 @@
 
         <div>
             <template x-for="reg in registrations" :key="reg.id">
-                <div style="padding:16px 20px;display:flex;align-items:center;gap:16px;border-bottom:1px solid var(--border);transition:background .15s;"
-                     :style="reg.isOwn ? 'background:rgba(var(--accent-rgb),.05)' : ''"
-                     onmouseover="if(!this._own)this.style.background='var(--bg-hover)'"
-                     onmouseout="if(!this._own)this.style.background=''">
+                <div style="display:flex;align-items:center;gap:0;border-bottom:1px solid var(--border);transition:background .2s;"
+                     :style="reg.ffaRegistered ? 'background:rgba(34,197,94,.07)' : reg.isOwn ? 'background:var(--accent-subtle)' : ''">
 
-                    {# Avatar #}
-                    <template x-if="reg.athletePhoto">
-                        <img :src="'/uploads/athletes/' + reg.athletePhoto"
-                             style="width:40px;height:40px;border-radius:50%;object-fit:cover;flex-shrink:0;">
-                    </template>
-                    <template x-if="!reg.athletePhoto">
-                        <div class="avatar"
-                             style="background:var(--bg-2);border:1px solid var(--border);color:var(--text-2);font-size:12px;font-weight:700;flex-shrink:0;"
-                             x-text="reg.athleteName.split(' ').map(p => p[0] || '').join('').slice(0,2).toUpperCase()"></div>
-                    </template>
+                    {# Barre FFA à gauche #}
+                    <span style="width:3px;align-self:stretch;flex-shrink:0;border-radius:0 2px 2px 0;transition:background .2s;"
+                          :style="reg.ffaRegistered ? 'background:#22c55e;box-shadow:0 0 6px #22c55e60;' : 'background:transparent;'"></span>
 
-                    {# Nom + disciplines #}
-                    <div style="flex:1;min-width:0;">
-                        <div style="display:flex;align-items:center;gap:8px;margin-bottom:6px;">
-                            <span style="font-size:13px;font-weight:600;color:var(--text-1);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;" x-text="reg.athleteName"></span>
-                            <template x-if="reg.isOwn">
-                                <span style="font-size:11px;padding:2px 6px;border-radius:6px;font-weight:600;flex-shrink:0;background:{{ competition.colorBg }}20;color:{{ competition.colorBg }};">Toi</span>
-                            </template>
+                    <div style="display:flex;align-items:center;gap:14px;padding:14px 18px;flex:1;min-width:0;">
+
+                        {# Avatar #}
+                        <template x-if="reg.athletePhoto">
+                            <img :src="'/uploads/athletes/' + reg.athletePhoto"
+                                 style="width:38px;height:38px;border-radius:10px;object-fit:cover;flex-shrink:0;">
+                        </template>
+                        <template x-if="!reg.athletePhoto">
+                            <div class="avatar"
+                                 style="width:38px;height:38px;border-radius:10px;background:var(--bg-hover);border:1px solid var(--border);color:var(--text-2);font-size:12px;font-weight:700;flex-shrink:0;display:flex;align-items:center;justify-content:center;"
+                                 x-text="reg.athleteName.split(' ').map(p => p[0] || '').join('').slice(0,2).toUpperCase()"></div>
+                        </template>
+
+                        {# Nom + licence + disciplines #}
+                        <div style="flex:1;min-width:0;">
+                            <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-bottom:5px;">
+                                <span style="font-size:13px;font-weight:600;color:var(--text-1);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;" x-text="reg.athleteName"></span>
+                                <template x-if="reg.licenseNumber">
+                                    <span style="font-size:10px;font-weight:600;padding:1px 7px;border-radius:999px;background:var(--bg-hover);color:var(--text-3);border:1px solid var(--border);flex-shrink:0;font-family:monospace;"
+                                          x-text="'#' + reg.licenseNumber"></span>
+                                </template>
+                                <template x-if="reg.isOwn">
+                                    <span style="font-size:10px;padding:1px 7px;border-radius:999px;font-weight:600;flex-shrink:0;background:{{ competition.colorBg }}20;color:{{ competition.colorBg }};border:1px solid {{ competition.colorBg }}40;">Toi</span>
+                                </template>
+                                <template x-if="reg.ffaRegistered">
+                                    <span style="font-size:10px;padding:1px 7px;border-radius:999px;font-weight:600;flex-shrink:0;background:rgba(34,197,94,.1);color:#22c55e;border:1px solid rgba(34,197,94,.25);">FFA ✓</span>
+                                </template>
+                            </div>
+                            <div style="display:flex;flex-wrap:wrap;gap:5px;">
+                                <template x-for="d in reg.disciplines" :key="d">
+                                    <span style="font-size:11px;padding:2px 8px;border-radius:6px;font-weight:500;background:var(--bg-2);color:var(--text-2);border:1px solid var(--border);"
+                                          x-text="disciplineLabels[d] || d"></span>
+                                </template>
+                            </div>
                         </div>
-                        <div style="display:flex;flex-wrap:wrap;gap:6px;">
-                            <template x-for="d in reg.disciplines" :key="d">
-                                <span style="font-size:11px;padding:2px 8px;border-radius:6px;font-weight:500;background:var(--bg-2);color:var(--text-2);border:1px solid var(--border);"
-                                      x-text="disciplineLabels[d] || d"></span>
-                            </template>
-                        </div>
+
+                        {# Actions coach/admin #}
+                        <template x-if="reg.canManage">
+                            <div style="display:flex;align-items:center;gap:5px;flex-shrink:0;">
+
+                                {# Toggle FFA #}
+                                <button @click="toggleFfa(reg.id, reg.ffaToken)"
+                                        :disabled="loading"
+                                        :title="reg.ffaRegistered ? 'Retirer l\'inscription FFA' : 'Marquer comme inscrit sur FFA'"
+                                        class="ffa-btn"
+                                        :class="reg.ffaRegistered ? 'ffa-btn--on' : ''">
+                                    <span class="ffa-box" :class="reg.ffaRegistered ? 'ffa-box--on' : ''">
+                                        <svg x-show="reg.ffaRegistered" width="8" height="8" fill="none" viewBox="0 0 24 24" stroke-width="3.5" stroke="white" style="display:none;">
+                                            <path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7"/>
+                                        </svg>
+                                    </span>
+                                    FFA
+                                </button>
+
+                                {# Modifier disciplines #}
+                                <button @click="openModalFor(reg)"
+                                        title="Modifier les disciplines"
+                                        class="btn-icon-subtle"
+                                        style="width:30px;height:30px;border-radius:7px;">
+                                    <svg width="13" height="13" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"/></svg>
+                                </button>
+
+                                {# Retirer #}
+                                <template x-if="reg.canRemove">
+                                    <button @click="unregisterAny(reg.id, reg.unregToken)"
+                                            :disabled="loading"
+                                            title="Retirer l'inscription"
+                                            class="btn-icon-subtle danger"
+                                            style="width:30px;height:30px;border-radius:7px;">
+                                        <svg width="13" height="13" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
+                                    </button>
+                                </template>
+
+                            </div>
+                        </template>
+
+                        {# Bouton retirer pour athlète lui-même (non coach) #}
+                        <template x-if="!reg.canManage && reg.canRemove">
+                            <button @click="unregisterAny(reg.id, reg.unregToken)"
+                                    :disabled="loading"
+                                    class="btn btn-sm"
+                                    style="color:var(--text-3);border:1px solid var(--border);flex-shrink:0;transition:all .15s;"
+                                    onmouseover="this.style.color='#f87171';this.style.borderColor='rgba(239,68,68,.4)';this.style.background='rgba(239,68,68,.1)'"
+                                    onmouseout="this.style.color='var(--text-3)';this.style.borderColor='var(--border)';this.style.background=''">
+                                <svg width="12" height="12" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
+                                Retirer
+                            </button>
+                        </template>
+
                     </div>
-
-                    {# Bouton retirer #}
-                    <template x-if="reg.canRemove">
-                        <button @click="unregisterAny(reg.id, reg.unregToken)"
-                                :disabled="loading"
-                                title="Retirer l'inscription"
-                                class="btn btn-sm"
-                                style="color:var(--text-3);border:1px solid var(--border);flex-shrink:0;transition:all .15s;"
-                                onmouseover="this.style.color='#f87171';this.style.borderColor='rgba(239,68,68,.4)';this.style.background='rgba(239,68,68,.1)'"
-                                onmouseout="this.style.color='var(--text-3)';this.style.borderColor='var(--border)';this.style.background=''">
-                            <svg width="12" height="12" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
-                            Retirer
-                        </button>
-                    </template>
                 </div>
             </template>
         </div>
     </div>
 
 </div>
+</div>
 
 {# ── Modal disciplines ───────────────────────────────────────────────── #}
+{% set shortLabels = {
+    'longueur':   'Longueur',
+    'hauteur':    'Hauteur',
+    'triple':     'Triple',
+    'perche':     'Perche',
+    'poids':      'Poids',
+    'disque':     'Disque',
+    'javelot':    'Javelot',
+    'marteau':    'Marteau',
+    '4x100m':     '4×100m',
+    '4x200m':     '4×200m',
+    '4x400m':     '4×400m',
+    'decathlon':  'Décathlon',
+    'heptathlon': 'Heptathlon',
+} %}
+{% set groupColors = {
+    'Sprints':            '#6366f1',
+    'Demi-fond / Fond':   '#06b6d4',
+    'Haies':              '#f59e0b',
+    'Sauts':              '#10b981',
+    'Lancers':            '#f43f5e',
+    'Combinés':           '#8b5cf6',
+    'Marche':             '#64748b',
+    'Relais':             '#f97316',
+    'Autre':              '#94a3b8',
+} %}
+
 <div x-show="modalOpen"
      x-transition:enter="transition ease-out duration-200" x-transition:enter-start="opacity-0" x-transition:enter-end="opacity-100"
      x-transition:leave="transition ease-in duration-150" x-transition:leave-end="opacity-0"
      class="modal-backdrop"
      @click.self="modalOpen = false" style="display:none;">
 
-    <div class="modal" style="max-width:540px;display:flex;flex-direction:column;max-height:88vh;" @click.stop>
+    <div class="modal" style="max-width:580px;width:100%;display:flex;flex-direction:column;max-height:90vh;border-radius:16px;overflow:hidden;" @click.stop>
 
-        <div class="modal-header" style="flex-shrink:0;">
-            <div>
-                <h3 class="modal-title">Choisir les disciplines</h3>
-                <p style="font-size:12px;color:var(--text-3);margin:3px 0 0;">{{ competition.title }}</p>
+        {# Header #}
+        <div style="padding:18px 20px 14px;border-bottom:1px solid var(--border);flex-shrink:0;display:flex;align-items:center;justify-content:space-between;gap:12px;">
+            <div style="display:flex;align-items:center;gap:10px;">
+                <div style="width:32px;height:32px;border-radius:9px;background:var(--accent-subtle);display:flex;align-items:center;justify-content:center;flex-shrink:0;">
+                    <svg width="15" height="15" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="var(--accent)"><path stroke-linecap="round" stroke-linejoin="round" d="M13 10V3L4 14h7v7l9-11h-7z"/></svg>
+                </div>
+                <div>
+                    <h3 style="font-size:14px;font-weight:700;color:var(--text-1);margin:0;line-height:1.2;"
+                        x-text="editingReg ? editingReg.athleteName : 'Mes disciplines'">Mes disciplines</h3>
+                    <p style="font-size:11px;color:var(--text-3);margin:0;">{{ competition.title }}</p>
+                </div>
             </div>
-            <button @click="modalOpen = false" class="btn btn-ghost btn-sm" style="padding:6px;">
-                <svg width="16" height="16" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
+            <button @click="modalOpen = false" class="btn-icon-subtle" style="width:30px;height:30px;border-radius:var(--radius-sm);">
+                <svg width="14" height="14" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
             </button>
         </div>
 
-        <div style="overflow-y:auto;flex:1;padding:20px;display:flex;flex-direction:column;gap:20px;">
-            {% for groupName, codes in disciplineGroups %}
-            <div>
-                <p style="font-size:11px;font-weight:600;color:var(--text-3);text-transform:uppercase;letter-spacing:.06em;margin:0 0 10px;">{{ groupName }}</p>
-                <div style="display:flex;flex-wrap:wrap;gap:8px;">
-                    {% for code in codes %}
-                    {% set label = disciplineLabels[code] ?? code %}
-                    <button type="button"
-                            @click="toggleDisc('{{ code }}')"
-                            style="padding:6px 14px;border-radius:8px;font-size:13px;font-weight:500;transition:all .15s;cursor:pointer;"
-                            :style="selected.includes('{{ code }}')
-                                ? 'background:{{ competition.colorBg }}25;border:1px solid {{ competition.colorBg }};color:{{ competition.colorBg }}'
-                                : 'background:var(--bg-2);border:1px solid var(--border);color:var(--text-2)'">
-                        {{ label|capitalize }}
-                    </button>
-                    {% endfor %}
+        {# Body — 2 colonnes desktop, 1 mobile #}
+        <div style="overflow-y:auto;flex:1;padding:14px 18px;">
+            <div class="disc-groups-grid">
+                {% for groupName, codes in disciplineGroups %}
+                {% set catColor = groupColors[groupName] ?? '#6366f1' %}
+                <div>
+                    <p class="disc-group-label" style="color:{{ catColor }};">{{ groupName }}</p>
+                    <div class="disc-grid">
+                        {% for code in codes %}
+                        {% set label = shortLabels[code] ?? (disciplineLabels[code] ?? code)|capitalize %}
+                        <button type="button"
+                                class="disc-btn"
+                                style="--c:{{ catColor }};"
+                                :class="{ 'disc-btn--on': selected.includes('{{ code }}') }"
+                                @click="toggleDisc('{{ code }}')">
+                            {{ label }}
+                        </button>
+                        {% endfor %}
+                    </div>
+                    {% if groupName == 'Autre' %}
+                    <div x-show="selected.includes('autre')" x-transition style="margin-top:8px;display:none;">
+                        <textarea x-model="autreText" placeholder="Précise la discipline…" rows="2"
+                                  class="form-input" style="resize:none;font-size:13px;"></textarea>
+                    </div>
+                    {% endif %}
                 </div>
-                {% if groupName == 'Autre' %}
-                <div x-show="selected.includes('autre')" x-transition style="margin-top:10px;display:none;">
-                    <textarea x-model="autreText" placeholder="Précise la discipline…" rows="2"
-                              class="form-input" style="resize:none;"></textarea>
-                </div>
-                {% endif %}
+                {% endfor %}
             </div>
-            {% endfor %}
         </div>
 
-        <div style="padding:16px 20px;border-top:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;gap:16px;flex-shrink:0;">
-            <span style="font-size:13px;color:var(--text-2);">
-                <span style="font-weight:600;color:var(--text-1);" x-text="selected.length"></span>
-                <span x-text="selected.length > 1 ? ' disciplines' : ' discipline'"></span>
-            </span>
+        {# Footer #}
+        <div style="padding:12px 18px;border-top:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;gap:12px;flex-shrink:0;">
+            <div style="min-width:0;overflow:hidden;">
+                <template x-if="selected.length === 0">
+                    <span style="font-size:12px;color:var(--text-3);">Aucune sélection</span>
+                </template>
+                <template x-if="selected.length > 0">
+                    <div style="display:flex;flex-wrap:wrap;gap:4px;">
+                        <template x-for="d in selected" :key="d">
+                            <span class="badge badge-indigo" style="font-size:10px;" x-text="disciplineLabels[d] || d"></span>
+                        </template>
+                    </div>
+                </template>
+            </div>
             <button @click="submitRegister()"
                     :disabled="selected.length === 0 || loading"
-                    style="display:flex;align-items:center;gap:8px;padding:10px 24px;border-radius:12px;font-size:13px;font-weight:700;color:#fff;border:none;cursor:pointer;transition:opacity .15s;background:{{ competition.colorBg }};"
-                    :style="(selected.length === 0 || loading) ? 'opacity:.4;cursor:not-allowed' : ''"
-                    onmouseover="if(this.style.opacity !== '0.4')this.style.filter='brightness(.9)'"
-                    onmouseout="this.style.filter=''">
-                <svg x-show="loading" width="14" height="14" fill="none" viewBox="0 0 24 24" style="animation:spin 1s linear infinite"><circle cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4" style="opacity:.25"/><path fill="currentColor" d="M4 12a8 8 0 018-8v8z" style="opacity:.75"/></svg>
-                <span x-text="myReg ? 'Mettre à jour' : 'Confirmer l\'inscription'"></span>
+                    class="btn btn-primary btn-sm"
+                    style="flex-shrink:0;gap:6px;"
+                    :style="(selected.length === 0 || loading) ? 'opacity:.45;cursor:not-allowed;pointer-events:none;' : ''">
+                <svg x-show="loading" width="13" height="13" fill="none" viewBox="0 0 24 24" style="animation:spin 1s linear infinite;"><circle cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4" style="opacity:.25"/><path fill="currentColor" d="M4 12a8 8 0 018-8v8z" style="opacity:.75"/></svg>
+                <svg x-show="!loading" width="13" height="13" fill="none" viewBox="0 0 24 24" stroke-width="2.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7"/></svg>
+                <span x-text="(myReg && !editingReg) ? 'Mettre à jour' : 'Confirmer'"></span>
             </button>
         </div>
     </div>
 </div>
 
 </div>{# /x-data #}
+
+<style>
+/* ── Discipline picker ───────────────────────────────────── */
+.disc-groups-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 14px 18px;
+}
+@media (max-width: 500px) {
+    .disc-groups-grid { grid-template-columns: 1fr; }
+}
+.disc-group-label {
+    font-size: 10px;
+    font-weight: 800;
+    text-transform: uppercase;
+    letter-spacing: .1em;
+    margin: 0 0 6px;
+    /* color set inline per group */
+}
+.disc-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(54px, 1fr));
+    gap: 4px;
+}
+.disc-btn {
+    --c: #6366f1; /* overridden per button */
+    height: 32px;
+    border-radius: var(--radius-sm);
+    font-size: 11px;
+    font-weight: 700;
+    cursor: pointer;
+    transition: background .12s, color .12s, border-color .12s, box-shadow .12s, transform .1s;
+    text-align: center;
+    line-height: 1;
+    background: var(--bg-hover);
+    color: var(--text-2);
+    border: 1px solid var(--border);
+    width: 100%;
+    padding: 0 4px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+.disc-btn:hover:not(.disc-btn--on) {
+    background: var(--bg-card);
+    color: var(--c);
+    border-color: var(--c);
+    transform: translateY(-1px);
+}
+.disc-btn:active { transform: scale(.96); }
+.disc-btn--on {
+    background: var(--c);
+    border-color: var(--c);
+    color: #fff;
+    box-shadow: 0 2px 10px color-mix(in srgb, var(--c) 40%, transparent);
+    transform: translateY(-1px);
+}
+.disc-btn--on:hover {
+    filter: brightness(.9);
+}
+@keyframes spin { from { transform:rotate(0deg) } to { transform:rotate(360deg) } }
+
+/* ── FFA toggle ──────────────────────────────────────────── */
+.ffa-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    height: 28px;
+    padding: 0 9px;
+    border-radius: var(--radius-sm);
+    font-size: 11px;
+    font-weight: 700;
+    letter-spacing: .03em;
+    cursor: pointer;
+    flex-shrink: 0;
+    border: 1px solid var(--border);
+    background: var(--bg-hover);
+    color: var(--text-3);
+    transition: color .13s, background .13s, border-color .13s;
+}
+.ffa-btn:hover:not(.ffa-btn--on) {
+    color: #16a34a;
+    border-color: rgba(34,197,94,.4);
+    background: rgba(34,197,94,.06);
+}
+.ffa-btn--on {
+    color: #16a34a;
+    border-color: rgba(34,197,94,.45);
+    background: rgba(34,197,94,.1);
+}
+.ffa-btn--on:hover {
+    background: rgba(34,197,94,.18);
+}
+.ffa-box {
+    width: 13px;
+    height: 13px;
+    border-radius: 3px;
+    border: 1.5px solid currentColor;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+    transition: background .13s, border-color .13s;
+}
+.ffa-box--on {
+    background: #22c55e;
+    border-color: #22c55e;
+}
+</style>
 
 <script>
 function competitionPage(cfg) {
@@ -422,9 +642,10 @@ function competitionPage(cfg) {
         disciplineLabels: cfg.disciplineLabels,
         canRegister:      cfg.canRegister,
 
-        modalOpen: false,
-        selected:  [],
-        autreText: '',
+        modalOpen:   false,
+        editingReg:  null,   // null = own registration, object = a specific reg (coach edit)
+        selected:    [],
+        autreText:   '',
 
         loading:     false,
         toast:       '',
@@ -432,9 +653,17 @@ function competitionPage(cfg) {
         _toastTimer: null,
 
         openModal() {
-            this.selected  = this.myReg ? [...this.myReg.disciplines] : [];
-            this.autreText = '';
-            this.modalOpen = true;
+            this.editingReg = null;
+            this.selected   = this.myReg ? [...this.myReg.disciplines] : [];
+            this.autreText  = '';
+            this.modalOpen  = true;
+        },
+
+        openModalFor(reg) {
+            this.editingReg = reg;
+            this.selected   = [...(reg.disciplines || [])];
+            this.autreText  = '';
+            this.modalOpen  = true;
         },
 
         toggleDisc(code) {
@@ -480,14 +709,25 @@ function competitionPage(cfg) {
         },
 
         async submitRegister() {
-            const data = await this.post(cfg.registerUrl, {
-                _token:      cfg.registerToken,
-                disciplines: this.disciplinesForSubmit,
-            });
+            let data;
+            if (this.editingReg) {
+                // Coach modifie l'inscription d'un autre athlète
+                const url = cfg.updateAnyBase.replace('/0/', '/' + this.editingReg.id + '/');
+                data = await this.post(url, {
+                    _token:      this.editingReg.updateToken,
+                    disciplines: this.disciplinesForSubmit,
+                });
+            } else {
+                data = await this.post(cfg.registerUrl, {
+                    _token:      cfg.registerToken,
+                    disciplines: this.disciplinesForSubmit,
+                });
+            }
             if (data.ok) {
                 this.apply(data);
-                this.modalOpen = false;
-                this.showToast('Inscription enregistrée ✓');
+                this.modalOpen  = false;
+                this.editingReg = null;
+                this.showToast('Inscription mise à jour ✓');
             } else {
                 this.showToast(data.error || 'Une erreur est survenue.', true);
             }
@@ -511,6 +751,16 @@ function competitionPage(cfg) {
             if (data.ok) {
                 this.apply(data);
                 this.showToast('Inscription retirée.');
+            } else {
+                this.showToast(data.error || 'Une erreur est survenue.', true);
+            }
+        },
+
+        async toggleFfa(regId, token) {
+            const url  = cfg.ffaToggleBase.replace('/0/', '/' + regId + '/');
+            const data = await this.post(url, { _token: token });
+            if (data.ok) {
+                this.apply(data);
             } else {
                 this.showToast(data.error || 'Une erreur est survenue.', true);
             }

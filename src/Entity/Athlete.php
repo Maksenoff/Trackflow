@@ -37,6 +37,9 @@ class Athlete
     #[ORM\Column(length: 255, nullable: true)]
     private ?string $photo = null;
 
+    #[ORM\Column(length: 20, nullable: true)]
+    private ?string $licenseNumber = null;
+
     #[ORM\Column(length: 500, nullable: true)]
     private ?string $ffaProfileUrl = null;
 
@@ -61,12 +64,16 @@ class Athlete
     #[ORM\OrderBy(['createdAt' => 'DESC'])]
     private Collection $videos;
 
+    #[ORM\OneToMany(targetEntity: CompetitionRegistration::class, mappedBy: 'athlete', cascade: ['remove'])]
+    private Collection $competitionRegistrations;
+
     public function __construct()
     {
-        $this->performances    = new ArrayCollection();
-        $this->goals           = new ArrayCollection();
-        $this->athleteSessions = new ArrayCollection();
-        $this->videos          = new ArrayCollection();
+        $this->performances             = new ArrayCollection();
+        $this->goals                    = new ArrayCollection();
+        $this->athleteSessions          = new ArrayCollection();
+        $this->videos                   = new ArrayCollection();
+        $this->competitionRegistrations = new ArrayCollection();
         $this->createdAt       = new \DateTime();
     }
 
@@ -101,6 +108,9 @@ class Athlete
 
     public function getPhoto(): ?string { return $this->photo; }
     public function setPhoto(?string $photo): static { $this->photo = $photo; return $this; }
+
+    public function getLicenseNumber(): ?string { return $this->licenseNumber; }
+    public function setLicenseNumber(?string $licenseNumber): static { $this->licenseNumber = $licenseNumber; return $this; }
 
     public function getFfaProfileUrl(): ?string { return $this->ffaProfileUrl; }
     public function setFfaProfileUrl(?string $ffaProfileUrl): static { $this->ffaProfileUrl = $ffaProfileUrl; return $this; }

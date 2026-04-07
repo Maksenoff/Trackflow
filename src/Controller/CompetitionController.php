@@ -63,13 +63,18 @@ class CompetitionController extends AbstractController
         $csrf    = $this->container->get('security.csrf.token_manager');
 
         $registrationsData = array_map(fn($reg) => [
-            'id'          => $reg->getId(),
-            'athleteName' => $reg->getAthlete()->getFullName(),
-            'athletePhoto'=> $reg->getAthlete()->getPhoto(),
-            'disciplines' => $reg->getDisciplines(),
-            'isOwn'       => $myRegistration && $myRegistration->getId() === $reg->getId(),
-            'canRemove'   => ($myRegistration && $myRegistration->getId() === $reg->getId()) || $isCoach,
-            'unregToken'  => $csrf->getToken('unregister-any-' . $reg->getId())->getValue(),
+            'id'            => $reg->getId(),
+            'athleteName'   => $reg->getAthlete()->getFullName(),
+            'athletePhoto'  => $reg->getAthlete()->getPhoto(),
+            'licenseNumber' => $reg->getAthlete()->getLicenseNumber(),
+            'disciplines'   => $reg->getDisciplines(),
+            'ffaRegistered' => $reg->isFfaRegistered(),
+            'isOwn'         => $myRegistration && $myRegistration->getId() === $reg->getId(),
+            'canRemove'     => ($myRegistration && $myRegistration->getId() === $reg->getId()) || $isCoach,
+            'canManage'     => $isCoach,
+            'unregToken'    => $csrf->getToken('unregister-any-' . $reg->getId())->getValue(),
+            'ffaToken'      => $csrf->getToken('ffa-toggle-' . $reg->getId())->getValue(),
+            'updateToken'   => $csrf->getToken('update-any-' . $reg->getId())->getValue(),
         ], $registrations);
 
         return $this->render('competition/show.html.twig', [
