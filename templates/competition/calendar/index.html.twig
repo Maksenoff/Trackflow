@@ -2,13 +2,18 @@
 {% block title %}Compétitions{% endblock %}
 
 {% block breadcrumb %}
-    <a href="{{ path('app_dashboard') }}" class="hover:text-white transition-colors">Tableau de bord</a>
-    <span class="mx-2 text-gray-600">/</span>
-    <span class="text-white font-medium">Compétitions</span>
+    <a href="{{ path('app_dashboard') }}">Tableau de bord</a>
+    <span class="sep">/</span>
+    <span class="current">Compétitions</span>
 {% endblock %}
 
 {% block body %}
-<div id="cal-root" class="space-y-5"
+<style>
+@media(min-width:768px){
+    .cal-pill-wrap:hover .cal-tooltip { opacity: 1 !important; }
+}
+</style>
+<div id="cal-root" style="display:flex;flex-direction:column;gap:20px;"
      x-data="{
         dayModal: false,
         dayDate: '',
@@ -21,32 +26,27 @@
      }">
 
     {# ── Header ── #}
-    <div class="flex items-center justify-between">
+    <div style="display:flex;flex-direction:column;gap:12px;" class="sm:flex-row sm:items-center sm:justify-between">
         <div>
-            <h1 class="text-2xl font-bold text-white capitalize">{{ monthName }}</h1>
+            <h1 class="section-title" style="text-transform:capitalize">{{ monthName }}</h1>
             {% set total = 0 %}{% for d, c in byDay %}{% set total = total + c|length %}{% endfor %}
-            <p class="text-gray-400 mt-1">{{ total }} compétition{% if total > 1 %}s{% endif %} programmée{% if total > 1 %}s{% endif %}</p>
+            <p class="section-subtitle">{{ total }} compétition{% if total > 1 %}s{% endif %} programmée{% if total > 1 %}s{% endif %}</p>
         </div>
-        <div class="flex items-center gap-2">
-            <a href="{{ path('app_competition_calendar', {month: prevMonth, year: prevYear}) }}"
-               class="flex items-center gap-1 bg-gray-800 hover:bg-gray-700 text-gray-300 px-3 py-2 rounded-lg text-sm transition-colors">
-                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"/></svg>
+        <div style="display:flex;flex-wrap:wrap;align-items:center;gap:8px;">
+            <a href="{{ path('app_competition_calendar', {month: prevMonth, year: prevYear}) }}" class="btn btn-secondary btn-sm">
+                <svg width="14" height="14" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"/></svg>
                 Précédent
             </a>
             {% if month != currentMonth or year != currentYear %}
-                <a href="{{ path('app_competition_calendar') }}" class="bg-gray-800 hover:bg-gray-700 text-gray-300 px-3 py-2 rounded-lg text-sm transition-colors">
-                    Aujourd'hui
-                </a>
+                <a href="{{ path('app_competition_calendar') }}" class="btn btn-secondary btn-sm">Aujourd'hui</a>
             {% endif %}
-            <a href="{{ path('app_competition_calendar', {month: nextMonth, year: nextYear}) }}"
-               class="flex items-center gap-1 bg-gray-800 hover:bg-gray-700 text-gray-300 px-3 py-2 rounded-lg text-sm transition-colors">
+            <a href="{{ path('app_competition_calendar', {month: nextMonth, year: nextYear}) }}" class="btn btn-secondary btn-sm">
                 Suivant
-                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/></svg>
+                <svg width="14" height="14" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/></svg>
             </a>
             {% if canEdit %}
-            <a href="{{ path('app_competition_new') }}"
-               class="flex items-center gap-2 bg-indigo-600 hover:bg-indigo-500 text-white px-4 py-2 rounded-lg text-sm font-medium transition-colors ml-2">
-                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/></svg>
+            <a href="{{ path('app_competition_new') }}" class="btn btn-primary btn-sm">
+                <svg width="14" height="14" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/></svg>
                 Nouvelle compétition
             </a>
             {% endif %}
@@ -55,38 +55,36 @@
 
     {# ── Légende ── #}
     {% if competitionTypes is not empty %}
-    <div class="flex flex-wrap gap-2 items-center">
+    <div style="display:flex;flex-wrap:wrap;gap:8px;align-items:center;">
         {% for ct in competitionTypes %}
-            <span class="flex items-center gap-1.5 bg-gray-900 border border-gray-800 px-2.5 py-1 rounded-lg text-xs text-gray-400">
-                <span class="w-2 h-2 rounded-full shrink-0" style="background: {{ ct.color }}"></span>
+            <span style="display:flex;align-items:center;gap:6px;background:var(--bg-2);border:1px solid var(--border);padding:4px 10px;border-radius:8px;font-size:12px;color:var(--text-2);">
+                <span style="width:8px;height:8px;border-radius:50%;flex-shrink:0;background:{{ ct.color }}"></span>
                 {{ ct.name }}
             </span>
         {% endfor %}
         {% if is_granted('ROLE_ADMIN') %}
-        <a href="{{ path('app_competition_type_index') }}"
-           class="flex items-center gap-1 text-xs text-gray-600 hover:text-amber-400 transition-colors ml-1">
-            <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"/></svg>
+        <a href="{{ path('app_competition_type_index') }}" style="display:flex;align-items:center;gap:4px;font-size:12px;color:var(--text-3);text-decoration:none;margin-left:4px;" onmouseover="this.style.color='var(--warning)'" onmouseout="this.style.color='var(--text-3)'">
+            <svg width="12" height="12" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"/></svg>
             Gérer
         </a>
         {% endif %}
     </div>
     {% else %}
-    <div class="text-xs text-gray-500">
+    <div style="font-size:12px;color:var(--text-3);">
         Aucun type configuré —
         {% if is_granted('ROLE_ADMIN') %}
-        <a href="{{ path('app_competition_type_index') }}" class="text-amber-400 hover:text-amber-300">Créer des types</a>
+        <a href="{{ path('app_competition_type_index') }}" style="color:var(--warning);text-decoration:none;">Créer des types</a>
         {% endif %}
     </div>
     {% endif %}
 
     {# ── Grille calendrier ── #}
-    <div class="bg-gray-900 border border-gray-800 rounded-xl overflow-hidden select-none">
+    <div class="card" style="overflow:hidden;user-select:none;">
 
         {# En-têtes jours #}
-        <div class="grid grid-cols-7 border-b border-gray-800 rounded-t-xl overflow-hidden">
+        <div class="grid grid-cols-7" style="border-bottom:1px solid var(--border);">
             {% for day in ['Lun', 'Mar', 'Mer', 'Jeu', 'Ven', 'Sam', 'Dim'] %}
-                <div class="py-3 text-center text-xs font-semibold uppercase tracking-wide
-                    {% if day in ['Sam', 'Dim'] %}text-gray-600{% else %}text-gray-500{% endif %}">{{ day }}</div>
+                <div style="padding:10px 4px;text-align:center;font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:.05em;color:{{ day in ['Sam', 'Dim'] ? 'var(--text-3)' : 'var(--text-2)' }};">{{ day }}</div>
             {% endfor %}
         </div>
 
@@ -94,7 +92,7 @@
 
             {# Cases vides en début #}
             {% for i in 1..(firstWeekday - 1) %}
-                <div class="min-h-28 border-b border-r border-gray-800/40 bg-gray-950/40"></div>
+                <div class="min-h-28" style="border-bottom:1px solid var(--border);border-right:1px solid var(--border);background:var(--bg);opacity:.5;"></div>
             {% endfor %}
 
             {# Cases jours #}
@@ -122,28 +120,28 @@
                     }]) %}
                 {% endfor %}
 
-                <div class="min-h-28 border-b border-r border-gray-800/40 p-1.5 group transition-colors relative
-                    {% if isToday %}bg-amber-950/20
-                    {% elseif isCurrentWeek %}bg-gray-800/60
-                    {% elseif isWeekend %}bg-gray-950/50
-                    {% else %}bg-gray-900{% endif %}"
+                <div class="min-h-28 group relative"
+                     style="border-bottom:1px solid var(--border);border-right:1px solid var(--border);padding:6px;transition:background .15s;
+                     background:{% if isToday %}rgba(245,158,11,.06){% elseif isCurrentWeek %}var(--bg-hover){% elseif isWeekend %}var(--bg){% else %}var(--bg-2){% endif %};"
                      data-date="{{ dateStr }}">
 
                     {# Numéro + bouton ajout rapide #}
-                    <div class="flex items-start justify-between mb-1">
+                    <div style="display:flex;align-items:flex-start;justify-content:space-between;margin-bottom:4px;">
                         <span @click="{{ allCompData|length > 0 ? 'openDay(\'' ~ '%02d'|format(day) ~ '/' ~ '%02d'|format(month) ~ '/' ~ year ~ '\', ' ~ allCompData|json_encode ~ ')' : '' }}"
-                              class="w-7 h-7 flex items-center justify-center rounded-full text-sm font-medium transition-colors
-                                  {% if isToday %}bg-amber-600 text-white font-bold ring-2 ring-amber-400/50 ring-offset-1 ring-offset-transparent
-                                  {% elseif isCurrentWeek %}text-gray-300 font-medium
-                                  {% elseif isWeekend %}text-gray-600
-                                  {% else %}text-gray-400 group-hover:text-white{% endif %}
-                                  {{ allCompData|length > 0 ? 'cursor-pointer hover:ring-2 hover:ring-amber-500/50' : '' }}">
+                              style="width:26px;height:26px;display:flex;align-items:center;justify-content:center;border-radius:50%;font-size:13px;font-weight:500;transition:all .15s;
+                              {% if isToday %}background:#d97706;color:#fff;font-weight:700;box-shadow:0 0 0 3px rgba(245,158,11,.25);
+                              {% elseif isCurrentWeek %}color:var(--text-1);
+                              {% elseif isWeekend %}color:var(--text-3);
+                              {% else %}color:var(--text-2);{% endif %}
+                              {{ allCompData|length > 0 ? 'cursor:pointer;' : '' }}">
                             {{ day }}
                         </span>
                         {% if canEdit %}
                         <a href="{{ path('app_competition_new') }}?date={{ dateStr }}"
-                           class="opacity-0 group-hover:opacity-100 w-5 h-5 flex items-center justify-center rounded text-gray-500 hover:text-amber-400 hover:bg-gray-700 transition-all">
-                            <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M12 4v16m8-8H4"/></svg>
+                           style="opacity:0;width:20px;height:20px;display:flex;align-items:center;justify-content:center;border-radius:6px;color:var(--text-3);text-decoration:none;transition:all .15s;"
+                           onmouseover="this.style.color='var(--warning)';this.style.background='var(--bg-hover)'"
+                           onmouseout="this.style.color='var(--text-3)';this.style.background='transparent'">
+                            <svg width="12" height="12" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M12 4v16m8-8H4"/></svg>
                         </a>
                         {% endif %}
                     </div>
@@ -151,46 +149,46 @@
                     {# Pastilles compétitions #}
                     <div data-competitions>
                         {% for c in dayComps|slice(0, 3) %}
-                            <div class="relative group/pill mb-0.5 {% if canEdit %}cursor-grab active:cursor-grabbing{% endif %}"
+                            <div class="cal-pill-wrap"
+                                 style="position:relative;margin-bottom:2px;{% if canEdit %}cursor:grab;{% endif %}"
                                  {% if canEdit %}draggable="true" data-competition-id="{{ c.id }}"{% endif %}>
                                 <a href="{{ path('app_competition_show', {id: c.id}) }}"
                                    draggable="false"
-                                   class="flex items-center gap-1 px-1.5 py-0.5 rounded text-xs truncate hover:brightness-125 transition-all block"
-                                   style="background: {{ c.colorBg }}22; border-left: 2px solid {{ c.colorBg }}">
-                                    <span class="truncate font-medium text-white/90 leading-tight">{{ c.title }}</span>
+                                   style="display:flex;align-items:center;gap:4px;padding:2px 6px;border-radius:4px;font-size:11px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;text-decoration:none;transition:filter .15s;background:{{ c.colorBg }}22;border-left:2px solid {{ c.colorBg }};"
+                                   onmouseover="this.style.filter='brightness(1.3)'"
+                                   onmouseout="this.style.filter='brightness(1)'">
+                                    <span style="overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-weight:500;color:var(--text-1);line-height:1.4;">{{ c.title }}</span>
                                 </a>
 
                                 {# Tooltip au survol #}
-                                <div class="absolute bottom-full {% if col >= 5 %}right-0{% else %}left-0{% endif %} mb-1.5 z-50 w-52 pointer-events-none
-                                            opacity-0 group-hover/pill:opacity-100 transition-opacity duration-150
-                                            bg-gray-800 border border-gray-700 rounded-xl shadow-2xl overflow-hidden">
-                                    <div class="h-1 shrink-0" style="background: {{ c.colorBg }}"></div>
-                                    <div class="p-3">
+                                <div class="cal-tooltip"
+                                     style="position:absolute;bottom:100%;{% if col >= 5 %}right:0;{% else %}left:0;{% endif %}margin-bottom:6px;z-index:50;width:208px;pointer-events:none;opacity:0;transition:opacity .15s;background:var(--bg-3);border:1px solid var(--border-2);border-radius:12px;box-shadow:0 8px 32px rgba(0,0,0,.4);overflow:hidden;">
+                                    <div style="height:3px;flex-shrink:0;background:{{ c.colorBg }};"></div>
+                                    <div style="padding:12px;">
                                         {% if c.typeLabel != '—' %}
-                                            <span class="inline-block text-xs font-semibold px-2 py-0.5 rounded-full mb-1.5"
-                                                  style="background: {{ c.colorBg }}25; color: {{ c.colorBg }}; border: 1px solid {{ c.colorBg }}40">
+                                            <span style="display:inline-block;font-size:11px;font-weight:600;padding:2px 8px;border-radius:99px;margin-bottom:6px;background:{{ c.colorBg }}25;color:{{ c.colorBg }};border:1px solid {{ c.colorBg }}40;">
                                                 {{ c.typeLabel }}
                                             </span>
                                         {% endif %}
-                                        <p class="text-sm font-semibold text-white leading-tight">{{ c.title }}</p>
+                                        <p style="font-size:13px;font-weight:600;color:var(--text-1);margin:0;line-height:1.3;">{{ c.title }}</p>
                                         {% if c.location %}
-                                            <p class="text-xs text-gray-400 mt-1 flex items-center gap-1">
-                                                <svg class="w-3 h-3 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"/></svg>
+                                            <p style="font-size:11px;color:var(--text-2);margin:6px 0 0;display:flex;align-items:center;gap:4px;">
+                                                <svg width="11" height="11" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"/></svg>
                                                 {{ c.location }}
                                             </p>
                                         {% endif %}
                                         {% if registeredIds is not empty %}
-                                        <div class="mt-2 flex items-center gap-1.5">
+                                        <div style="margin-top:8px;display:flex;align-items:center;gap:6px;">
                                             {% if c.id in registeredIds %}
-                                                <span class="w-2 h-2 rounded-full bg-emerald-400 shrink-0"></span>
-                                                <span class="text-xs text-emerald-400 font-medium">Inscrit</span>
+                                                <span style="width:7px;height:7px;border-radius:50%;background:#34d399;flex-shrink:0;"></span>
+                                                <span style="font-size:11px;color:#34d399;font-weight:500;">Inscrit</span>
                                             {% else %}
-                                                <span class="w-2 h-2 rounded-full bg-red-500 shrink-0"></span>
-                                                <span class="text-xs text-red-400 font-medium">Non inscrit</span>
+                                                <span style="width:7px;height:7px;border-radius:50%;background:#f87171;flex-shrink:0;"></span>
+                                                <span style="font-size:11px;color:#f87171;font-weight:500;">Non inscrit</span>
                                             {% endif %}
                                         </div>
                                         {% endif %}
-                                        <p class="text-xs text-amber-400 mt-2 font-medium">Cliquer pour voir la fiche →</p>
+                                        <p style="font-size:11px;color:#fbbf24;margin:8px 0 0;font-weight:500;">Cliquer pour voir la fiche →</p>
                                     </div>
                                 </div>
                             </div>
@@ -198,7 +196,9 @@
                     </div>
 
                     {% if dayComps|length > 3 %}
-                        <p class="text-xs text-gray-500 px-1 cursor-pointer hover:text-gray-300"
+                        <p style="font-size:11px;color:var(--text-3);padding:0 4px;cursor:pointer;transition:color .15s;"
+                           onmouseover="this.style.color='var(--text-2)'"
+                           onmouseout="this.style.color='var(--text-3)'"
                            @click.stop="openDay('{{ '%02d'|format(day) }}/{{ '%02d'|format(month) }}/{{ year }}', {{ allCompData|json_encode }})">
                             +{{ dayComps|length - 3 }} autres
                         </p>
@@ -210,23 +210,21 @@
             {% set lastCol = ((daysInMonth + firstWeekday - 2) % 7) + 1 %}
             {% if lastCol < 7 %}
                 {% for i in (lastCol + 1)..7 %}
-                    <div class="min-h-28 border-b border-r border-gray-800/40 bg-gray-950/40"></div>
+                    <div style="min-height:7rem;border-bottom:1px solid var(--border);border-right:1px solid var(--border);background:var(--bg);opacity:.5;"></div>
                 {% endfor %}
             {% endif %}
         </div>
     </div>
 
     {# ── Navigation bas de page ── #}
-    <div class="flex items-center justify-between">
-        <a href="{{ path('app_competition_calendar', {month: prevMonth, year: prevYear}) }}"
-           class="flex items-center gap-1 bg-gray-800 hover:bg-gray-700 text-gray-300 px-3 py-2 rounded-lg text-sm transition-colors">
-            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"/></svg>
+    <div style="display:flex;align-items:center;justify-content:space-between;">
+        <a href="{{ path('app_competition_calendar', {month: prevMonth, year: prevYear}) }}" class="btn btn-secondary btn-sm">
+            <svg width="14" height="14" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"/></svg>
             Précédent
         </a>
-        <a href="{{ path('app_competition_calendar', {month: nextMonth, year: nextYear}) }}"
-           class="flex items-center gap-1 bg-gray-800 hover:bg-gray-700 text-gray-300 px-3 py-2 rounded-lg text-sm transition-colors">
+        <a href="{{ path('app_competition_calendar', {month: nextMonth, year: nextYear}) }}" class="btn btn-secondary btn-sm">
             Suivant
-            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/></svg>
+            <svg width="14" height="14" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/></svg>
         </a>
     </div>
 
@@ -236,38 +234,37 @@
     <div x-show="dayModal"
          x-transition:enter="ease-out duration-150" x-transition:enter-start="opacity-0" x-transition:enter-end="opacity-100"
          x-transition:leave="ease-in duration-100" x-transition:leave-start="opacity-100" x-transition:leave-end="opacity-0"
-         class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50"
+         class="modal-backdrop"
          @click.self="dayModal = false"
          style="display:none">
 
-        <div class="bg-gray-900 border border-gray-700 rounded-2xl w-full max-w-md shadow-2xl overflow-hidden">
-            <div class="flex items-center justify-between px-6 py-4 border-b border-gray-800">
-                <h3 class="font-semibold text-white" x-text="'Compétitions du ' + dayDate"></h3>
-                <button @click="dayModal = false" class="text-gray-500 hover:text-white p-1 transition-colors">
-                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
+        <div class="modal" style="max-width:440px;overflow:hidden;">
+            <div class="modal-header">
+                <h3 class="modal-title" x-text="'Compétitions du ' + dayDate"></h3>
+                <button @click="dayModal = false" class="btn btn-ghost btn-sm" style="padding:6px;">
+                    <svg width="16" height="16" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
                 </button>
             </div>
-            <div class="px-5 py-4 space-y-2 max-h-80 overflow-y-auto">
+            <div style="padding:16px;display:flex;flex-direction:column;gap:8px;max-height:320px;overflow-y:auto;">
                 <template x-for="c in dayComps" :key="c.id">
-                    <a :href="c.showUrl"
-                       class="flex items-center gap-3 bg-gray-800 rounded-xl px-4 py-3 hover:bg-gray-750 transition-colors">
-                        <div class="w-1 h-10 rounded-full shrink-0" :style="'background:' + c.color"></div>
-                        <div class="flex-1 min-w-0">
-                            <p class="font-medium text-white text-sm truncate" x-text="c.title"></p>
-                            <div class="flex items-center gap-2 mt-0.5">
-                                <span class="text-xs" :style="'color:' + c.color" x-text="c.typeLabel"></span>
-                                <span x-show="c.location" class="text-xs text-gray-500" x-text="c.location"></span>
+                    <a :href="c.showUrl" class="list-item" style="text-decoration:none;">
+                        <div style="width:3px;height:36px;border-radius:2px;flex-shrink:0;" :style="'background:' + c.color"></div>
+                        <div style="flex:1;min-width:0;">
+                            <p style="font-weight:500;font-size:13px;color:var(--text-1);margin:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;" x-text="c.title"></p>
+                            <div style="display:flex;align-items:center;gap:8px;margin-top:2px;">
+                                <span style="font-size:11px;" :style="'color:' + c.color" x-text="c.typeLabel"></span>
+                                <span x-show="c.location" style="font-size:11px;color:var(--text-3);" x-text="c.location"></span>
                             </div>
                         </div>
-                        <svg class="w-4 h-4 text-gray-600 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/></svg>
+                        <svg width="14" height="14" fill="none" stroke="currentColor" viewBox="0 0 24 24" style="color:var(--text-3);"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/></svg>
                     </a>
                 </template>
             </div>
             {% if canEdit %}
-            <div class="px-5 py-4 border-t border-gray-800">
+            <div style="padding:16px;border-top:1px solid var(--border);">
                 <a :href="'/competitions/new?date=' + dayDate.split('/').reverse().join('-')"
-                   class="w-full flex items-center justify-center gap-2 bg-indigo-600 hover:bg-indigo-500 text-white px-4 py-2.5 rounded-lg text-sm font-medium transition-colors">
-                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/></svg>
+                   class="btn btn-primary" style="width:100%;justify-content:center;">
+                    <svg width="14" height="14" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/></svg>
                     Ajouter une compétition ce jour
                 </a>
             </div>

@@ -2,7 +2,7 @@
 {% block title %}Créer mon profil athlète{% endblock %}
 
 {% block breadcrumb %}
-    <span class="text-white font-medium">Créer mon profil</span>
+    <span class="current">Créer mon profil</span>
 {% endblock %}
 
 {% block body %}
@@ -14,98 +14,90 @@
     data-gender="{{ form.gender.vars.id }}"
     style="display:none"></div>
 
-<div class="max-w-2xl mx-auto" x-data="newAthlete()" x-init="init()">
+<div style="max-width:640px;margin:0 auto;" x-data="newAthlete()" x-init="init()">
 
-    <div class="mb-6 flex items-start justify-between">
+    <div style="margin-bottom:24px;display:flex;align-items:flex-start;justify-content:space-between;gap:16px;">
         <div>
-            <h1 class="text-2xl font-bold text-white">Créer mon profil athlète</h1>
-            <p class="text-gray-400 mt-1">Liez votre compte à votre profil FFA pour synchroniser vos résultats automatiquement.</p>
+            <h1 class="section-title">Créer mon profil athlète</h1>
+            <p class="section-subtitle">Liez votre compte à votre profil FFA pour synchroniser vos résultats automatiquement.</p>
         </div>
-        <a href="{{ path('app_athlete_index') }}"
-           class="text-sm text-gray-500 hover:text-gray-300 transition-colors flex items-center gap-1.5 mt-1">
-            Passer cette étape
-            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/>
-            </svg>
+        <a href="{{ path('app_athlete_index') }}" class="btn btn-ghost btn-sm" style="white-space:nowrap;margin-top:4px;">
+            Passer
+            <svg width="14" height="14" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/></svg>
         </a>
     </div>
 
     {# Step 1 — Choose mode #}
-    <div x-show="step === 'choose'" x-transition class="grid grid-cols-2 gap-4">
+    <div x-show="step === 'choose'" x-transition style="display:grid;grid-template-columns:1fr 1fr;gap:16px;" data-stagger>
         <button type="button" @click="step = 'licence'"
-                class="bg-gray-900 border border-gray-800 hover:border-indigo-500 rounded-xl p-6 text-left transition-colors group">
-            <div class="w-10 h-10 rounded-lg bg-indigo-600/20 flex items-center justify-center mb-4 group-hover:bg-indigo-600/30 transition-colors">
-                <svg class="w-5 h-5 text-indigo-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 6H5a2 2 0 00-2 2v9a2 2 0 002 2h14a2 2 0 002-2V8a2 2 0 00-2-2h-5m-4 0V5a2 2 0 114 0v1m-4 0a2 2 0 104 0"/>
-                </svg>
+                class="card card-hover card-accent-hover"
+                style="padding:24px;text-align:left;background:none;cursor:pointer;border:none;width:100%;">
+            <div style="width:40px;height:40px;border-radius:10px;background:rgba(var(--accent-rgb),.15);display:flex;align-items:center;justify-content:center;margin-bottom:16px;">
+                <svg width="20" height="20" fill="none" stroke="var(--accent)" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 6H5a2 2 0 00-2 2v9a2 2 0 002 2h14a2 2 0 002-2V8a2 2 0 00-2-2h-5m-4 0V5a2 2 0 114 0v1m-4 0a2 2 0 104 0"/></svg>
             </div>
-            <h3 class="text-white font-semibold mb-1">Avec mon profil athle.fr</h3>
-            <p class="text-sm text-gray-400">Collez l'URL de votre profil athle.fr pour préremplir et synchroniser vos résultats.</p>
+            <h3 style="font-size:15px;font-weight:600;color:var(--text-1);margin:0 0 6px">Avec mon profil athle.fr</h3>
+            <p style="font-size:13px;color:var(--text-2);margin:0;line-height:1.5">Collez l'URL de votre profil athle.fr pour préremplir et synchroniser vos résultats.</p>
         </button>
 
         <button type="button" @click="step = 'form'"
-                class="bg-gray-900 border border-gray-800 hover:border-gray-600 rounded-xl p-6 text-left transition-colors group">
-            <div class="w-10 h-10 rounded-lg bg-gray-800 flex items-center justify-center mb-4 group-hover:bg-gray-700 transition-colors">
-                <svg class="w-5 h-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"/>
-                </svg>
+                class="card card-hover"
+                style="padding:24px;text-align:left;background:none;cursor:pointer;border:none;width:100%;">
+            <div style="width:40px;height:40px;border-radius:10px;background:var(--bg-hover);display:flex;align-items:center;justify-content:center;margin-bottom:16px;">
+                <svg width="20" height="20" fill="none" stroke="var(--text-2)" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"/></svg>
             </div>
-            <h3 class="text-white font-semibold mb-1">Manuellement</h3>
-            <p class="text-sm text-gray-400">Remplissez vos informations vous-même.</p>
+            <h3 style="font-size:15px;font-weight:600;color:var(--text-1);margin:0 0 6px">Manuellement</h3>
+            <p style="font-size:13px;color:var(--text-2);margin:0;line-height:1.5">Remplissez vos informations vous-même.</p>
         </button>
     </div>
 
     {# Step 2 — URL lookup #}
-    <div x-show="step === 'licence'" x-transition class="bg-gray-900 border border-gray-800 rounded-xl p-6">
-        <div class="flex items-center gap-3 mb-5">
-            <button type="button" @click="step = 'choose'" class="text-gray-500 hover:text-white transition-colors">
-                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"/>
-                </svg>
+    <div x-show="step === 'licence'" x-transition class="card card-body">
+        <div style="display:flex;align-items:center;gap:12px;margin-bottom:20px;">
+            <button type="button" @click="step = 'choose'" class="btn btn-ghost btn-sm" style="padding:6px;">
+                <svg width="18" height="18" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"/></svg>
             </button>
-            <h2 class="text-white font-semibold">Recherche via athle.fr</h2>
+            <h2 style="font-size:16px;font-weight:600;color:var(--text-1);margin:0">Recherche via athle.fr</h2>
         </div>
 
-        <p class="text-sm text-gray-400 mb-4">
-            Allez sur <strong class="text-gray-300">athle.fr</strong> ou <strong class="text-gray-300">bases.athle.fr</strong>, trouvez votre profil, puis copiez l'URL.
+        <p style="font-size:13px;color:var(--text-2);margin:0 0 16px;line-height:1.6">
+            Allez sur <strong style="color:var(--text-1)">athle.fr</strong> ou <strong style="color:var(--text-1)">bases.athle.fr</strong>, trouvez votre profil, puis copiez l'URL.
         </p>
 
-        <div class="flex gap-3">
+        <div style="display:flex;gap:10px;">
             <input type="text"
                    x-model="urlInput"
                    @keydown.enter="lookupUrl()"
                    placeholder="https://www.athle.fr/athlete/… ou https://bases.athle.fr/…"
-                   class="flex-1 bg-gray-800 border border-gray-700 rounded-lg px-4 py-2.5 text-white text-sm focus:outline-none focus:border-indigo-500 transition-colors">
+                   class="form-input"
+                   style="flex:1;">
             <button type="button" @click="lookupUrl()"
                     :disabled="lookupLoading || !urlInput.trim()"
-                    class="flex items-center gap-2 bg-indigo-600 hover:bg-indigo-500 disabled:opacity-50 disabled:cursor-not-allowed text-white px-4 py-2.5 rounded-lg text-sm font-medium transition-colors">
-                <svg x-show="lookupLoading" class="w-4 h-4 animate-spin" fill="none" viewBox="0 0 24 24">
-                    <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"/>
-                    <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8z"/>
+                    class="btn btn-primary">
+                <svg x-show="lookupLoading" width="14" height="14" fill="none" viewBox="0 0 24 24" style="animation:spin 1s linear infinite">
+                    <circle cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4" style="opacity:.25"/>
+                    <path fill="currentColor" d="M4 12a8 8 0 018-8v8z" style="opacity:.75"/>
                 </svg>
                 <span x-text="lookupLoading ? 'Chargement…' : 'Importer'"></span>
             </button>
         </div>
 
-        <p x-show="lookupError" x-text="lookupError"
-           class="mt-3 text-sm text-red-400 bg-red-900/20 border border-red-900/50 rounded-lg px-4 py-2.5"></p>
+        <div x-show="lookupError" x-text="lookupError"
+             style="margin-top:12px;font-size:13px;color:var(--danger);background:rgba(239,68,68,.08);border:1px solid rgba(239,68,68,.25);border-radius:10px;padding:10px 14px;display:none"></div>
     </div>
 
     {# Step 3 — Form #}
-    <div x-show="step === 'form'" class="bg-gray-900 border border-gray-800 rounded-xl p-6">
-        <div class="flex items-center gap-3 mb-5">
-            <button type="button" @click="step = 'choose'" class="text-gray-500 hover:text-white transition-colors">
-                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"/>
-                </svg>
+    <div x-show="step === 'form'" class="card card-body">
+        <div style="display:flex;align-items:center;gap:12px;margin-bottom:20px;flex-wrap:wrap;">
+            <button type="button" @click="step = 'choose'" class="btn btn-ghost btn-sm" style="padding:6px;">
+                <svg width="18" height="18" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"/></svg>
             </button>
-            <h2 class="text-white font-semibold">Mes informations</h2>
-            <span x-show="prefilled" class="flex items-center gap-1 text-xs bg-green-900/40 text-green-400 border border-green-900/50 px-2 py-0.5 rounded-full">
-                <svg class="w-3 h-3" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd"/></svg>
+            <h2 style="font-size:16px;font-weight:600;color:var(--text-1);margin:0">Mes informations</h2>
+            <span x-show="prefilled" class="badge badge-green" style="display:none">
+                <svg width="10" height="10" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd"/></svg>
                 Prérempli via athle.fr
             </span>
-            <span x-show="syncReady" class="flex items-center gap-1 text-xs bg-indigo-900/40 text-indigo-400 border border-indigo-900/50 px-2 py-0.5 rounded-full">
-                <svg class="w-3 h-3" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M4 2a1 1 0 011 1v2.101a7.002 7.002 0 0111.601 2.566 1 1 0 11-1.885.666A5.002 5.002 0 005.999 7H9a1 1 0 010 2H4a1 1 0 01-1-1V3a1 1 0 011-1zm.008 9.057a1 1 0 011.276.61A5.002 5.002 0 0014.001 13H11a1 1 0 110-2h5a1 1 0 011 1v5a1 1 0 11-2 0v-2.101a7.002 7.002 0 01-11.601-2.566 1 1 0 01.61-1.276z" clip-rule="evenodd"/></svg>
+            <span x-show="syncReady" class="badge badge-indigo" style="display:none">
+                <svg width="10" height="10" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M4 2a1 1 0 011 1v2.101a7.002 7.002 0 0111.601 2.566 1 1 0 11-1.885.666A5.002 5.002 0 005.999 7H9a1 1 0 010 2H4a1 1 0 01-1-1V3a1 1 0 011-1zm.008 9.057a1 1 0 011.276.61A5.002 5.002 0 0014.001 13H11a1 1 0 110-2h5a1 1 0 011 1v5a1 1 0 11-2 0v-2.101a7.002 7.002 0 01-11.601-2.566 1 1 0 01.61-1.276z" clip-rule="evenodd"/></svg>
                 Sync résultats activée
             </span>
         </div>
@@ -114,21 +106,22 @@
 
         {{ form_row(form.ffaProfileUrl) }}
 
-        <div class="grid grid-cols-2 gap-4">
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;">
             <div>{{ form_row(form.firstName) }}</div>
             <div>{{ form_row(form.lastName) }}</div>
         </div>
-        <div class="grid grid-cols-2 gap-4">
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;">
             <div>{{ form_row(form.birthDate) }}</div>
             <div>{{ form_row(form.gender) }}</div>
         </div>
+
         <div>
-            <p class="text-sm font-medium text-gray-300 mb-2">Spécialités</p>
+            <p class="form-label">Spécialités</p>
             <input type="hidden" name="disciplines_raw" id="disciplines_raw_link" value="[]">
-            <div class="flex flex-wrap gap-2" id="disc-pills-link">
+            <div style="display:flex;flex-wrap:wrap;gap:8px;" id="disc-pills-link">
                 {% for label, value in disciplines %}
                     <button type="button"
-                            class="disc-pill inline-block bg-gray-800 text-gray-400 border border-gray-700 hover:border-gray-500 hover:text-gray-200 px-3 py-1.5 rounded-lg text-xs font-medium transition-all cursor-pointer"
+                            class="disc-pill btn btn-sm"
                             data-value="{{ value }}"
                             data-hidden="disciplines_raw_link"
                             onclick="discPillToggle(this)">
@@ -137,18 +130,23 @@
                 {% endfor %}
             </div>
         </div>
+
         {{ form_row(form.notes) }}
         {{ form_row(form.photoFile) }}
 
-        <div class="pt-2">
-            <button type="submit" class="bg-indigo-600 hover:bg-indigo-500 text-white px-5 py-2.5 rounded-lg text-sm font-medium transition-colors">
-                Créer mon profil
-            </button>
+        <div style="padding-top:8px;">
+            <button type="submit" class="btn btn-primary">Créer mon profil</button>
         </div>
         {{ form_end(form) }}
     </div>
 
 </div>
+
+<style>
+@keyframes spin{to{transform:rotate(360deg)}}
+.disc-pill{background:var(--bg-hover);color:var(--text-2);border:1px solid var(--border);}
+.disc-pill.active{background:var(--accent);color:#fff;border-color:var(--accent);}
+</style>
 
 <script>
 (function () {
@@ -219,7 +217,7 @@
                 if (data.discipline && data.discipline.length > 0) {
                     var discs = Array.isArray(data.discipline) ? data.discipline : [data.discipline];
                     document.querySelectorAll('#disc-pills-link .disc-pill').forEach(function(btn) {
-                        if (discs.includes(btn.dataset.value) && !btn.classList.contains('bg-indigo-600')) {
+                        if (discs.includes(btn.dataset.value) && !btn.classList.contains('active')) {
                             discPillToggle(btn);
                         }
                     });
@@ -239,12 +237,10 @@ function discPillToggle(btn) {
     var idx = selected.indexOf(val);
     if (idx === -1) {
         selected.push(val);
-        btn.classList.remove('bg-gray-800', 'text-gray-400', 'border-gray-700');
-        btn.classList.add('bg-indigo-600', 'text-white', 'border-indigo-500');
+        btn.classList.add('active');
     } else {
         selected.splice(idx, 1);
-        btn.classList.remove('bg-indigo-600', 'text-white', 'border-indigo-500');
-        btn.classList.add('bg-gray-800', 'text-gray-400', 'border-gray-700');
+        btn.classList.remove('active');
     }
     hiddenInput.value = JSON.stringify(selected);
 }

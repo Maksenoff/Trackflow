@@ -1,12 +1,12 @@
 {% extends 'base.html.twig' %}
 
 {% block body %}
-<div class="max-w-2xl mx-auto space-y-6">
+<div style="max-width:640px;margin:0 auto;display:flex;flex-direction:column;gap:24px;">
     <div>
         {% block form_header %}{% endblock %}
     </div>
 
-    <div class="bg-gray-900 border border-gray-800 rounded-xl p-6">
+    <div class="card card-body">
         {% block form_content %}{% endblock %}
     </div>
 </div>

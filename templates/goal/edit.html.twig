@@ -2,35 +2,35 @@
 {% block title %}Modifier objectif{% endblock %}
 
 {% block breadcrumb %}
-    <a href="{{ path('app_athlete_show', {id: athlete.id}) }}" class="hover:text-white">{{ athlete.fullName }}</a>
-    <span class="mx-2 text-gray-600">/</span>
-    <span class="text-white font-medium">Modifier objectif</span>
+    <a href="{{ path('app_athlete_show', {id: athlete.id}) }}">{{ athlete.fullName }}</a>
+    <span class="sep">/</span>
+    <span class="current">Modifier objectif</span>
 {% endblock %}
 
 {% block body %}
-<div class="max-w-2xl mx-auto">
-    <div class="mb-6">
-        <h1 class="text-2xl font-bold text-white">Modifier l'objectif</h1>
-        <p class="text-gray-400 mt-1">{{ athlete.fullName }}</p>
+<div style="max-width:640px;margin:0 auto;">
+    <div style="margin-bottom:24px;">
+        <h1 class="section-title">Modifier l'objectif</h1>
+        <p class="section-subtitle">{{ athlete.fullName }}</p>
     </div>
-    <div class="bg-gray-900 border border-gray-800 rounded-xl p-6">
-        {{ form_start(form, {attr: {class: 'space-y-5'}}) }}
+    <div class="card card-body">
+        {{ form_start(form, {}) }}
         {{ form_row(form.title) }}
-        <div class="grid grid-cols-2 gap-4">
+        <div style="display:grid;grid-template-columns:repeat(2,1fr);gap:16px;">
             <div>{{ form_row(form.discipline) }}</div>
             <div>{{ form_row(form.deadline) }}</div>
         </div>
-        <div class="grid grid-cols-2 gap-4">
+        <div style="display:grid;grid-template-columns:repeat(2,1fr);gap:16px;">
             <div>{{ form_row(form.targetValue) }}</div>
             <div>{{ form_row(form.unit) }}</div>
         </div>
         {{ form_row(form.status) }}
         {{ form_row(form.notes) }}
-        <div class="flex gap-3 pt-2">
-            <button type="submit" class="bg-indigo-600 hover:bg-indigo-500 text-white px-5 py-2.5 rounded-lg text-sm font-medium transition-colors">
+        <div style="display:flex;gap:10px;padding-top:8px;">
+            <button type="submit" class="btn btn-primary">
                 Enregistrer
             </button>
-            <a href="{{ path('app_athlete_show', {id: athlete.id}) }}" class="bg-gray-800 hover:bg-gray-700 text-gray-300 px-5 py-2.5 rounded-lg text-sm font-medium transition-colors">
+            <a href="{{ path('app_athlete_show', {id: athlete.id}) }}" class="btn btn-secondary">
                 Annuler
             </a>
         </div>

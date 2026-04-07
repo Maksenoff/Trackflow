@@ -3,64 +3,55 @@
 {% block title %}{{ athlete.fullName }}{% endblock %}
 
 {% block breadcrumb %}
-    <a href="{{ path('app_dashboard') }}" class="hover:text-white transition-colors">Tableau de bord</a>
-    <span class="mx-2 text-gray-600">/</span>
-    <a href="{{ path('app_athlete_index') }}" class="hover:text-white transition-colors">Athlètes</a>
-    <span class="mx-2 text-gray-600">/</span>
-    <span class="text-white font-medium">{{ athlete.fullName }}</span>
+    <a href="{{ path('app_dashboard') }}">Tableau de bord</a>
+    <span class="sep">/</span>
+    <a href="{{ path('app_athlete_index') }}">Athlètes</a>
+    <span class="sep">/</span>
+    <span class="current">{{ athlete.fullName }}</span>
 {% endblock %}
 
 {% block body %}
-<div class="space-y-6" x-data="{ activeTab: 'performances', deleteOpen: false }">
+<div style="display:flex;flex-direction:column;gap:20px;" x-data="{ activeTab: 'performances', deleteOpen: false }">
 
     {# Athlete header #}
-    <div class="bg-gray-900 border border-gray-800 rounded-xl p-6">
-        <div class="flex items-start justify-between">
-            <div class="flex items-center gap-5">
-                <div class="w-20 h-20 rounded-xl bg-indigo-600/20 flex items-center justify-center text-indigo-300 font-bold text-2xl overflow-hidden shrink-0">
+    <div class="card card-body">
+        <div style="display:flex;flex-direction:column;gap:16px;">
+        <div style="display:flex;flex-wrap:wrap;align-items:flex-start;justify-content:space-between;gap:16px;">
+            <div style="display:flex;align-items:center;gap:18px;">
+                <div class="avatar avatar-lg avatar-sq">
                     {% if athlete.photo %}
-                        <img src="/uploads/athletes/{{ athlete.photo }}" alt="{{ athlete.fullName }}" class="w-full h-full object-cover">
+                        <img src="/uploads/athletes/{{ athlete.photo }}" alt="{{ athlete.fullName }}">
                     {% else %}
                         {{ athlete.firstName|slice(0,1) }}{{ athlete.lastName|slice(0,1) }}
                     {% endif %}
                 </div>
                 <div>
-                    <h1 class="text-2xl font-bold text-white">{{ athlete.fullName }}</h1>
-                    <div class="flex flex-wrap gap-2 mt-2">
+                    <h1 style="font-size:22px;font-weight:800;color:var(--text-1);">{{ athlete.fullName }}</h1>
+                    <div style="display:flex;flex-wrap:wrap;gap:6px;margin-top:8px;">
                         {% for disc in athlete.disciplines %}
-                            <span class="inline-flex items-center gap-1.5 text-sm font-semibold text-indigo-200 bg-indigo-600/20 border border-indigo-500/30 px-3 py-1 rounded-lg">
-                                <svg class="w-3.5 h-3.5 text-indigo-400 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"/>
-                                </svg>
+                            <span class="badge badge-indigo">
+                                <svg width="12" height="12" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M13 10V3L4 14h7v7l9-11h-7z"/></svg>
                                 {{ disc|capitalize }}
                             </span>
                         {% else %}
-                            <span class="text-sm text-gray-500">Aucune discipline</span>
+                            <span style="font-size:13px;color:var(--text-3);">Aucune discipline</span>
                         {% endfor %}
                     </div>
-                    <div class="flex items-center gap-4 mt-2 text-sm text-gray-400">
-                        {% if athlete.age %}
-                            <span>{{ athlete.age }} ans</span>
-                        {% endif %}
-                        {% if athlete.gender %}
-                            <span>{{ athlete.gender == 'M' ? 'Homme' : (athlete.gender == 'F' ? 'Femme' : 'Autre') }}</span>
-                        {% endif %}
+                    <div style="display:flex;flex-wrap:wrap;gap:12px;margin-top:8px;font-size:12.5px;color:var(--text-2);">
+                        {% if athlete.age %}<span>{{ athlete.age }} ans</span>{% endif %}
+                        {% if athlete.gender %}<span>{{ athlete.gender == 'M' ? 'Homme' : (athlete.gender == 'F' ? 'Femme' : 'Autre') }}</span>{% endif %}
                         <span>Suivi depuis {{ athlete.createdAt|date_fr('F Y') }}</span>
                     </div>
                 </div>
             </div>
-            <div class="flex gap-2">
+            <div style="display:flex;gap:8px;flex-shrink:0;align-self:flex-start;flex-wrap:wrap;">
                 {% if canEdit %}
-                <a href="{{ path('app_athlete_edit', {id: athlete.id}) }}"
-                   class="flex items-center gap-2 bg-gray-800 hover:bg-gray-700 text-gray-300 px-3 py-2 rounded-lg text-sm transition-colors">
-                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"/>
-                    </svg>
+                <a href="{{ path('app_athlete_edit', {id: athlete.id}) }}" class="btn btn-secondary btn-sm">
+                    <svg fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"/></svg>
                     Modifier
                 </a>
                 {% if is_granted('ROLE_ADMIN') %}
-                <button type="button" @click="deleteOpen = true"
-                        class="flex items-center gap-2 bg-gray-800 hover:bg-red-900/40 hover:text-red-400 hover:border-red-800 border border-gray-700 text-gray-300 px-3 py-2 rounded-lg text-sm transition-all">
+                <button type="button" @click="deleteOpen = true" class="btn btn-danger btn-sm">
                     <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/>
                     </svg>
@@ -68,36 +59,26 @@
                 </button>
 
                 {# Delete confirmation modal #}
-                <div x-show="deleteOpen" x-transition.opacity
-                     class="fixed inset-0 z-50 flex items-center justify-center p-4"
-                     style="background: rgba(0,0,0,0.7)">
-                    <div x-show="deleteOpen" x-transition.scale.origin.center
-                         @click.outside="deleteOpen = false"
-                         class="bg-gray-900 border border-gray-700 rounded-2xl p-6 max-w-sm w-full shadow-2xl">
-                        <div class="flex items-center gap-3 mb-4">
-                            <div class="w-10 h-10 rounded-full bg-red-900/40 flex items-center justify-center shrink-0">
-                                <svg class="w-5 h-5 text-red-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/>
-                                </svg>
+                <div x-show="deleteOpen" x-transition.opacity class="modal-backdrop" style="display:none;">
+                    <div x-show="deleteOpen" x-transition.scale.origin.center @click.outside="deleteOpen = false" class="modal">
+                        <div class="modal-header" style="display:flex;align-items:center;gap:12px;">
+                            <div style="width:40px;height:40px;border-radius:50%;background:var(--danger-bg);display:flex;align-items:center;justify-content:center;flex-shrink:0;">
+                                <svg width="18" height="18" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2" style="color:var(--danger);"><path stroke-linecap="round" stroke-linejoin="round" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/></svg>
                             </div>
                             <div>
-                                <h3 class="text-white font-semibold">Supprimer l'athlète</h3>
-                                <p class="text-sm text-gray-400">{{ athlete.fullName }}</p>
+                                <div style="font-weight:700;color:var(--text-1);">Supprimer l'athlète</div>
+                                <div style="font-size:13px;color:var(--text-2);">{{ athlete.fullName }}</div>
                             </div>
                         </div>
-                        <p class="text-sm text-gray-400 mb-6">Cette action est irréversible. Toutes les performances, séances et objectifs associés seront supprimés.</p>
-                        <div class="flex gap-3">
-                            <form action="{{ path('app_athlete_delete', {id: athlete.id}) }}" method="post" class="flex-1">
+                        <div class="modal-body">
+                            <p style="font-size:13px;color:var(--text-2);">Cette action est irréversible. Toutes les performances, séances et objectifs associés seront supprimés.</p>
+                        </div>
+                        <div class="modal-footer">
+                            <button type="button" @click="deleteOpen = false" class="btn btn-secondary">Annuler</button>
+                            <form action="{{ path('app_athlete_delete', {id: athlete.id}) }}" method="post">
                                 <input type="hidden" name="_token" value="{{ csrf_token('delete' ~ athlete.id) }}">
-                                <button type="submit"
-                                        class="w-full cursor-pointer bg-red-600 hover:bg-red-500 text-white px-4 py-2.5 rounded-lg text-sm font-medium transition-colors">
-                                    Oui, supprimer
-                                </button>
+                                <button type="submit" class="btn btn-danger">Supprimer</button>
                             </form>
-                            <button type="button" @click="deleteOpen = false"
-                                    class="flex-1 cursor-pointer bg-gray-800 hover:bg-gray-700 text-gray-300 px-4 py-2.5 rounded-lg text-sm font-medium transition-colors">
-                                Annuler
-                            </button>
                         </div>
                     </div>
                 </div>
@@ -107,69 +88,64 @@
         </div>
 
         {% if athlete.notes %}
-            <div class="mt-4 pt-4 border-t border-gray-800 text-sm text-gray-400">
-                {{ athlete.notes }}
-            </div>
+            <div style="padding-top:12px;border-top:1px solid var(--border);font-size:13px;color:var(--text-2);">{{ athlete.notes }}</div>
         {% endif %}
 
         {% if athlete.ffaProfileUrl %}
-        <div class="mt-4 pt-4 border-t border-gray-800 flex items-center gap-3 text-sm">
-            <span class="text-gray-500">Profil athle.fr :</span>
-            <a href="{{ athlete.ffaProfileUrl }}" target="_blank" class="text-indigo-400 hover:text-indigo-300 truncate max-w-xs transition-colors">bases.athle.fr</a>
-            <span id="ffa-sync-badge" class="flex items-center gap-1.5 text-gray-500">
-                <svg id="ffa-spin" class="w-3.5 h-3.5 animate-spin hidden" fill="none" viewBox="0 0 24 24">
-                    <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"/>
-                    <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8z"/>
+        <div style="padding-top:12px;border-top:1px solid var(--border);display:flex;align-items:center;gap:10px;font-size:13px;">
+            <span style="color:var(--text-3);">Profil athle.fr :</span>
+            <a href="{{ athlete.ffaProfileUrl }}" target="_blank" style="color:var(--accent-hover);text-decoration:none;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:200px;">bases.athle.fr</a>
+            <span id="ffa-sync-badge" style="display:flex;align-items:center;gap:6px;color:var(--text-3);">
+                <svg id="ffa-spin" style="width:14px;height:14px;display:none;" fill="none" viewBox="0 0 24 24">
+                    <circle style="opacity:.25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"/>
+                    <path style="opacity:.75" fill="currentColor" d="M4 12a8 8 0 018-8v8z"/>
                 </svg>
-                <span id="ffa-sync-text">Synchronisation…</span>
+                <span id="ffa-sync-text" style="font-size:12px;">Synchronisation…</span>
             </span>
         </div>
         {% endif %}
 
         {# Quick stats #}
-        <div class="grid grid-cols-4 gap-4 mt-5 pt-5 border-t border-gray-800">
+        <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:16px;padding-top:16px;border-top:1px solid var(--border);" data-stagger>
             <div>
-                <p class="text-2xl font-bold text-white">{{ athlete.athleteSessions|length }}</p>
-                <p class="text-sm text-gray-400">Séances</p>
+                <div style="font-size:26px;font-weight:800;color:var(--text-1);" data-count="{{ athlete.athleteSessions|length }}">{{ athlete.athleteSessions|length }}</div>
+                <div style="font-size:12px;color:var(--text-2);margin-top:2px;">Séances</div>
             </div>
             <div>
-                <p class="text-2xl font-bold text-white">{{ athlete.performances|length }}</p>
-                <p class="text-sm text-gray-400">Performances</p>
+                <div style="font-size:26px;font-weight:800;color:var(--text-1);" data-count="{{ athlete.performances|length }}">{{ athlete.performances|length }}</div>
+                <div style="font-size:12px;color:var(--text-2);margin-top:2px;">Performances</div>
             </div>
             <div>
-                <p class="text-2xl font-bold text-white">{{ athlete.goals|filter(g => g.status == 'achieved')|length }}</p>
-                <p class="text-sm text-gray-400">Objectifs atteints</p>
+                <div style="font-size:26px;font-weight:800;color:var(--success);" data-count="{{ athlete.goals|filter(g => g.status == 'achieved')|length }}">{{ athlete.goals|filter(g => g.status == 'achieved')|length }}</div>
+                <div style="font-size:12px;color:var(--text-2);margin-top:2px;">Objectifs atteints</div>
             </div>
             <div>
-                <p class="text-2xl font-bold text-white">{{ athlete.goals|filter(g => g.status == 'in_progress')|length }}</p>
-                <p class="text-sm text-gray-400">En cours</p>
+                <div style="font-size:26px;font-weight:800;color:var(--accent-hover);" data-count="{{ athlete.goals|filter(g => g.status == 'in_progress')|length }}">{{ athlete.goals|filter(g => g.status == 'in_progress')|length }}</div>
+                <div style="font-size:12px;color:var(--text-2);margin-top:2px;">En cours</div>
             </div>
+        </div>
         </div>
     </div>
 
     {# Tabs #}
-    <div class="flex gap-1 bg-gray-900 border border-gray-800 rounded-xl p-1">
-        <button @click="activeTab = 'performances'"
-                :class="activeTab === 'performances' ? 'bg-gray-700 text-white' : 'text-gray-400 hover:text-white'"
-                class="flex-1 py-2 px-4 rounded-lg text-sm font-medium transition-colors">
+    <div class="tf-tabs">
+        <button class="tf-tab" :class="activeTab === 'performances' ? 'active' : ''" @click="activeTab = 'performances'">
+            <svg fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"/></svg>
             Performances
         </button>
         {% if canEdit %}
-        <button @click="activeTab = 'sessions'"
-                :class="activeTab === 'sessions' ? 'bg-gray-700 text-white' : 'text-gray-400 hover:text-white'"
-                class="flex-1 py-2 px-4 rounded-lg text-sm font-medium transition-colors">
+        <button class="tf-tab" :class="activeTab === 'sessions' ? 'active' : ''" @click="activeTab = 'sessions'">
+            <svg fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"/></svg>
             Séances
         </button>
         {% endif %}
-        <button @click="activeTab = 'goals'"
-                :class="activeTab === 'goals' ? 'bg-gray-700 text-white' : 'text-gray-400 hover:text-white'"
-                class="flex-1 py-2 px-4 rounded-lg text-sm font-medium transition-colors">
+        <button class="tf-tab" :class="activeTab === 'goals' ? 'active' : ''" @click="activeTab = 'goals'">
+            <svg fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
             Objectifs
         </button>
         {% if canEdit %}
-        <button @click="activeTab = 'videos'; $nextTick(() => videoApp.load())"
-                :class="activeTab === 'videos' ? 'bg-gray-700 text-white' : 'text-gray-400 hover:text-white'"
-                class="flex-1 py-2 px-4 rounded-lg text-sm font-medium transition-colors">
+        <button class="tf-tab" :class="activeTab === 'videos' ? 'active' : ''" @click="activeTab = 'videos'; $nextTick(() => videoApp.load())">
+            <svg fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M15 10l4.553-2.069A1 1 0 0121 8.87v6.26a1 1 0 01-1.447.894L15 14M5 18h8a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z"/></svg>
             Vidéos
         </button>
         {% endif %}
@@ -181,36 +157,25 @@
          x-init="init()">
 
         {# Header row #}
-        <div class="flex items-center justify-between mb-4">
-            <div class="flex items-center gap-3">
-                <h2 class="text-lg font-semibold text-white">Performances</h2>
-                <span class="text-xs bg-gray-800 text-gray-400 px-2 py-0.5 rounded-full"
-                      x-text="filtered.length + ' résultat' + (filtered.length > 1 ? 's' : '')"></span>
+        <div style="display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:12px;margin-bottom:16px;">
+            <div style="display:flex;align-items:center;gap:10px;">
+                <h2 style="font-size:16px;font-weight:700;color:var(--text-1);">Performances</h2>
+                <span class="badge badge-neutral" x-text="filtered.length + ' résultat' + (filtered.length > 1 ? 's' : '')"></span>
             </div>
-            <div class="flex items-center gap-2">
-                <a href="{{ path('app_athlete_stats', {id: athlete.id}) }}"
-                   class="flex items-center gap-1.5 bg-gray-800 hover:bg-gray-700 text-gray-300 hover:text-white px-3 py-2 rounded-lg text-sm transition-colors border border-gray-700 hover:border-gray-600">
-                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"/>
-                    </svg>
+            <div style="display:flex;flex-wrap:wrap;align-items:center;gap:8px;">
+                <a href="{{ path('app_athlete_stats', {id: athlete.id}) }}" class="btn btn-secondary btn-sm">
+                    <svg fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"/></svg>
                     Stats avancées
                 </a>
                 {% if canEdit %}
                 {% if athlete.ffaProfileUrl %}
-                <button id="manual-sync-btn" @click="triggerSync()"
-                        :disabled="syncing"
-                        class="flex items-center gap-1.5 bg-gray-800 hover:bg-gray-700 disabled:opacity-60 text-gray-300 px-3 py-2 rounded-lg text-sm transition-colors">
-                    <svg :class="syncing ? 'animate-spin' : ''" class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/>
-                    </svg>
+                <button id="manual-sync-btn" @click="triggerSync()" :disabled="syncing" class="btn btn-secondary btn-sm">
+                    <svg :style="syncing ? 'animation:tf-spin 1s linear infinite' : ''" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/></svg>
                     <span x-text="syncLabel"></span>
                 </button>
                 {% endif %}
-                <a href="{{ path('app_performance_new', {athleteId: athlete.id}) }}"
-                   class="flex items-center gap-2 bg-indigo-600 hover:bg-indigo-500 text-white px-3 py-2 rounded-lg text-sm font-medium transition-colors">
-                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/>
-                    </svg>
+                <a href="{{ path('app_performance_new', {athleteId: athlete.id}) }}" class="btn btn-primary btn-sm">
+                    <svg fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M12 4v16m8-8H4"/></svg>
                     Ajouter
                 </a>
                 {% endif %}
@@ -218,70 +183,73 @@
         </div>
 
         <template x-if="allPerfs.length === 0">
-            <div class="bg-gray-900 border border-gray-800 rounded-xl p-10 text-center text-gray-500">
-                Aucune performance enregistrée.
+            <div class="empty-state" style="padding:40px;">
+                <svg width="32" height="32" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"/></svg>
+                <p>Aucune performance enregistrée.</p>
             </div>
         </template>
 
         {# ── Bilan annuel niveau (accordéon, style FFA) ── #}
         <template x-if="annualBilan.length > 0">
-            <div class="bg-gray-900 border border-gray-800 rounded-xl overflow-hidden mb-4">
+            <div class="card" style="overflow:hidden mb-4">
 
                 {# Header / toggle #}
                 <button type="button" @click="_bilanOpen = !_bilanOpen"
-                        class="w-full flex items-center justify-between px-4 py-3 hover:bg-gray-800/40 transition-colors text-left">
-                    <div class="flex items-center gap-3 flex-wrap min-w-0">
-                        <svg :class="_bilanOpen ? 'rotate-90' : ''"
-                             class="w-4 h-4 text-gray-500 transition-transform shrink-0"
+                        style="width:100%;display:flex;align-items:center;justify-content:space-between;padding:12px 16px;text-align:left;background:none;border:none;cursor:pointer;color:var(--text-1);"
+                        onmouseover="this.style.background='var(--bg-hover)'" onmouseout="this.style.background='none'">
+                    <div style="display:flex;align-items:center;gap:12px;flex-wrap:wrap;min-width:0;">
+                        <svg :style="_bilanOpen ? 'transform:rotate(90deg)' : ''"
+                             style="width:16px;height:16px;color:var(--text-3);transition:transform .15s;flex-shrink:0;"
                              fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/>
                         </svg>
-                        <span class="text-sm font-semibold text-white shrink-0">Bilan niveau</span>
+                        <span style="font-size:14px;font-weight:600;color:var(--text-1);flex-shrink:0;">Bilan niveau</span>
                         {# Preview des 3 dernières années quand replié #}
                         <template x-if="!_bilanOpen">
-                            <div class="flex items-center gap-3 flex-wrap">
+                            <div style="display:flex;align-items:center;gap:12px;flex-wrap:wrap;">
                                 <template x-for="row in annualBilan.slice(0,4)" :key="row.year">
-                                    <div class="flex items-center gap-1.5">
-                                        <span class="text-xs text-gray-500" x-text="row.year"></span>
-                                        <span class="text-xs font-bold bg-violet-900/50 text-violet-200 border border-violet-700/40 px-2 py-0.5 rounded"
+                                    <div style="display:flex;align-items:center;gap:6px;">
+                                        <span style="font-size:11px;color:var(--text-3);" x-text="row.year"></span>
+                                        <span style="font-size:11px;font-weight:700;background:rgba(139,92,246,.15);color:#c4b5fd;border:1px solid rgba(139,92,246,.3);padding:1px 6px;border-radius:4px;"
                                               x-text="row.level"></span>
                                     </div>
                                 </template>
                             </div>
                         </template>
                     </div>
-                    <span class="text-xs text-gray-600 shrink-0 ml-2" x-text="annualBilan.length + ' ans'"></span>
+                    <span style="font-size:11px;color:var(--text-3);flex-shrink:0;margin-left:8px;" x-text="annualBilan.length + ' ans'"></span>
                 </button>
 
                 {# Corps — table style FFA #}
-                <div x-show="_bilanOpen" x-transition.duration.150ms class="border-t border-gray-800">
-                    <table class="w-full text-sm">
+                <div x-show="_bilanOpen" x-transition.duration.150ms style="border-top:1px solid var(--border);">
+                    <table style="width:100%;font-size:13px;border-collapse:collapse;">
                         <thead>
-                            <tr class="text-xs text-gray-600 uppercase tracking-wide border-b border-gray-800/60">
-                                <th class="text-left px-4 py-2 font-medium w-14">Année</th>
-                                <th class="text-left px-4 py-2 font-medium w-28">Niveau</th>
-                                <th class="text-left px-4 py-2 font-medium">Top performances</th>
+                            <tr style="font-size:11px;color:var(--text-3);text-transform:uppercase;letter-spacing:.06em;border-bottom:1px solid var(--border);">
+                                <th style="text-align:left;padding:8px 16px;font-weight:500;width:56px;">Année</th>
+                                <th style="text-align:left;padding:8px 16px;font-weight:500;width:112px;">Niveau</th>
+                                <th style="text-align:left;padding:8px 16px;font-weight:500;">Top performances</th>
                             </tr>
                         </thead>
                         <tbody>
                             <template x-for="row in annualBilan" :key="row.year">
-                                <tr class="border-t border-gray-800/40 hover:bg-white/[0.02] transition-colors">
-                                    <td class="px-4 py-2.5 text-gray-400 font-semibold text-sm" x-text="row.year"></td>
-                                    <td class="px-4 py-2.5">
-                                        <div class="flex items-center gap-1.5">
-                                            <span class="text-xs font-bold bg-violet-900/50 text-violet-200 border border-violet-700/40 px-2 py-1 rounded-lg"
+                                <tr style="border-top:1px solid var(--border);"
+                                    onmouseover="this.style.background='var(--bg-hover)'" onmouseout="this.style.background=''">
+                                    <td style="padding:10px 16px;color:var(--text-2);font-weight:600;font-size:13px;" x-text="row.year"></td>
+                                    <td style="padding:10px 16px;">
+                                        <div style="display:flex;align-items:center;gap:6px;">
+                                            <span style="font-size:11px;font-weight:700;background:rgba(139,92,246,.15);color:#c4b5fd;border:1px solid rgba(139,92,246,.3);padding:3px 8px;border-radius:6px;"
                                                   x-text="row.level"></span>
-                                            <span class="text-xs text-gray-600" x-text="'(' + row.pts + ' pts)'"></span>
+                                            <span style="font-size:11px;color:var(--text-3);" x-text="'(' + row.pts + ' pts)'"></span>
                                         </div>
                                     </td>
-                                    <td class="px-4 py-2.5">
-                                        <div class="flex items-center gap-4 flex-wrap">
+                                    <td style="padding:10px 16px;">
+                                        <div style="display:flex;align-items:center;gap:16px;flex-wrap:wrap;">
                                             <template x-for="(p, i) in row.top2" :key="i">
-                                                <div class="flex items-center gap-1.5 text-xs">
-                                                    <span class="text-gray-400" x-text="p.disc"></span>
-                                                    <span class="text-gray-200 font-semibold" x-text="p.value"></span>
+                                                <div style="display:flex;align-items:center;gap:6px;font-size:12px;">
+                                                    <span style="color:var(--text-2);" x-text="p.disc"></span>
+                                                    <span style="color:var(--text-1);font-weight:600;" x-text="p.value"></span>
                                                     <template x-if="p.level">
-                                                        <span class="text-[10px] font-semibold bg-violet-900/40 text-violet-300 border border-violet-700/30 px-1.5 py-0.5 rounded"
+                                                        <span style="font-size:10px;font-weight:600;background:rgba(139,92,246,.12);color:#c4b5fd;border:1px solid rgba(139,92,246,.25);padding:1px 5px;border-radius:4px;"
                                                               x-text="p.level + (p.pts ? ' · ' + p.pts + 'pts' : '')"></span>
                                                     </template>
                                                 </div>
@@ -297,90 +265,91 @@
         </template>
 
         <template x-if="allPerfs.length > 0">
-            <div class="space-y-3">
+            <div style="display:flex;flex-direction:column;gap:12px;">
 
                 {# ── Season tabs ── #}
-                <div class="flex flex-wrap gap-2">
+                <div style="display:flex;flex-wrap:wrap;gap:8px;">
                     <button @click="activeSeason = ''"
-                            :class="activeSeason === '' ? 'bg-indigo-600 text-white' : 'bg-gray-800 text-gray-400 hover:text-white'"
-                            class="px-3 py-1.5 rounded-lg text-sm font-medium transition-colors">
+                            :style="activeSeason === '' ? 'background:var(--accent);color:#fff;' : 'background:var(--bg-2);color:var(--text-3);'"
+                            style="padding:6px 12px;border-radius:8px;font-size:13px;font-weight:500;border:1px solid var(--border);cursor:pointer;transition:all .15s;">
                         Toutes
-                        <span class="ml-1 text-xs opacity-70" x-text="'(' + allPerfs.length + ')'"></span>
+                        <span style="margin-left:4px;font-size:11px;opacity:.7;" x-text="'(' + allPerfs.length + ')'"></span>
                     </button>
                     <template x-for="[s, count] in seasons" :key="s">
                         <button @click="activeSeason = s; activeCat = ''"
-                                :class="activeSeason === s ? 'bg-indigo-600 text-white' : 'bg-gray-800 text-gray-400 hover:text-white'"
-                                class="px-3 py-1.5 rounded-lg text-sm font-medium transition-colors">
+                                :style="activeSeason === s ? 'background:var(--accent);color:#fff;' : 'background:var(--bg-2);color:var(--text-3);'"
+                                style="padding:6px 12px;border-radius:8px;font-size:13px;font-weight:500;border:1px solid var(--border);cursor:pointer;transition:all .15s;">
                             <span x-text="s.replace('-20', '-')"></span>
-                            <span class="ml-1 text-xs opacity-70" x-text="'(' + count + ')'"></span>
+                            <span style="margin-left:4px;font-size:11px;opacity:.7;" x-text="'(' + count + ')'"></span>
                         </button>
                     </template>
                 </div>
 
                 {# ── Category + Indoor/Outdoor filters ── #}
-                <div class="flex flex-wrap gap-2 items-center">
+                <div style="display:flex;flex-wrap:wrap;gap:8px;align-items:center;">
                     <template x-if="categories.length > 1">
-                        <div class="flex flex-wrap gap-2 items-center">
-                            <span class="text-xs text-gray-500">Catégorie :</span>
+                        <div style="display:flex;flex-wrap:wrap;gap:8px;align-items:center;">
+                            <span style="font-size:11px;color:var(--text-3);">Catégorie :</span>
                             <button @click="activeCat = ''"
-                                    :class="activeCat === '' ? 'bg-gray-700 text-white' : 'bg-gray-800/50 text-gray-500 hover:text-white'"
-                                    class="px-2.5 py-1 rounded-md text-xs font-medium transition-colors">Toutes</button>
+                                    :style="activeCat === '' ? 'background:var(--bg-3);color:var(--text-1);' : 'background:var(--bg-2);color:var(--text-3);'"
+                                    style="padding:4px 10px;border-radius:6px;font-size:11px;font-weight:500;border:1px solid var(--border);cursor:pointer;">Toutes</button>
                             <template x-for="c in categories" :key="c">
                                 <button @click="activeCat = (activeCat === c ? '' : c)"
-                                        :class="activeCat === c ? 'bg-gray-700 text-white' : 'bg-gray-800/50 text-gray-500 hover:text-white'"
-                                        class="px-2.5 py-1 rounded-md text-xs font-medium transition-colors"
+                                        :style="activeCat === c ? 'background:var(--bg-3);color:var(--text-1);' : 'background:var(--bg-2);color:var(--text-3);'"
+                                        style="padding:4px 10px;border-radius:6px;font-size:11px;font-weight:500;border:1px solid var(--border);cursor:pointer;"
                                         x-text="c"></button>
                             </template>
                         </div>
                     </template>
-                    <div class="flex gap-1 ml-auto">
+                    <div style="display:flex;gap:4px;margin-left:auto;">
                         <button @click="activeIndoor = (activeIndoor === null ? true : (activeIndoor === true ? false : null))"
-                                :class="activeIndoor === true ? 'bg-indigo-800/60 text-indigo-300 border-indigo-700' : activeIndoor === false ? 'bg-amber-900/40 text-amber-300 border-amber-800' : 'bg-gray-800/50 text-gray-500 border-gray-700 hover:text-white'"
-                                class="px-2.5 py-1 rounded-md text-xs font-medium border transition-colors">
+                                :style="activeIndoor === true ? 'background:rgba(99,102,241,.15);color:#a5b4fc;border-color:rgba(99,102,241,.4);' : activeIndoor === false ? 'background:rgba(251,191,36,.1);color:#fbbf24;border-color:rgba(251,191,36,.3);' : 'background:var(--bg-2);color:var(--text-3);border-color:var(--border);'"
+                                style="padding:4px 10px;border-radius:6px;font-size:11px;font-weight:500;border:1px solid;cursor:pointer;transition:all .15s;">
                             <span x-text="activeIndoor === true ? '🏛 Indoor' : activeIndoor === false ? '🌤 Outdoor' : '🏛/🌤 Tous'"></span>
                         </button>
                     </div>
                 </div>
 
                 {# ── Discipline accordions ── #}
-                <div class="space-y-2">
+                <div style="display:flex;flex-direction:column;gap:8px;">
                     <template x-for="disc in disciplineGroups" :key="disc.name">
-                        <div class="bg-gray-900 border border-gray-800 rounded-xl overflow-hidden flex">
+                        <div class="card" style="overflow:hidden;display:flex;">
 
                             {# Left accent bar for specialties #}
-                            <div class="w-1 shrink-0 rounded-l-xl transition-colors"
-                                 :class="specialties.includes(disc.name) ? 'bg-indigo-500' : 'bg-gray-700'"></div>
-                            <div class="flex-1 min-w-0">
+                            <div style="width:4px;flex-shrink:0;border-radius:12px 0 0 12px;transition:background .2s;"
+                                 :style="specialties.includes(disc.name) ? 'background:var(--accent)' : 'background:var(--border-2)'"></div>
+                            <div style="flex:1;min-width:0;">
                             {# Accordion header — always visible, shows PB & SB #}
                             <button type="button"
                                     @click="toggleDisc(disc.name)"
-                                    class="w-full flex items-center justify-between px-4 py-3 hover:bg-gray-800/40 transition-colors text-left">
-                                <div class="flex items-center gap-3 flex-1 min-w-0">
-                                    <svg :class="isDiscOpen(disc.name) ? 'rotate-90' : ''"
-                                         class="w-4 h-4 text-gray-500 transition-transform shrink-0"
+                                    style="width:100%;display:flex;align-items:center;justify-content:space-between;padding:12px 16px;text-align:left;background:none;border:none;cursor:pointer;color:var(--text-1);"
+                                    onmouseover="this.style.background='var(--bg-hover)'" onmouseout="this.style.background='none'">
+                                <div style="display:flex;align-items:center;gap:12px;flex:1;min-width:0;">
+                                    <svg :style="isDiscOpen(disc.name) ? 'transform:rotate(90deg)' : ''"
+                                         style="width:16px;height:16px;color:var(--text-3);transition:transform .15s;flex-shrink:0;"
                                          fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/>
                                     </svg>
-                                    <span class="font-semibold text-white" x-text="disc.name"></span>
-                                    <span class="text-xs bg-gray-800 text-gray-500 px-2 py-0.5 rounded-full shrink-0"
+                                    <span style="font-weight:600;color:var(--text-1);" x-text="disc.name"></span>
+                                    <span style="font-size:11px;background:var(--bg-2);color:var(--text-3);padding:1px 8px;border-radius:999px;flex-shrink:0;"
                                           x-text="disc.perfs.length + ' perf' + (disc.perfs.length > 1 ? 's' : '')"></span>
                                 </div>
-                                <div class="flex items-center shrink-0 ml-4">
+                                <div style="display:flex;align-items:center;flex-shrink:0;margin-left:16px;">
                                     {# PB #}
                                     <div style="width:80px">
                                         <template x-if="disc.pb">
-                                            <div class="border-l-2 border-yellow-400/70 pl-2.5">
-                                                <div class="text-[9px] font-semibold text-gray-300 uppercase tracking-[0.12em]">PB</div>
-                                                <div class="text-sm font-mono font-bold text-yellow-400 leading-tight" x-text="disc.pb"></div>
+                                            <div style="border-left:2px solid rgba(251,191,36,.7);padding-left:10px;">
+                                                <div style="font-size:9px;font-weight:600;color:var(--text-2);text-transform:uppercase;letter-spacing:.12em;">PB</div>
+                                                <div style="font-size:13px;font-family:monospace;font-weight:700;color:#fbbf24;line-height:1.2;" x-text="disc.pb"></div>
                                             </div>
                                         </template>
                                     </div>
                                     {# SB #}
                                     <div style="width:80px">
                                         <template x-if="disc.sb">
-                                            <div class="border-l-2 border-emerald-400/70 pl-2.5">
-                                                <div class="text-[9px] font-semibold text-gray-300 uppercase tracking-[0.12em]">SB</div>
-                                                <div class="text-sm font-mono font-bold text-emerald-400 leading-tight" x-text="disc.sb"></div>
+                                            <div style="border-left:2px solid rgba(52,211,153,.7);padding-left:10px;">
+                                                <div style="font-size:9px;font-weight:600;color:var(--text-2);text-transform:uppercase;letter-spacing:.12em;">SB</div>
+                                                <div style="font-size:13px;font-family:monospace;font-weight:700;color:#34d399;line-height:1.2;" x-text="disc.sb"></div>
                                             </div>
                                         </template>
                                     </div>
@@ -389,11 +358,11 @@
 
                             {# Accordion body #}
                             <div x-show="isDiscOpen(disc.name)" x-transition.duration.150ms
-                                 class="border-t border-gray-800">
+                                 style="border-top:1px solid var(--border);">
 
                                 {# Chart — canvas present always so init can find it; hidden when < 2 perfs #}
-                                <div x-show="disc.hasChart" class="px-4 py-3">
-                                    <div class="bg-gray-950 border border-gray-700/60 rounded-lg px-3 pt-3 pb-2">
+                                <div x-show="disc.hasChart" style="padding:12px 16px;">
+                                    <div style="background:var(--bg);border:1px solid var(--border);border-radius:8px;padding:12px 12px 8px;">
                                         <canvas :data-disc="disc.name"
                                                 :data-labels="JSON.stringify(disc.chartLabels)"
                                                 :data-values="JSON.stringify(disc.chartValues)"
@@ -405,37 +374,39 @@
                                 </div>
 
                                 {# Performances table #}
-                                <table class="w-full text-sm">
+                                <table style="width:100%;font-size:13px;border-collapse:collapse;">
                                     <thead>
-                                        <tr class="text-xs text-gray-600 uppercase tracking-wide border-t border-gray-800/60">
-                                            <th class="text-left px-4 py-1.5 font-medium w-24">Date</th>
-                                            <th class="text-left px-4 py-1.5 font-medium">Performance</th>
-                                            <th class="text-left px-4 py-1.5 font-medium hidden sm:table-cell">Lieu</th>
-                                            <th class="text-left px-4 py-1.5 font-medium hidden md:table-cell">Saison</th>
-                                            <th class="text-left px-4 py-1.5 font-medium hidden md:table-cell">Cat.</th>
-                                            <th class="text-left px-4 py-1.5 font-medium hidden md:table-cell">Niveau</th>
-                                            <th class="w-14"></th>
+                                        <tr style="font-size:11px;color:var(--text-3);text-transform:uppercase;letter-spacing:.06em;border-top:1px solid var(--border);">
+                                            <th style="text-align:left;padding:6px 16px;font-weight:500;width:96px;">Date</th>
+                                            <th style="text-align:left;padding:6px 16px;font-weight:500;">Performance</th>
+                                            <th style="text-align:left;padding:6px 16px;font-weight:500;">Lieu</th>
+                                            <th style="text-align:left;padding:6px 16px;font-weight:500;">Saison</th>
+                                            <th style="text-align:left;padding:6px 16px;font-weight:500;">Cat.</th>
+                                            <th style="text-align:left;padding:6px 16px;font-weight:500;">Niveau</th>
+                                            <th style="width:56px;"></th>
                                         </tr>
                                     </thead>
                                     <tbody>
                                         <template x-for="p in disc.perfs" :key="p.id">
-                                            <tr class="border-t border-gray-800/40 hover:bg-white/[0.02] transition-colors group">
-                                                <td class="px-4 py-2 text-gray-500 whitespace-nowrap text-xs" x-text="p.dateFormatted"></td>
-                                                <td class="px-4 py-2">
-                                                    <div class="flex items-center gap-1.5">
-                                                        <span class="w-3 shrink-0 text-center text-xs leading-none"
-                                                              :class="p.isPersonalBest ? 'text-yellow-400' : 'opacity-0'"
+                                            <tr style="border-top:1px solid var(--border);"
+                                                onmouseover="this.style.background='var(--bg-hover)';this.querySelector('.perf-actions')&&(this.querySelector('.perf-actions').style.opacity='1')"
+                                                onmouseout="this.style.background='';this.querySelector('.perf-actions')&&(this.querySelector('.perf-actions').style.opacity='0')">
+                                                <td style="padding:8px 16px;color:var(--text-3);white-space:nowrap;font-size:12px;" x-text="p.dateFormatted"></td>
+                                                <td style="padding:8px 16px;">
+                                                    <div style="display:flex;align-items:center;gap:6px;">
+                                                        <span style="width:12px;flex-shrink:0;text-align:center;font-size:12px;line-height:1;"
+                                                              :style="p.isPersonalBest ? 'color:#fbbf24' : 'opacity:0'"
                                                               title="Record personnel">★</span>
-                                                        <span :class="p.isPersonalBest ? 'text-yellow-300 font-bold' : 'text-gray-100 font-medium'"
+                                                        <span :style="p.isPersonalBest ? 'color:#fde68a;font-weight:700;' : 'color:var(--text-1);font-weight:500;'"
                                                               x-text="p.formattedValue"></span>
                                                         <template x-if="p.isIndoor === true">
-                                                            <span class="text-[10px] font-medium text-indigo-400 bg-indigo-950 px-1.5 py-0.5 rounded" title="Indoor">IN</span>
+                                                            <span style="font-size:10px;font-weight:500;color:#a5b4fc;background:rgba(99,102,241,.1);padding:1px 5px;border-radius:4px;" title="Indoor">IN</span>
                                                         </template>
                                                         <template x-if="p.isIndoor === false">
-                                                            <span class="text-[10px] font-medium text-amber-400 bg-amber-950/60 px-1.5 py-0.5 rounded" title="Outdoor">OUT</span>
+                                                            <span style="font-size:10px;font-weight:500;color:#fbbf24;background:rgba(251,191,36,.1);padding:1px 5px;border-radius:4px;" title="Outdoor">OUT</span>
                                                         </template>
                                                         <template x-if="p.wind !== null && p.wind !== undefined">
-                                                            <span class="inline-flex items-center gap-0.5 text-[10px] font-medium text-sky-400 bg-sky-950/50 px-1.5 py-0.5 rounded"
+                                                            <span style="display:inline-flex;align-items:center;gap:2px;font-size:10px;font-weight:500;color:#38bdf8;background:rgba(56,189,248,.1);padding:1px 5px;border-radius:4px;"
                                                                   :title="'Vent : ' + p.wind + (p.wind !== 'NC' ? ' m/s' : '')">
                                                                 <svg style="width:17px;height:17px;flex-shrink:0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                                                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9.59 4.59A2 2 0 1111 8H2m10.59 11.41A2 2 0 1014 16H2m15.73-8.27A2.5 2.5 0 1119.5 12H2"/>
@@ -444,36 +415,38 @@
                                                             </span>
                                                         </template>
                                                     </div>
-                                                    <p x-show="p.notes" x-text="p.notes" class="text-xs text-gray-600 mt-0.5"></p>
+                                                    <p x-show="p.notes" x-text="p.notes" style="font-size:11px;color:var(--text-3);margin-top:2px;"></p>
                                                 </td>
-                                                <td class="px-4 py-2 hidden sm:table-cell">
-                                                    <span class="text-xs text-gray-600" x-text="p.venue || ''"></span>
+                                                <td style="padding:8px 16px;">
+                                                    <span style="font-size:12px;color:var(--text-3);" x-text="p.venue || ''"></span>
                                                 </td>
-                                                <td class="px-4 py-2 hidden md:table-cell">
-                                                    <span class="text-xs text-gray-700" x-text="p.seasonShort"></span>
+                                                <td style="padding:8px 16px;">
+                                                    <span style="font-size:12px;color:var(--text-3);" x-text="p.seasonShort"></span>
                                                 </td>
-                                                <td class="px-4 py-2 hidden md:table-cell">
+                                                <td style="padding:8px 16px;">
                                                     <span x-show="p.category" x-text="p.category"
-                                                          class="text-[10px] bg-gray-800 text-gray-500 px-2 py-0.5 rounded-full"></span>
+                                                          style="font-size:10px;background:var(--bg-2);color:var(--text-3);padding:1px 7px;border-radius:999px;"></span>
                                                 </td>
-                                                <td class="px-4 py-2 hidden md:table-cell">
+                                                <td style="padding:8px 16px;">
                                                     <template x-if="p.level || p.levelPoints">
-                                                        <div class="flex items-center gap-1">
+                                                        <div style="display:flex;align-items:center;gap:4px;">
                                                             <span x-show="p.level" x-text="p.level"
-                                                                  class="text-[10px] font-semibold bg-violet-900/40 text-violet-300 border border-violet-700/30 px-1.5 py-0.5 rounded"></span>
+                                                                  style="font-size:10px;font-weight:600;background:rgba(139,92,246,.12);color:#c4b5fd;border:1px solid rgba(139,92,246,.25);padding:1px 5px;border-radius:4px;"></span>
                                                             <span x-show="p.levelPoints" x-text="p.levelPoints + ' pts'"
-                                                                  class="text-[10px] text-gray-500"></span>
+                                                                  style="font-size:10px;color:var(--text-3);"></span>
                                                         </div>
                                                     </template>
                                                 </td>
-                                                <td class="px-3 py-2">
+                                                <td style="padding:8px 12px;">
                                                     {% if canEdit %}
-                                                    <div class="flex items-center gap-0.5 opacity-0 group-hover:opacity-100 transition-opacity">
-                                                        <a :href="p.editUrl" class="text-gray-700 hover:text-indigo-400 p-1 rounded transition-colors">
-                                                            <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"/></svg>
+                                                    <div class="perf-actions" style="display:flex;align-items:center;gap:2px;opacity:0;transition:opacity .15s;">
+                                                        <a :href="p.editUrl" style="color:var(--text-3);padding:4px;border-radius:4px;"
+                                                           onmouseover="this.style.color='var(--accent)'" onmouseout="this.style.color='var(--text-3)'">
+                                                            <svg style="width:12px;height:12px;" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"/></svg>
                                                         </a>
-                                                        <button @click="deletePerf(p)" class="text-gray-700 hover:text-red-400 p-1 rounded transition-colors">
-                                                            <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
+                                                        <button @click="deletePerf(p)" style="color:var(--text-3);padding:4px;border-radius:4px;background:none;border:none;cursor:pointer;"
+                                                                onmouseover="this.style.color='#f87171'" onmouseout="this.style.color='var(--text-3)'">
+                                                            <svg style="width:12px;height:12px;" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
                                                         </button>
                                                     </div>
                                                     {% endif %}
@@ -487,7 +460,7 @@
                         </div>{# end flex card #}
                     </template>
 
-                    <div x-show="disciplineGroups.length === 0" class="bg-gray-900 border border-gray-800 rounded-xl p-8 text-center text-gray-500 text-sm">
+                    <div x-show="disciplineGroups.length === 0" class="empty-state" style="padding:32px;">
                         Aucun résultat pour ces filtres.
                     </div>
                 </div>
@@ -503,43 +476,43 @@
             {# Prochaine séance #}
             {% if upcomingSessions is not empty %}
                 {% set next = upcomingSessions[0] %}
-                <div style="margin-top: 2.5rem">
-                    <div class="flex items-center gap-3 mb-4">
-                        <h2 class="text-sm font-semibold text-gray-400 uppercase tracking-widest">Prochaine séance</h2>
-                        <span class="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse"></span>
+                <div style="margin-top:2.5rem;">
+                    <div style="display:flex;align-items:center;gap:12px;margin-bottom:16px;">
+                        <h2 style="font-size:12px;font-weight:600;color:var(--text-3);text-transform:uppercase;letter-spacing:.08em;">Prochaine séance</h2>
+                        <span style="width:6px;height:6px;border-radius:50%;background:#34d399;display:inline-block;animation:pulse 2s infinite;"></span>
                     </div>
-                    <div class="bg-gray-900 border border-indigo-600/40 rounded-xl overflow-hidden relative">
-                        <div class="h-1" style="background: {{ next.colorBg }}"></div>
-                        <div class="px-5 py-4 flex items-center justify-between gap-4">
-                            <div class="flex items-center gap-5">
-                                <div class="text-center shrink-0">
-                                    <p class="text-2xl font-bold text-white leading-none">{{ next.date|date('d') }}</p>
-                                    <p class="text-xs text-gray-400 uppercase mt-0.5">{{ next.date|date_fr('M Y') }}</p>
+                    <div class="card" style="overflow:hidden;border-color:rgba(99,102,241,.3);">
+                        <div style="height:3px;background:{{ next.colorBg }};"></div>
+                        <div style="padding:16px 20px;display:flex;align-items:center;justify-content:space-between;gap:16px;">
+                            <div style="display:flex;align-items:center;gap:20px;">
+                                <div style="text-align:center;flex-shrink:0;">
+                                    <p style="font-size:24px;font-weight:700;color:var(--text-1);line-height:1;">{{ next.date|date('d') }}</p>
+                                    <p style="font-size:11px;color:var(--text-2);text-transform:uppercase;margin-top:2px;">{{ next.date|date_fr('M Y') }}</p>
                                 </div>
-                                <div class="w-px h-8 bg-gray-700"></div>
+                                <div style="width:1px;height:32px;background:var(--border);"></div>
                                 <div>
-                                    <p class="text-base font-semibold text-white">{{ next.title }}</p>
-                                    <div class="flex items-center gap-2 mt-1 flex-wrap">
-                                        <span class="text-xs px-2 py-0.5 rounded font-medium"
-                                              style="background: {{ next.colorBg }}22; color: {{ next.colorBg }}">
+                                    <p style="font-size:15px;font-weight:600;color:var(--text-1);">{{ next.title }}</p>
+                                    <div style="display:flex;align-items:center;gap:8px;margin-top:4px;flex-wrap:wrap;">
+                                        <span style="font-size:11px;padding:2px 8px;border-radius:4px;font-weight:500;background:{{ next.colorBg }}22;color:{{ next.colorBg }};">
                                             {{ next.typeLabel }}
                                         </span>
                                         {% if next.durationMinutes %}
-                                            <span class="text-xs text-gray-500">{{ next.durationMinutes }} min</span>
+                                            <span style="font-size:11px;color:var(--text-3);">{{ next.durationMinutes }} min</span>
                                         {% endif %}
                                     </div>
                                 </div>
                             </div>
                             <a href="{{ path('app_calendar') }}"
-                               class="text-xs text-indigo-400 hover:text-indigo-300 font-medium transition-colors shrink-0">
+                               style="font-size:12px;color:var(--accent);font-weight:500;text-decoration:none;flex-shrink:0;"
+                               onmouseover="this.style.opacity='.7'" onmouseout="this.style.opacity='1'">
                                 Voir le calendrier →
                             </a>
                         </div>
                         {% if upcomingSessions|length > 1 %}
-                            <div class="border-t border-gray-800 px-5 py-2 flex gap-4 overflow-x-auto">
+                            <div style="border-top:1px solid var(--border);padding:8px 20px;display:flex;gap:16px;overflow-x:auto;">
                                 {% for s in upcomingSessions[1:] %}
-                                    <span class="text-xs text-gray-500 whitespace-nowrap shrink-0">
-                                        <span class="text-gray-400 font-medium">{{ s.date|date('d/m') }}</span>
+                                    <span style="font-size:11px;color:var(--text-3);white-space:nowrap;flex-shrink:0;">
+                                        <span style="color:var(--text-2);font-weight:500;">{{ s.date|date('d/m') }}</span>
                                         · {{ s.title }}
                                     </span>
                                 {% endfor %}
@@ -551,41 +524,38 @@
 
             {# Séances à enregistrer #}
             {% if unloggedSessions is not empty %}
-                <div style="margin-top: 2.5rem">
-                    <div class="flex items-center gap-3 mb-4">
-                        <h2 class="text-sm font-semibold text-gray-400 uppercase tracking-widest">À débriefer</h2>
-                        <span class="text-xs bg-amber-500/10 text-amber-400 border border-amber-500/20 px-2.5 py-0.5 rounded-full font-medium">
+                <div style="margin-top:2.5rem;">
+                    <div style="display:flex;align-items:center;gap:12px;margin-bottom:16px;">
+                        <h2 style="font-size:12px;font-weight:600;color:var(--text-3);text-transform:uppercase;letter-spacing:.08em;">À débriefer</h2>
+                        <span style="font-size:11px;background:rgba(251,191,36,.08);color:#fbbf24;border:1px solid rgba(251,191,36,.2);padding:1px 8px;border-radius:999px;font-weight:500;">
                             {{ unloggedSessions|length }}
                         </span>
                     </div>
-                    <div class="grid grid-cols-2 lg:grid-cols-3 gap-3">
+                    <div style="display:grid;grid-template-columns:repeat(2,1fr);gap:12px;">
                         {% for session in unloggedSessions %}
-                            <div class="bg-gray-900 border border-gray-800 rounded-xl overflow-hidden hover:border-amber-500/30 transition-colors">
-                                <div class="h-0.5" style="background: {{ session.colorBg }}"></div>
-                                <div class="px-3 py-3 flex flex-col gap-2">
-                                    <div class="flex items-start justify-between gap-2">
-                                        <div class="flex items-center gap-2">
-                                            <div class="text-center shrink-0">
-                                                <p class="text-lg font-bold text-white leading-none">{{ session.date|date('d') }}</p>
-                                                <p class="text-[10px] text-gray-500 uppercase">{{ session.date|date_fr('M') }}</p>
-                                            </div>
+                            <div class="card" style="overflow:hidden;">
+                                <div style="height:2px;background:{{ session.colorBg }};"></div>
+                                <div style="padding:12px;display:flex;flex-direction:column;gap:8px;">
+                                    <div style="display:flex;align-items:flex-start;justify-content:space-between;gap:8px;">
+                                        <div style="text-align:center;flex-shrink:0;">
+                                            <p style="font-size:18px;font-weight:700;color:var(--text-1);line-height:1;">{{ session.date|date('d') }}</p>
+                                            <p style="font-size:10px;color:var(--text-3);text-transform:uppercase;">{{ session.date|date_fr('M') }}</p>
                                         </div>
                                         <a href="{{ path('app_athlete_session_log', {athleteId: athlete.id, sessionId: session.id}) }}"
-                                           class="flex items-center gap-1 bg-indigo-600 hover:bg-indigo-500 text-white px-2.5 py-1.5 rounded-lg text-[10px] font-semibold transition-colors shrink-0 shadow-sm">
+                                           class="btn btn-primary btn-sm" style="font-size:10px;display:flex;align-items:center;gap:4px;flex-shrink:0;">
                                             Débrief
-                                            <svg class="w-2.5 h-2.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <svg style="width:10px;height:10px;" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M9 5l7 7-7 7"/>
                                             </svg>
                                         </a>
                                     </div>
-                                    <p class="text-xs font-medium text-white leading-tight">{{ session.title }}</p>
-                                    <div class="flex items-center gap-2 flex-wrap">
-                                        <span class="text-[10px] px-1.5 py-0.5 rounded font-medium"
-                                              style="background: {{ session.colorBg }}22; color: {{ session.colorBg }}">
+                                    <p style="font-size:12px;font-weight:500;color:var(--text-1);line-height:1.3;">{{ session.title }}</p>
+                                    <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;">
+                                        <span style="font-size:10px;padding:1px 6px;border-radius:4px;font-weight:500;background:{{ session.colorBg }}22;color:{{ session.colorBg }};">
                                             {{ session.typeLabel }}
                                         </span>
                                         {% if session.durationMinutes %}
-                                            <span class="text-[10px] text-gray-500">{{ session.durationMinutes }} min</span>
+                                            <span style="font-size:10px;color:var(--text-3);">{{ session.durationMinutes }} min</span>
                                         {% endif %}
                                     </div>
                                 </div>
@@ -596,37 +566,37 @@
             {% endif %}
 
             {# Historique #}
-            <div style="margin-top: 2.5rem">
-                <h2 class="text-sm font-semibold text-gray-400 uppercase tracking-widest mb-4">Historique</h2>
+            <div style="margin-top:2.5rem;">
+                <h2 style="font-size:12px;font-weight:600;color:var(--text-3);text-transform:uppercase;letter-spacing:.08em;margin-bottom:16px;">Historique</h2>
                 {% if loggedSessions is empty %}
-                    <div class="bg-gray-900 border border-gray-800 rounded-xl p-10 text-center text-gray-500 text-sm">
-                        Aucune séance enregistrée pour l'instant.
-                    </div>
+                    <div class="empty-state" style="padding:40px;">Aucune séance enregistrée pour l'instant.</div>
                 {% else %}
-                    <div class="grid grid-cols-2 lg:grid-cols-3 gap-3">
+                    <div style="display:grid;grid-template-columns:repeat(2,1fr);gap:12px;">
                         {% for as in loggedSessions %}
                             {% set s = as.session %}
-                            <div class="bg-gray-900 border border-gray-800 rounded-xl overflow-hidden flex flex-col">
-                                <div class="h-0.5" style="background: {{ s.colorBg }}"></div>
-                                <div class="px-3 py-3 flex-1 flex flex-col gap-2">
+                            <div class="card" style="overflow:hidden;display:flex;flex-direction:column;">
+                                <div style="height:2px;background:{{ s.colorBg }};"></div>
+                                <div style="padding:12px;flex:1;display:flex;flex-direction:column;gap:8px;">
                                     {# Ligne 1 : date + boutons #}
-                                    <div class="flex items-start justify-between gap-1">
-                                        <div class="text-center shrink-0">
-                                            <p class="text-lg font-bold text-white leading-none">{{ s.date|date('d') }}</p>
-                                            <p class="text-[10px] text-gray-500 uppercase">{{ s.date|date_fr('M') }}</p>
+                                    <div style="display:flex;align-items:flex-start;justify-content:space-between;gap:4px;">
+                                        <div style="text-align:center;flex-shrink:0;">
+                                            <p style="font-size:18px;font-weight:700;color:var(--text-1);line-height:1;">{{ s.date|date('d') }}</p>
+                                            <p style="font-size:10px;color:var(--text-3);text-transform:uppercase;">{{ s.date|date_fr('M') }}</p>
                                         </div>
-                                        <div class="flex gap-0.5 shrink-0">
+                                        <div style="display:flex;gap:2px;flex-shrink:0;">
                                             <a href="{{ path('app_athlete_session_edit', {athleteId: athlete.id, id: as.id}) }}"
-                                               class="text-gray-600 hover:text-indigo-400 p-1 rounded hover:bg-gray-800 transition-colors">
-                                                <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                               style="color:var(--text-3);padding:4px;border-radius:4px;display:flex;"
+                                               onmouseover="this.style.color='var(--accent)';this.style.background='var(--bg-2)'" onmouseout="this.style.color='var(--text-3)';this.style.background='none'">
+                                                <svg style="width:12px;height:12px;" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"/>
                                                 </svg>
                                             </a>
-                                            <form action="{{ path('app_athlete_session_delete', {athleteId: athlete.id, id: as.id}) }}" method="post" class="inline">
+                                            <form action="{{ path('app_athlete_session_delete', {athleteId: athlete.id, id: as.id}) }}" method="post" style="display:inline;">
                                                 <input type="hidden" name="_token" value="{{ csrf_token('delete-as' ~ as.id) }}">
                                                 <button type="submit" onclick="return confirm('Supprimer ce ressenti ?')"
-                                                        class="text-gray-600 hover:text-red-400 p-1 rounded hover:bg-gray-800 transition-colors">
-                                                    <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                        style="color:var(--text-3);padding:4px;border-radius:4px;display:flex;background:none;border:none;cursor:pointer;"
+                                                        onmouseover="this.style.color='#f87171';this.style.background='var(--bg-2)'" onmouseout="this.style.color='var(--text-3)';this.style.background='none'">
+                                                    <svg style="width:12px;height:12px;" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
                                                     </svg>
                                                 </button>
@@ -634,24 +604,23 @@
                                         </div>
                                     </div>
                                     {# Ligne 2 : titre #}
-                                    <p class="text-xs font-medium text-white leading-tight">{{ s.title }}</p>
+                                    <p style="font-size:12px;font-weight:500;color:var(--text-1);line-height:1.3;">{{ s.title }}</p>
                                     {# Ligne 3 : type #}
-                                    <span class="text-[10px] px-1.5 py-0.5 rounded font-medium w-fit"
-                                          style="background: {{ s.colorBg }}22; color: {{ s.colorBg }}">
+                                    <span style="font-size:10px;padding:1px 6px;border-radius:4px;font-weight:500;width:fit-content;background:{{ s.colorBg }}22;color:{{ s.colorBg }};">
                                         {{ s.typeLabel }}
                                     </span>
                                     {# Commentaire #}
                                     {% if as.comment %}
-                                        <p class="text-[10px] text-gray-400 italic leading-relaxed line-clamp-2">"{{ as.comment }}"</p>
+                                        <p style="font-size:10px;color:var(--text-2);font-style:italic;line-height:1.5;overflow:hidden;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;">"{{ as.comment }}"</p>
                                     {% endif %}
                                     {# Effort en bas à droite #}
                                     {% if as.difficulty is not null %}
-                                        <div class="flex justify-end mt-auto pt-1">
-                                            <span class="inline-flex items-center gap-1 text-[10px] font-bold px-2 py-1 rounded-lg
-                                                {% if as.difficulty <= 3 %}bg-emerald-500/10 text-emerald-400
-                                                {% elseif as.difficulty <= 6 %}bg-yellow-500/10 text-yellow-400
-                                                {% else %}bg-red-500/10 text-red-400{% endif %}">
-                                                <svg style="width:19px;height:19px;flex-shrink:0" fill="currentColor" viewBox="0 0 24 24">
+                                        <div style="display:flex;justify-content:flex-end;margin-top:auto;padding-top:4px;">
+                                            <span style="display:inline-flex;align-items:center;gap:4px;font-size:10px;font-weight:700;padding:4px 8px;border-radius:6px;
+                                                {% if as.difficulty <= 3 %}background:rgba(52,211,153,.1);color:#34d399;
+                                                {% elseif as.difficulty <= 6 %}background:rgba(251,191,36,.1);color:#fbbf24;
+                                                {% else %}background:rgba(239,68,68,.1);color:#f87171;{% endif %}">
+                                                <svg style="width:14px;height:14px;flex-shrink:0" fill="currentColor" viewBox="0 0 24 24">
                                                     <path d="M20.57 14.86L22 13.43 20.57 12 17 15.57 8.43 7 12 3.43 10.57 2 9.14 3.43 7.71 2 5.57 4.14 4.14 2.71 2.71 4.14l1.43 1.43L2 7.71l1.43 1.43L2 10.57 3.43 12 7 8.43 15.57 17 12 20.57 13.43 22l1.43-1.43L16.29 22l2.14-2.14 1.43 1.43 1.43-1.43-1.43-1.43L22 16.29l-1.43-1.43z"/>
                                                 </svg>
                                                 {{ as.difficulty }}/10
@@ -670,12 +639,11 @@
 
     {# Goals tab #}
     <div x-show="activeTab === 'goals'" x-transition>
-        <div class="flex items-center justify-between mb-4">
-            <h2 class="text-lg font-semibold text-white">Objectifs</h2>
+        <div style="display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:12px;margin-bottom:16px;">
+            <h2 style="font-size:16px;font-weight:600;color:var(--text-1);">Objectifs</h2>
             {% if canEdit %}
-            <a href="{{ path('app_goal_new', {athleteId: athlete.id}) }}"
-               class="flex items-center gap-2 bg-indigo-600 hover:bg-indigo-500 text-white px-3 py-2 rounded-lg text-sm font-medium transition-colors">
-                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <a href="{{ path('app_goal_new', {athleteId: athlete.id}) }}" class="btn btn-primary btn-sm">
+                <svg style="width:14px;height:14px;" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/>
                 </svg>
                 Ajouter
@@ -684,34 +652,35 @@
         </div>
 
         {% if athlete.goals is empty %}
-            <div id="goals-empty" class="bg-gray-900 border border-gray-800 rounded-xl p-10 text-center text-gray-500">
+            <div id="goals-empty" class="empty-state" style="padding:40px;">
                 Aucun objectif défini.
             </div>
         {% else %}
-            <div id="goals-list" class="space-y-3">
+            <div id="goals-list" style="display:flex;flex-direction:column;gap:12px;">
                 {% for goal in athlete.goals %}
-                    <div id="goal-{{ goal.id }}"
-                         class="bg-gray-900 border rounded-xl px-5 py-4 transition-all
-                        {% if goal.isAchieved %}border-emerald-800/50
-                        {% elseif goal.isOverdue %}border-red-800/50
-                        {% else %}border-gray-800{% endif %}">
-                        <div class="flex items-start justify-between gap-4">
-                            <div class="flex items-start gap-3">
+                    <div id="goal-{{ goal.id }}" class="card" style="padding:16px 20px;
+                        {% if goal.isAchieved %}border-color:rgba(52,211,153,.3);
+                        {% elseif goal.isOverdue %}border-color:rgba(239,68,68,.3);
+                        {% endif %}">
+                        <div style="display:flex;align-items:flex-start;justify-content:space-between;gap:16px;">
+                            <div style="display:flex;align-items:flex-start;gap:12px;">
                                 <button type="button"
                                         onclick="goalToggle({{ goal.id }}, '{{ path('app_goal_toggle', {athleteId: athlete.id, id: goal.id}) }}', '{{ csrf_token('toggle-goal' ~ goal.id) }}')"
-                                        class="mt-0.5 w-5 h-5 rounded-full border-2 flex items-center justify-center transition-colors shrink-0
-                                        {% if goal.isAchieved %}border-emerald-500 bg-emerald-500{% else %}border-gray-600 hover:border-emerald-500{% endif %}">
+                                        style="margin-top:2px;width:20px;height:20px;border-radius:50%;border:2px solid;display:flex;align-items:center;justify-content:center;flex-shrink:0;cursor:pointer;transition:all .15s;
+                                        {% if goal.isAchieved %}border-color:#34d399;background:#34d399;{% else %}border-color:var(--border-2);background:none;{% endif %}"
+                                        onmouseover="{% if not goal.isAchieved %}this.style.borderColor='#34d399'{% endif %}"
+                                        onmouseout="{% if not goal.isAchieved %}this.style.borderColor='var(--border-2)'{% endif %}">
                                     {% if goal.isAchieved %}
-                                        <svg class="w-3 h-3 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <svg style="width:10px;height:10px;color:#fff;" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M5 13l4 4L19 7"/>
                                         </svg>
                                     {% endif %}
                                 </button>
                                 <div>
-                                    <p class="font-medium {% if goal.isAchieved %}text-emerald-400 line-through{% else %}text-white{% endif %}">
+                                    <p style="font-weight:500;{% if goal.isAchieved %}color:#34d399;text-decoration:line-through;{% else %}color:var(--text-1);{% endif %}">
                                         {{ goal.title }}
                                     </p>
-                                    <div class="flex items-center gap-3 mt-1 text-xs text-gray-400">
+                                    <div style="display:flex;align-items:center;gap:12px;margin-top:4px;font-size:12px;color:var(--text-2);">
                                         {% if goal.discipline %}
                                             <span>{{ goal.discipline }}</span>
                                         {% endif %}
@@ -719,36 +688,38 @@
                                             <span>Cible : {{ goal.targetValue }} {{ goal.unit }}</span>
                                         {% endif %}
                                         {% if goal.deadline %}
-                                            <span class="{% if goal.isOverdue and not goal.isAchieved %}text-red-400{% endif %}">
+                                            <span style="{% if goal.isOverdue and not goal.isAchieved %}color:#f87171;{% endif %}">
                                                 Échéance : {{ goal.deadline|date('d/m/Y') }}
                                             </span>
                                         {% endif %}
                                     </div>
                                     {% if goal.notes %}
-                                        <p class="text-xs text-gray-500 mt-1">{{ goal.notes }}</p>
+                                        <p style="font-size:12px;color:var(--text-3);margin-top:4px;">{{ goal.notes }}</p>
                                     {% endif %}
                                 </div>
                             </div>
-                            <div class="flex items-center gap-2 shrink-0">
-                                <span class="goal-status-badge text-xs px-2 py-0.5 rounded-full font-medium
-                                    {% if goal.isAchieved %}bg-emerald-900/50 text-emerald-400
-                                    {% elseif goal.isOverdue %}bg-red-900/50 text-red-400
-                                    {% else %}bg-blue-900/50 text-blue-400{% endif %}">
+                            <div style="display:flex;align-items:center;gap:8px;flex-shrink:0;">
+                                <span class="goal-status-badge" style="font-size:11px;padding:2px 8px;border-radius:999px;font-weight:500;
+                                    {% if goal.isAchieved %}background:rgba(52,211,153,.1);color:#34d399;
+                                    {% elseif goal.isOverdue %}background:rgba(239,68,68,.1);color:#f87171;
+                                    {% else %}background:rgba(96,165,250,.1);color:#60a5fa;{% endif %}">
                                     {% if goal.isAchieved %}Atteint
                                     {% elseif goal.isOverdue %}En retard
                                     {% else %}En cours{% endif %}
                                 </span>
                                 {% if canEdit %}
                                 <a href="{{ path('app_goal_edit', {athleteId: athlete.id, id: goal.id}) }}"
-                                   class="text-gray-500 hover:text-indigo-400 transition-colors">
-                                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                   style="color:var(--text-3);transition:color .15s;"
+                                   onmouseover="this.style.color='var(--accent)'" onmouseout="this.style.color='var(--text-3)'">
+                                    <svg style="width:16px;height:16px;" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"/>
                                     </svg>
                                 </a>
                                 <button type="button"
                                         onclick="goalDelete({{ goal.id }}, '{{ path('app_goal_delete', {athleteId: athlete.id, id: goal.id}) }}', '{{ csrf_token('delete-goal' ~ goal.id) }}')"
-                                        class="text-gray-500 hover:text-red-400 transition-colors">
-                                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        style="color:var(--text-3);transition:color .15s;background:none;border:none;cursor:pointer;"
+                                        onmouseover="this.style.color='#f87171'" onmouseout="this.style.color='var(--text-3)'">
+                                    <svg style="width:16px;height:16px;" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
                                     </svg>
                                 </button>
@@ -773,22 +744,26 @@ function goalToggle(id, url, token) {
         var el = document.getElementById('goal-' + id);
         if (!el) return;
         var btn = el.querySelector('button[onclick^="goalToggle"]');
-        var title = el.querySelector('p.font-medium');
+        var title = el.querySelector('p[style*="font-weight"]');
         var badge = el.querySelector('.goal-status-badge');
 
         if (data.achieved) {
-            el.className = el.className.replace(/border-\S+/g, '').trim() + ' border-emerald-800/50';
-            btn.className = btn.className.replace(/border-\S+|bg-\S+/g, '').trim() + ' border-emerald-500 bg-emerald-500';
-            btn.innerHTML = '<svg class="w-3 h-3 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M5 13l4 4L19 7"/></svg>';
-            title.className = title.className.replace('text-white', 'text-emerald-400') + ' line-through';
-            badge.className = badge.className.replace(/bg-\S+|text-\S+400/g, '').trim() + ' bg-emerald-900/50 text-emerald-400';
+            el.style.borderColor = 'rgba(52,211,153,.3)';
+            btn.style.borderColor = '#34d399';
+            btn.style.background = '#34d399';
+            btn.innerHTML = '<svg style="width:10px;height:10px;color:#fff;" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M5 13l4 4L19 7"/></svg>';
+            if (title) { title.style.color = '#34d399'; title.style.textDecoration = 'line-through'; }
+            badge.style.background = 'rgba(52,211,153,.1)';
+            badge.style.color = '#34d399';
             badge.textContent = 'Atteint';
         } else {
-            el.className = el.className.replace(/border-\S+/g, '').trim() + ' border-gray-800';
-            btn.className = btn.className.replace(/border-\S+|bg-\S+/g, '').trim() + ' border-gray-600 hover:border-emerald-500';
+            el.style.borderColor = '';
+            btn.style.borderColor = 'var(--border-2)';
+            btn.style.background = 'none';
             btn.innerHTML = '';
-            title.className = title.className.replace('text-emerald-400', 'text-white').replace(' line-through', '');
-            badge.className = badge.className.replace(/bg-\S+|text-\S+400/g, '').trim() + ' bg-blue-900/50 text-blue-400';
+            if (title) { title.style.color = 'var(--text-1)'; title.style.textDecoration = ''; }
+            badge.style.background = 'rgba(96,165,250,.1)';
+            badge.style.color = '#60a5fa';
             badge.textContent = 'En cours';
         }
     })
@@ -808,7 +783,7 @@ function goalDelete(id, url, token) {
         if (el) el.remove();
         var list = document.getElementById('goals-list');
         if (list && list.children.length === 0) {
-            list.outerHTML = '<div class="bg-gray-900 border border-gray-800 rounded-xl p-10 text-center text-gray-500">Aucun objectif défini.</div>';
+            list.outerHTML = '<div class="empty-state" style="padding:40px;" id="goals-empty">Aucun objectif défini.</div>';
         }
     })
     .catch(() => location.reload());
@@ -828,57 +803,59 @@ function goalDelete(id, url, token) {
         </div>
 
         {# Upload — compact collapsible #}
-        <div class="bg-gray-900 border border-gray-800 rounded-xl overflow-hidden mb-4" x-data="{ uploadOpen: false }">
+        <div class="card" style="overflow:hidden;margin-bottom:16px;" x-data="{ uploadOpen: false }">
 
             {# Toggle header #}
             <button type="button" @click="uploadOpen = !uploadOpen"
-                    class="w-full flex items-center gap-3 px-4 py-3 hover:bg-gray-800/60 transition-colors">
-                <div class="w-7 h-7 rounded-lg bg-indigo-600/20 flex items-center justify-center shrink-0">
-                    <svg class="w-3.5 h-3.5 text-indigo-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    style="width:100%;display:flex;align-items:center;gap:12px;padding:12px 16px;background:none;border:none;cursor:pointer;color:var(--text-1);"
+                    onmouseover="this.style.background='var(--bg-hover)'" onmouseout="this.style.background='none'">
+                <div style="width:28px;height:28px;border-radius:8px;background:rgba(99,102,241,.15);display:flex;align-items:center;justify-content:center;flex-shrink:0;">
+                    <svg style="width:14px;height:14px;color:var(--accent);" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M12 4v16m8-8H4"/>
                     </svg>
                 </div>
-                <span class="text-sm font-medium text-white">Ajouter une vidéo</span>
-                <svg :class="uploadOpen ? 'rotate-180' : ''" class="w-4 h-4 text-gray-500 transition-transform ml-auto" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <span style="font-size:14px;font-weight:500;color:var(--text-1);">Ajouter une vidéo</span>
+                <svg :style="uploadOpen ? 'transform:rotate(180deg)' : ''" style="width:16px;height:16px;color:var(--text-3);transition:transform .2s;margin-left:auto;" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/>
                 </svg>
             </button>
 
             {# Collapsible form #}
-            <div x-show="uploadOpen" x-transition class="border-t border-gray-800">
-                <form id="video-upload-form" class="p-4 space-y-3">
+            <div x-show="uploadOpen" x-transition style="border-top:1px solid var(--border);">
+                <form id="video-upload-form" style="padding:16px;display:flex;flex-direction:column;gap:12px;">
 
                     {# File picker row #}
                     <div id="video-dropzone"
-                         class="flex items-center gap-3 bg-gray-800/60 border border-dashed border-gray-600 hover:border-indigo-500 hover:bg-indigo-500/5 rounded-lg px-3 py-2.5 cursor-pointer transition-all group"
-                         onclick="document.getElementById('video-file-input').click()">
-                        <svg class="w-4 h-4 text-gray-500 group-hover:text-indigo-400 shrink-0 transition-colors" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                         style="display:flex;align-items:center;gap:12px;background:var(--bg-2);border:1px dashed var(--border-2);border-radius:8px;padding:10px 12px;cursor:pointer;transition:all .15s;"
+                         onclick="document.getElementById('video-file-input').click()"
+                         onmouseover="this.style.borderColor='var(--accent)';this.style.background='rgba(99,102,241,.05)'"
+                         onmouseout="this.style.borderColor='var(--border-2)';this.style.background='var(--bg-2)'">
+                        <svg style="width:16px;height:16px;color:var(--text-3);flex-shrink:0;" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 10l4.553-2.069A1 1 0 0121 8.87v6.26a1 1 0 01-1.447.894L15 14M5 18h8a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z"/>
                         </svg>
-                        <span id="video-file-label" class="text-xs text-gray-400 group-hover:text-gray-200 transition-colors flex-1">Choisir un fichier — MP4, MOV, AVI… max 500 Mo</span>
-                        <input type="file" name="video" id="video-file-input" accept="video/*" required class="hidden">
+                        <span id="video-file-label" style="font-size:12px;color:var(--text-2);flex:1;">Choisir un fichier — MP4, MOV, AVI… max 500 Mo</span>
+                        <input type="file" name="video" id="video-file-input" accept="video/*" required style="display:none;">
                     </div>
 
                     {# Preview selected file #}
-                    <div id="video-file-preview" class="hidden items-center gap-2.5 bg-indigo-600/10 border border-indigo-600/30 rounded-lg px-3 py-2">
-                        <svg class="w-4 h-4 text-indigo-400 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <div id="video-file-preview" style="display:none;align-items:center;gap:10px;background:rgba(99,102,241,.08);border:1px solid rgba(99,102,241,.25);border-radius:8px;padding:8px 12px;">
+                        <svg style="width:16px;height:16px;color:var(--accent);flex-shrink:0;" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 10l4.553-2.069A1 1 0 0121 8.87v6.26a1 1 0 01-1.447.894L15 14M5 18h8a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z"/>
                         </svg>
-                        <div class="flex-1 min-w-0">
-                            <p id="vdz-filename" class="text-xs font-medium text-white truncate"></p>
-                            <p id="vdz-filesize" class="text-xs text-indigo-300/70"></p>
+                        <div style="flex:1;min-width:0;">
+                            <p id="vdz-filename" style="font-size:12px;font-weight:500;color:var(--text-1);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;"></p>
+                            <p id="vdz-filesize" style="font-size:11px;color:var(--accent);opacity:.7;"></p>
                         </div>
-                        <button type="button" onclick="videoClearFile()" class="text-gray-500 hover:text-red-400 transition-colors shrink-0">
-                            <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
+                        <button type="button" onclick="videoClearFile()" style="color:var(--text-3);background:none;border:none;cursor:pointer;flex-shrink:0;"
+                                onmouseover="this.style.color='#f87171'" onmouseout="this.style.color='var(--text-3)'">
+                            <svg style="width:14px;height:14px;" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
                         </button>
                     </div>
 
                     {# Title + category #}
-                    <div class="grid grid-cols-2 gap-2">
-                        <input type="text" name="title" required placeholder="Titre de la vidéo *"
-                               class="w-full bg-gray-800 border border-gray-700 rounded-lg px-3 py-2 text-xs text-white placeholder-gray-500 focus:outline-none focus:border-indigo-500">
-                        <select name="discipline"
-                                class="w-full bg-gray-800 border border-gray-700 rounded-lg px-3 py-2 text-xs text-white focus:outline-none focus:border-indigo-500">
+                    <div style="display:grid;grid-template-columns:repeat(2,1fr);gap:8px;">
+                        <input type="text" name="title" required placeholder="Titre de la vidéo *" class="form-input" style="font-size:12px;">
+                        <select name="discipline" class="form-input" style="font-size:12px;">
                             <option value="">— Catégorie —</option>
                             {% for label, value in constant('App\\Entity\\Performance::DISCIPLINES') %}
                                 <option value="{{ value }}">{{ label }}</option>
@@ -887,10 +864,9 @@ function goalDelete(id, url, token) {
                     </div>
 
                     {# Submit #}
-                    <div class="flex justify-end">
-                        <button type="submit" id="video-submit-btn"
-                                class="flex items-center gap-1.5 bg-indigo-600 hover:bg-indigo-500 text-white px-3 py-2 rounded-lg text-xs font-medium transition-colors disabled:opacity-50 disabled:cursor-not-allowed">
-                            <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <div style="display:flex;justify-content:flex-end;">
+                        <button type="submit" id="video-submit-btn" class="btn btn-primary btn-sm" style="font-size:12px;">
+                            <svg style="width:14px;height:14px;" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12"/>
                             </svg>
                             Envoyer
@@ -898,17 +874,17 @@ function goalDelete(id, url, token) {
                     </div>
 
                     {# Progress #}
-                    <div id="video-progress-wrap" class="hidden">
-                        <div class="flex items-center justify-between text-xs text-gray-400 mb-1">
+                    <div id="video-progress-wrap" style="display:none;">
+                        <div style="display:flex;align-items:center;justify-content:space-between;font-size:12px;color:var(--text-2);margin-bottom:4px;">
                             <span>Envoi en cours…</span>
                             <span id="video-progress-pct"></span>
                         </div>
-                        <div class="w-full bg-gray-800 rounded-full h-1 overflow-hidden">
-                            <div id="video-progress-bar" class="h-1 rounded-full bg-indigo-500" style="width:0%;transition:width 0.2s ease"></div>
+                        <div style="width:100%;background:var(--bg-2);border-radius:999px;height:4px;overflow:hidden;">
+                            <div id="video-progress-bar" style="height:4px;border-radius:999px;background:var(--accent);width:0%;transition:width 0.2s ease;"></div>
                         </div>
                     </div>
 
-                    <div id="video-upload-error" class="hidden text-xs text-red-400 bg-red-900/20 border border-red-800/40 rounded-lg px-3 py-2"></div>
+                    <div id="video-upload-error" style="display:none;font-size:12px;color:#f87171;background:rgba(239,68,68,.08);border:1px solid rgba(239,68,68,.2);border-radius:8px;padding:8px 12px;"></div>
 
                 </form>
             </div>
@@ -916,7 +892,7 @@ function goalDelete(id, url, token) {
 
         {# Videos list #}
         <div id="videos-container">
-            <div id="videos-loading" class="text-center py-10 text-gray-500 text-sm">Chargement…</div>
+            <div id="videos-loading" style="text-align:center;padding:40px;color:var(--text-3);font-size:13px;">Chargement…</div>
         </div>
 
     </div>
@@ -946,7 +922,7 @@ function goalDelete(id, url, token) {
         var container = document.getElementById('videos-container');
         container.innerHTML = '';
         if (!videos.length) {
-            container.innerHTML = '<div class="bg-gray-900 border border-gray-800 rounded-xl p-10 text-center text-gray-500 text-sm">Aucune vidéo pour l\'instant.</div>';
+            container.innerHTML = '<div class="empty-state" style="padding:40px;">Aucune vidéo pour l\'instant.</div>';
             return;
         }
 
@@ -959,7 +935,7 @@ function goalDelete(id, url, token) {
         });
 
         var wrap = document.createElement('div');
-        wrap.className = 'space-y-3';
+        wrap.style.cssText = 'display:flex;flex-direction:column;gap:12px;';
 
         order.forEach(function (disc, idx) {
             var label   = disc || 'Sans catégorie';
@@ -967,7 +943,7 @@ function goalDelete(id, url, token) {
             var isOpen  = idx === 0;
 
             var acc = document.createElement('div');
-            acc.className = 'bg-gray-900 border border-gray-800 rounded-xl overflow-hidden';
+            acc.style.cssText = 'background:var(--bg-2);border:1px solid var(--border);border-radius:12px;overflow:hidden;';
 
             // ── Header ──
             var header = document.createElement('button');
@@ -985,7 +961,7 @@ function goalDelete(id, url, token) {
 
             // ── Body ──
             var body = document.createElement('div');
-            body.className = 'border-t border-gray-800';
+            body.style.borderTop = '1px solid var(--border)';
             if (!isOpen) body.style.display = 'none';
 
             // Search bar
@@ -1001,7 +977,7 @@ function goalDelete(id, url, token) {
 
             // Video grid
             var grid = document.createElement('div');
-            grid.className = 'p-4 grid grid-cols-3 gap-2 sm:grid-cols-4';
+            grid.style.cssText = 'padding:16px;display:grid;grid-template-columns:repeat(3,1fr);gap:8px;';
 
             catVids.forEach(function (v) { grid.appendChild(createVideoCard(v)); });
 
@@ -1036,7 +1012,8 @@ function goalDelete(id, url, token) {
 
     function createVideoCard(v) {
         var card = document.createElement('div');
-        card.className = 'video-card bg-gray-800/50 border border-gray-700/60 rounded-xl overflow-hidden';
+        card.className = 'video-card';
+        card.style.cssText = 'background:var(--bg-2);border:1px solid var(--border);border-radius:12px;overflow:hidden;';
         card.id = 'vcard-' + v.id;
         card.dataset.title = v.title;
 
@@ -1376,24 +1353,22 @@ function goalDelete(id, url, token) {
         var err = document.getElementById('video-upload-error');
         if (file.size > MAX_SIZE) {
             err.textContent = 'Fichier trop lourd : ' + formatBytes(file.size) + ' — maximum 500 Mo.';
-            err.classList.remove('hidden');
+            err.style.display = 'block';
             fileInput.value = '';
             return;
         }
-        err.classList.add('hidden');
-        dropzone.classList.add('hidden');
+        err.style.display = 'none';
+        dropzone.style.display = 'none';
         var preview = document.getElementById('video-file-preview');
-        preview.classList.remove('hidden');
-        preview.classList.add('flex');
+        preview.style.display = 'flex';
         document.getElementById('vdz-filename').textContent = file.name;
         document.getElementById('vdz-filesize').textContent = formatBytes(file.size);
     }
 
     window.videoClearFile = function () {
         fileInput.value = '';
-        document.getElementById('video-file-preview').classList.add('hidden');
-        document.getElementById('video-file-preview').classList.remove('flex');
-        dropzone.classList.remove('hidden');
+        document.getElementById('video-file-preview').style.display = 'none';
+        dropzone.style.display = '';
         document.getElementById('video-file-label').textContent = 'Choisir un fichier — MP4, MOV, AVI… max 500 Mo';
     };
 
@@ -1436,9 +1411,9 @@ function goalDelete(id, url, token) {
         var progressBar  = document.getElementById('video-progress-bar');
         var progressPct  = document.getElementById('video-progress-pct');
 
-        err.classList.add('hidden');
+        err.style.display = 'none';
         btn.disabled = true;
-        progressWrap.classList.remove('hidden');
+        progressWrap.style.display = 'block';
         progressBar.style.width = '0%';
 
         var fd = new FormData(form);
@@ -1472,10 +1447,10 @@ function goalDelete(id, url, token) {
             btn.disabled = false;
 
             if (!success) {
-                progressWrap.classList.add('hidden');
+                progressWrap.style.display = 'none';
                 progressBar.style.width = '0%';
                 err.textContent = errorMsg;
-                err.classList.remove('hidden');
+                err.style.display = 'block';
                 return;
             }
 
@@ -1483,7 +1458,7 @@ function goalDelete(id, url, token) {
             progressBar.style.width = '100%';
             progressPct.textContent = '100%';
             setTimeout(function () {
-                progressWrap.classList.add('hidden');
+                progressWrap.style.display = 'none';
                 progressBar.style.width = '0%';
             }, 500);
 

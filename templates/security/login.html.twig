@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="fr" class="h-full">
+<html lang="fr" data-theme="dark">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -8,13 +8,83 @@
     {% block javascripts %}
         {% block importmap %}{{ importmap('app') }}{% endblock %}
     {% endblock %}
+    <style>
+        :root,[data-theme="dark"]{
+            --bg:#06060f;--bg-2:#0c0c1d;--bg-3:#131326;
+            --border:rgba(255,255,255,0.07);--border-2:rgba(255,255,255,0.12);
+            --text-1:#f1f5f9;--text-2:#94a3b8;--text-3:#64748b;
+            --accent:#6366f1;--accent-hover:#4f46e5;--accent-rgb:99,102,241;
+            --card-bg:#0f0f23;--card-border:rgba(255,255,255,0.07);
+            --input-bg:#06060f;--input-border:rgba(255,255,255,0.10);
+            --left-bg:linear-gradient(135deg,#1e1b4b 0%,#312e81 45%,#4338ca 100%);
+            --left-text:rgba(199,210,254,0.55);--left-sub:rgba(165,180,252,0.55);
+            --left-footer:rgba(165,180,252,0.3);
+            --feature-bg:rgba(0,0,0,0.2);--feature-border:rgba(255,255,255,0.06);
+            --toggle-off:rgba(255,255,255,0.08);--toggle-off-border:rgba(255,255,255,0.10);
+            --divider:rgba(255,255,255,0.06);
+        }
+        [data-theme="light"]{
+            --bg:#f0f4ff;--bg-2:#e8eeff;--bg-3:#dde5ff;
+            --border:rgba(0,0,0,0.08);--border-2:rgba(0,0,0,0.14);
+            --text-1:#0f172a;--text-2:#475569;--text-3:#94a3b8;
+            --accent:#4f46e5;--accent-hover:#4338ca;--accent-rgb:79,70,229;
+            --card-bg:#ffffff;--card-border:rgba(0,0,0,0.08);
+            --input-bg:#f8faff;--input-border:rgba(0,0,0,0.12);
+            --left-bg:linear-gradient(135deg,#1e1b4b 0%,#312e81 45%,#4338ca 100%);
+            --left-text:rgba(199,210,254,0.7);--left-sub:rgba(165,180,252,0.7);
+            --left-footer:rgba(165,180,252,0.4);
+            --feature-bg:rgba(0,0,0,0.15);--feature-border:rgba(255,255,255,0.08);
+            --toggle-off:#e2e8f0;--toggle-off-border:rgba(0,0,0,0.12);
+            --divider:rgba(0,0,0,0.06);
+        }
+        *,*::before,*::after{box-sizing:border-box}
+        body{margin:0;min-height:100vh;display:flex;font-family:'Inter',system-ui,sans-serif;background:var(--bg);color:var(--text-1);transition:background .3s,color .3s}
+        .login-left{width:50%;background:var(--left-bg);display:flex;flex-direction:column;position:relative;overflow:hidden}
+        @media(max-width:1023px){.login-left{display:none!important}}
+        .login-right{flex:1;display:flex;align-items:center;justify-content:center;padding:32px 24px;position:relative}
+        .login-card{width:100%;max-width:380px}
+        .card-box{background:var(--card-bg);border:1px solid var(--card-border);border-radius:16px;padding:32px;transition:background .3s,border-color .3s}
+        .form-field{display:flex;flex-direction:column;gap:6px}
+        .form-field label{font-size:13px;font-weight:500;color:var(--text-2)}
+        .form-field input{width:100%;background:var(--input-bg);border:1px solid var(--input-border);color:var(--text-1);border-radius:10px;padding:10px 14px;font-size:14px;outline:none;transition:border-color .15s,box-shadow .15s;font-family:inherit}
+        .form-field input:focus{border-color:var(--accent);box-shadow:0 0 0 3px rgba(var(--accent-rgb),.15)}
+        .form-field input::placeholder{color:var(--text-3)}
+        .pw-wrap{position:relative}
+        .pw-wrap input{padding-right:42px}
+        .pw-eye{position:absolute;right:12px;top:50%;transform:translateY(-50%);background:none;border:none;padding:0;cursor:pointer;color:var(--text-3);display:flex;align-items:center;transition:color .15s}
+        .pw-eye:hover{color:var(--text-2)}
+        .submit-btn{width:100%;background:var(--accent);color:white;font-size:14px;font-weight:600;padding:11px;border:none;border-radius:10px;cursor:pointer;transition:background .15s,transform .1s;margin-top:4px;font-family:inherit}
+        .submit-btn:hover{background:var(--accent-hover)}
+        .submit-btn:active{transform:scale(0.98)}
+        .theme-toggle-login{position:absolute;top:20px;right:20px;background:var(--card-bg);border:1px solid var(--card-border);border-radius:10px;padding:8px;cursor:pointer;color:var(--text-2);display:flex;align-items:center;transition:background .3s,border-color .3s}
+        .theme-toggle-login:hover{color:var(--text-1)}
+        .error-box{display:flex;align-items:center;gap:10px;background:rgba(239,68,68,.08);border:1px solid rgba(239,68,68,.25);color:#f87171;font-size:13px;padding:12px 14px;border-radius:10px;margin-bottom:20px}
+        .logo-mark{width:36px;height:36px;border-radius:10px;background:var(--accent);display:flex;align-items:center;justify-content:center;flex-shrink:0}
+        .logo-name{font-size:18px;font-weight:700;color:var(--text-1);letter-spacing:-.3px}
+        .logo-row{display:flex;align-items:center;justify-content:center;gap:10px;margin-bottom:28px}
+        .card-title{font-size:20px;font-weight:700;color:var(--text-1);margin:0 0 6px}
+        .card-sub{font-size:13px;color:var(--text-2);margin:0 0 24px}
+        .form-footer{text-align:center;font-size:13px;color:var(--text-3);margin:4px 0 0;padding-top:16px;border-top:1px solid var(--divider)}
+        .form-footer a{color:var(--accent);font-weight:500;text-decoration:none}
+        .form-footer a:hover{color:var(--accent-hover)}
+        .remember-row{display:flex;align-items:center;justify-content:space-between}
+        .remember-label{font-size:13px;color:var(--text-2)}
+    </style>
 </head>
-<body style="margin:0;min-height:100vh;display:flex;font-family:system-ui,sans-serif;background:#0d1117;color:#f3f4f6">
+<body>
+
+    {# ── Theme toggle ── #}
+    <button class="theme-toggle-login" onclick="TF_Login.toggleTheme()" title="Changer le thème">
+        <svg id="ltt-sun" width="16" height="16" fill="none" stroke="currentColor" viewBox="0 0 24 24" style="display:none">
+            <circle cx="12" cy="12" r="5"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 1v2M12 21v2M4.22 4.22l1.42 1.42M18.36 18.36l1.42 1.42M1 12h2M21 12h2M4.22 19.78l1.42-1.42M18.36 5.64l1.42-1.42"/>
+        </svg>
+        <svg id="ltt-moon" width="16" height="16" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 12.79A9 9 0 1111.21 3 7 7 0 0021 12.79z"/>
+        </svg>
+    </button>
 
     {# ── Panneau gauche — branding ── #}
-    <div style="width:50%;background:linear-gradient(135deg,#1e1b4b 0%,#312e81 45%,#4338ca 100%);display:flex;flex-direction:column;position:relative;overflow:hidden"
-         class="hidden lg:flex">
-
+    <div class="login-left">
         <div style="position:absolute;width:480px;height:480px;top:50%;left:50%;transform:translate(-50%,-50%);border-radius:50%;border:1px solid rgba(129,140,248,0.2)"></div>
         <div style="position:absolute;width:320px;height:320px;top:50%;left:50%;transform:translate(-50%,-50%);border-radius:50%;border:1px solid rgba(129,140,248,0.3)"></div>
         <div style="position:absolute;width:160px;height:160px;top:50%;left:50%;transform:translate(-50%,-50%);border-radius:50%;border:1px solid rgba(165,180,252,0.35)"></div>
@@ -22,8 +92,6 @@
         <div style="position:absolute;width:280px;height:280px;bottom:60px;left:-80px;border-radius:50%;background:radial-gradient(circle,rgba(129,140,248,0.12),transparent 70%)"></div>
 
         <div style="position:relative;display:flex;flex-direction:column;height:100%;padding:44px 52px">
-
-            {# Logo #}
             <div style="display:flex;align-items:center;gap:10px">
                 <div style="width:36px;height:36px;border-radius:10px;background:rgba(255,255,255,0.15);display:flex;align-items:center;justify-content:center">
                     <svg width="18" height="18" fill="none" stroke="white" viewBox="0 0 24 24">
@@ -33,100 +101,82 @@
                 <span style="font-size:17px;font-weight:700;color:white;letter-spacing:-0.3px">TrackFlow</span>
             </div>
 
-            {# Centre — titre + features #}
             <div style="flex:1;display:flex;flex-direction:column;justify-content:center;gap:40px">
-
-                {# Titre #}
                 <div>
                     <p style="font-size:44px;font-weight:800;color:white;line-height:1.1;margin:0 0 14px">
                         Chaque<br>seconde<br><span style="color:#a5b4fc">compte.</span>
                     </p>
-                    <p style="font-size:14px;color:rgba(199,210,254,0.55);line-height:1.6;margin:0;max-width:240px">
+                    <p style="font-size:14px;color:var(--left-text);line-height:1.6;margin:0;max-width:240px">
                         Performances, résultats FFA et objectifs — tout au même endroit.
                     </p>
                 </div>
 
-                {# Features #}
                 <div style="display:flex;flex-direction:column;gap:10px">
-
-                    <div style="display:flex;align-items:flex-start;gap:14px;background:rgba(0,0,0,0.2);border:1px solid rgba(255,255,255,0.06);border-radius:12px;padding:14px 16px">
+                    <div style="display:flex;align-items:flex-start;gap:14px;background:var(--feature-bg);border:1px solid var(--feature-border);border-radius:12px;padding:14px 16px">
                         <div style="width:36px;height:36px;border-radius:9px;background:rgba(99,102,241,0.25);display:flex;align-items:center;justify-content:center;flex-shrink:0;margin-top:1px">
-                            <svg width="16" height="16" fill="none" stroke="#a5b4fc" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"/>
-                            </svg>
+                            <svg width="16" height="16" fill="none" stroke="#a5b4fc" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"/></svg>
                         </div>
                         <div>
                             <p style="font-size:14px;font-weight:600;color:white;margin:0 0 3px">Performances &amp; records</p>
-                            <p style="font-size:12px;color:rgba(165,180,252,0.55);margin:0;line-height:1.5">Historique complet, meilleures marques, graphiques d'évolution par discipline.</p>
+                            <p style="font-size:12px;color:var(--left-sub);margin:0;line-height:1.5">Historique complet, meilleures marques, graphiques d'évolution par discipline.</p>
                         </div>
                     </div>
 
-                    <div style="display:flex;align-items:flex-start;gap:14px;background:rgba(0,0,0,0.2);border:1px solid rgba(255,255,255,0.06);border-radius:12px;padding:14px 16px">
+                    <div style="display:flex;align-items:flex-start;gap:14px;background:var(--feature-bg);border:1px solid var(--feature-border);border-radius:12px;padding:14px 16px">
                         <div style="width:36px;height:36px;border-radius:9px;background:rgba(99,102,241,0.25);display:flex;align-items:center;justify-content:center;flex-shrink:0;margin-top:1px">
-                            <svg width="16" height="16" fill="none" stroke="#a5b4fc" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/>
-                            </svg>
+                            <svg width="16" height="16" fill="none" stroke="#a5b4fc" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/></svg>
                         </div>
                         <div>
                             <p style="font-size:14px;font-weight:600;color:white;margin:0 0 3px">Sync athle.fr</p>
-                            <p style="font-size:12px;color:rgba(165,180,252,0.55);margin:0;line-height:1.5">Import automatique des résultats FFA depuis bases.athle.fr.</p>
+                            <p style="font-size:12px;color:var(--left-sub);margin:0;line-height:1.5">Import automatique des résultats FFA depuis bases.athle.fr.</p>
                         </div>
                     </div>
 
-                    <div style="display:flex;align-items:flex-start;gap:14px;background:rgba(0,0,0,0.2);border:1px solid rgba(255,255,255,0.06);border-radius:12px;padding:14px 16px">
+                    <div style="display:flex;align-items:flex-start;gap:14px;background:var(--feature-bg);border:1px solid var(--feature-border);border-radius:12px;padding:14px 16px">
                         <div style="width:36px;height:36px;border-radius:9px;background:rgba(99,102,241,0.25);display:flex;align-items:center;justify-content:center;flex-shrink:0;margin-top:1px">
-                            <svg width="16" height="16" fill="none" stroke="#a5b4fc" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"/>
-                            </svg>
+                            <svg width="16" height="16" fill="none" stroke="#a5b4fc" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"/></svg>
                         </div>
                         <div>
                             <p style="font-size:14px;font-weight:600;color:white;margin:0 0 3px">Calendrier &amp; séances</p>
-                            <p style="font-size:12px;color:rgba(165,180,252,0.55);margin:0;line-height:1.5">Planification des entraînements, suivi des charges et types de séance.</p>
+                            <p style="font-size:12px;color:var(--left-sub);margin:0;line-height:1.5">Planification des entraînements, suivi des charges et types de séance.</p>
                         </div>
                     </div>
 
-                    <div style="display:flex;align-items:flex-start;gap:14px;background:rgba(0,0,0,0.2);border:1px solid rgba(255,255,255,0.06);border-radius:12px;padding:14px 16px">
+                    <div style="display:flex;align-items:flex-start;gap:14px;background:var(--feature-bg);border:1px solid var(--feature-border);border-radius:12px;padding:14px 16px">
                         <div style="width:36px;height:36px;border-radius:9px;background:rgba(99,102,241,0.25);display:flex;align-items:center;justify-content:center;flex-shrink:0;margin-top:1px">
-                            <svg width="16" height="16" fill="none" stroke="#a5b4fc" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4M7.835 4.697a3.42 3.42 0 001.946-.806 3.42 3.42 0 014.438 0 3.42 3.42 0 001.946.806 3.42 3.42 0 013.138 3.138 3.42 3.42 0 00.806 1.946 3.42 3.42 0 010 4.438 3.42 3.42 0 00-.806 1.946 3.42 3.42 0 01-3.138 3.138 3.42 3.42 0 00-1.946.806 3.42 3.42 0 01-4.438 0 3.42 3.42 0 00-1.946-.806 3.42 3.42 0 01-3.138-3.138 3.42 3.42 0 00-.806-1.946 3.42 3.42 0 010-4.438 3.42 3.42 0 00.806-1.946 3.42 3.42 0 013.138-3.138z"/>
-                            </svg>
+                            <svg width="16" height="16" fill="none" stroke="#a5b4fc" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4M7.835 4.697a3.42 3.42 0 001.946-.806 3.42 3.42 0 014.438 0 3.42 3.42 0 001.946.806 3.42 3.42 0 013.138 3.138 3.42 3.42 0 00.806 1.946 3.42 3.42 0 010 4.438 3.42 3.42 0 00-.806 1.946 3.42 3.42 0 01-3.138 3.138 3.42 3.42 0 00-1.946.806 3.42 3.42 0 01-4.438 0 3.42 3.42 0 00-1.946-.806 3.42 3.42 0 01-3.138-3.138 3.42 3.42 0 00-.806-1.946 3.42 3.42 0 010-4.438 3.42 3.42 0 00.806-1.946 3.42 3.42 0 013.138-3.138z"/></svg>
                         </div>
                         <div>
                             <p style="font-size:14px;font-weight:600;color:white;margin:0 0 3px">Objectifs &amp; vidéos</p>
-                            <p style="font-size:12px;color:rgba(165,180,252,0.55);margin:0;line-height:1.5">Suivi des objectifs de saison et bibliothèque vidéo par athlète.</p>
+                            <p style="font-size:12px;color:var(--left-sub);margin:0;line-height:1.5">Suivi des objectifs de saison et bibliothèque vidéo par athlète.</p>
                         </div>
                     </div>
-
                 </div>
-
             </div>
 
-            <p style="font-size:12px;color:rgba(165,180,252,0.3)">© TrackFlow {{ "now"|date("Y") }}</p>
+            <p style="font-size:12px;color:var(--left-footer)">© TrackFlow {{ "now"|date("Y") }}</p>
         </div>
     </div>
 
     {# ── Panneau droit — formulaire ── #}
-    <div style="flex:1;display:flex;align-items:center;justify-content:center;padding:32px 24px">
-        <div style="width:100%;max-width:380px">
+    <div class="login-right">
+        <div class="login-card">
 
-            {# Logo centré au-dessus de la carte #}
-            <div style="display:flex;align-items:center;justify-content:center;gap:10px;margin-bottom:28px">
-                <div style="width:36px;height:36px;border-radius:10px;background:#6366f1;display:flex;align-items:center;justify-content:center">
+            <div class="logo-row">
+                <div class="logo-mark">
                     <svg width="18" height="18" fill="none" stroke="white" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"/>
                     </svg>
                 </div>
-                <span style="font-size:18px;font-weight:700;color:white;letter-spacing:-0.3px">TrackFlow</span>
+                <span class="logo-name">TrackFlow</span>
             </div>
 
-            {# Carte #}
-            <div style="background:#161b22;border:1px solid #30363d;border-radius:16px;padding:32px">
-
-                <h1 style="font-size:20px;font-weight:700;color:white;margin:0 0 6px">Connexion</h1>
-                <p style="font-size:13px;color:#8b949e;margin:0 0 24px">Accédez à votre espace de suivi.</p>
+            <div class="card-box">
+                <h1 class="card-title">Connexion</h1>
+                <p class="card-sub">Accédez à votre espace de suivi.</p>
 
                 {% if error %}
-                <div style="display:flex;align-items:center;gap:10px;background:rgba(239,68,68,0.08);border:1px solid rgba(239,68,68,0.25);color:#f87171;font-size:13px;padding:12px 14px;border-radius:10px;margin-bottom:20px">
+                <div class="error-box">
                     <svg width="16" height="16" fill="none" stroke="currentColor" viewBox="0 0 24 24" style="flex-shrink:0">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/>
                     </svg>
@@ -136,31 +186,20 @@
 
                 <form method="post" style="display:flex;flex-direction:column;gap:16px">
 
-                    {# Email #}
-                    <div>
-                        <label for="inputEmail" style="display:block;font-size:13px;font-weight:500;color:#c9d1d9;margin-bottom:6px">Email</label>
+                    <div class="form-field">
+                        <label for="inputEmail">Email</label>
                         <input type="email" id="inputEmail" name="_username"
                                value="{{ last_username }}" required autofocus
-                               placeholder="vous@exemple.fr"
-                               style="width:100%;box-sizing:border-box;background:#0d1117;border:1px solid #30363d;color:white;border-radius:10px;padding:10px 14px;font-size:14px;outline:none;transition:border-color .15s,box-shadow .15s"
-                               onfocus="this.style.borderColor='#6366f1';this.style.boxShadow='0 0 0 3px rgba(99,102,241,0.15)'"
-                               onblur="this.style.borderColor='#30363d';this.style.boxShadow='none'">
+                               placeholder="vous@exemple.fr">
                     </div>
 
-                    {# Mot de passe + œil #}
-                    <div x-data="{ show: false }">
-                        <label for="inputPassword" style="display:block;font-size:13px;font-weight:500;color:#c9d1d9;margin-bottom:6px">Mot de passe</label>
-                        <div style="position:relative">
+                    <div class="form-field" x-data="{ show: false }">
+                        <label for="inputPassword">Mot de passe</label>
+                        <div class="pw-wrap">
                             <input :type="show ? 'text' : 'password'" id="inputPassword" name="_password"
                                    required autocomplete="current-password"
-                                   placeholder="••••••••"
-                                   style="width:100%;box-sizing:border-box;background:#0d1117;border:1px solid #30363d;color:white;border-radius:10px;padding:10px 42px 10px 14px;font-size:14px;outline:none;transition:border-color .15s,box-shadow .15s"
-                                   onfocus="this.style.borderColor='#6366f1';this.style.boxShadow='0 0 0 3px rgba(99,102,241,0.15)'"
-                                   onblur="this.style.borderColor='#30363d';this.style.boxShadow='none'">
-                            <button type="button" @click="show = !show"
-                                    style="position:absolute;right:12px;top:50%;transform:translateY(-50%);background:none;border:none;padding:0;cursor:pointer;color:#6e7681;display:flex;align-items:center"
-                                    onmouseover="this.style.color='#c9d1d9'"
-                                    onmouseout="this.style.color='#6e7681'">
+                                   placeholder="••••••••">
+                            <button type="button" class="pw-eye" @click="show = !show">
                                 <svg x-show="!show" width="16" height="16" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/>
                                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"/>
@@ -172,13 +211,12 @@
                         </div>
                     </div>
 
-                    {# Toggle Se souvenir de moi #}
-                    <div x-data="{ on: false }" style="display:flex;align-items:center;justify-content:space-between">
-                        <span style="font-size:13px;color:#8b949e">Se souvenir de moi</span>
+                    <div class="remember-row" x-data="{ on: false }">
+                        <span class="remember-label">Se souvenir de moi</span>
                         <input type="checkbox" name="_remember_me" x-model="on" style="display:none">
                         <div @click="on = !on"
                              style="position:relative;width:40px;height:22px;border-radius:99px;cursor:pointer;transition:background .2s;flex-shrink:0"
-                             :style="on ? 'background:#6366f1' : 'background:#21262d;border:1px solid #30363d'">
+                             :style="on ? 'background:var(--accent)' : 'background:var(--toggle-off);border:1px solid var(--toggle-off-border)'">
                             <div style="position:absolute;top:3px;width:16px;height:16px;border-radius:50%;background:white;transition:transform .2s;box-shadow:0 1px 3px rgba(0,0,0,.4)"
                                  :style="on ? 'transform:translateX(21px);left:0' : 'transform:translateX(0);left:3px'"></div>
                         </div>
@@ -186,25 +224,37 @@
 
                     <input type="hidden" name="_csrf_token" value="{{ csrf_token('authenticate') }}">
 
-                    <button type="submit"
-                            style="width:100%;background:#6366f1;color:white;font-size:14px;font-weight:600;padding:11px;border:none;border-radius:10px;cursor:pointer;transition:background .15s;margin-top:4px"
-                            onmouseover="this.style.background='#4f46e5'"
-                            onmouseout="this.style.background='#6366f1'">
-                        Se connecter
-                    </button>
+                    <button type="submit" class="submit-btn">Se connecter</button>
 
-                    {# Lien inscription — dans la carte #}
-                    <p style="text-align:center;font-size:13px;color:#484f58;margin:4px 0 0;padding-top:16px;border-top:1px solid #21262d">
+                    <p class="form-footer">
                         Pas de compte ?
-                        <a href="{{ path('app_register') }}" style="color:#6366f1;font-weight:500;text-decoration:none"
-                           onmouseover="this.style.color='#818cf8'"
-                           onmouseout="this.style.color='#6366f1'">S'inscrire</a>
+                        <a href="{{ path('app_register') }}">S'inscrire</a>
                     </p>
-
                 </form>
-            </div>{# /carte #}
+            </div>
         </div>
     </div>
+
+    <script>
+    const TF_Login = {
+        toggleTheme() {
+            const html = document.documentElement;
+            const isDark = html.getAttribute('data-theme') === 'dark';
+            const next = isDark ? 'light' : 'dark';
+            html.setAttribute('data-theme', next);
+            localStorage.setItem('tf-theme', next);
+            document.getElementById('ltt-sun').style.display = isDark ? 'block' : 'none';
+            document.getElementById('ltt-moon').style.display = isDark ? 'none' : 'block';
+        },
+        init() {
+            const saved = localStorage.getItem('tf-theme') || 'dark';
+            document.documentElement.setAttribute('data-theme', saved);
+            document.getElementById('ltt-sun').style.display = saved === 'light' ? 'block' : 'none';
+            document.getElementById('ltt-moon').style.display = saved === 'dark' ? 'block' : 'none';
+        }
+    };
+    TF_Login.init();
+    </script>
 
 </body>
 </html>

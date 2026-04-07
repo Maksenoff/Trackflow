@@ -2,38 +2,37 @@
 {% block title %}Modifier {{ athlete.fullName }}{% endblock %}
 
 {% block breadcrumb %}
-    <a href="{{ path('app_dashboard') }}" class="hover:text-white">Tableau de bord</a>
-    <span class="mx-2 text-gray-600">/</span>
-    <a href="{{ path('app_athlete_index') }}" class="hover:text-white">Athlètes</a>
-    <span class="mx-2 text-gray-600">/</span>
-    <a href="{{ path('app_athlete_show', {id: athlete.id}) }}" class="hover:text-white">{{ athlete.fullName }}</a>
-    <span class="mx-2 text-gray-600">/</span>
-    <span class="text-white font-medium">Modifier</span>
+    <a href="{{ path('app_dashboard') }}">Tableau de bord</a>
+    <span class="sep">/</span>
+    <a href="{{ path('app_athlete_index') }}">Athlètes</a>
+    <span class="sep">/</span>
+    <a href="{{ path('app_athlete_show', {id: athlete.id}) }}">{{ athlete.fullName }}</a>
+    <span class="sep">/</span>
+    <span class="current">Modifier</span>
 {% endblock %}
 
 {% block body %}
-<div class="max-w-2xl mx-auto">
-    <div class="mb-6">
-        <h1 class="text-2xl font-bold text-white">Modifier {{ athlete.fullName }}</h1>
+<div style="max-width:640px;margin:0 auto;">
+    <div style="margin-bottom:24px;">
+        <h1 class="section-title">Modifier {{ athlete.fullName }}</h1>
     </div>
-    <div class="bg-gray-900 border border-gray-800 rounded-xl p-6">
-        {{ form_start(form, {attr: {class: 'space-y-5', enctype: 'multipart/form-data', novalidate: 'novalidate', 'data-turbo': 'false'}}) }}
-        <div class="grid grid-cols-2 gap-4">
+    <div class="card card-body">
+        {{ form_start(form, {attr: {enctype: 'multipart/form-data', novalidate: 'novalidate', 'data-turbo': 'false'}}) }}
+        <div style="display:grid;grid-template-columns:repeat(2,1fr);gap:16px;">
             <div>{{ form_row(form.firstName) }}</div>
             <div>{{ form_row(form.lastName) }}</div>
         </div>
-        <div class="grid grid-cols-2 gap-4">
+        <div style="display:grid;grid-template-columns:repeat(2,1fr);gap:16px;">
             <div>{{ form_row(form.birthDate) }}</div>
             <div>{{ form_row(form.gender) }}</div>
         </div>
-        <div>
-            <p class="text-sm font-medium text-gray-300 mb-2">Spécialités</p>
+        <div class="form-group">
+            <label class="form-label">Spécialités</label>
             <input type="hidden" name="disciplines_raw" id="disciplines_raw_edit" value="{{ athlete.disciplines | json_encode }}">
-            <div class="flex flex-wrap gap-2">
+            <div style="display:flex;flex-wrap:wrap;gap:8px;margin-top:6px;">
                 {% for label, value in disciplines %}
                     <button type="button"
-                            class="disc-pill inline-block border px-3 py-1.5 rounded-lg text-xs font-medium transition-all cursor-pointer
-                                   {% if value in athlete.disciplines %}bg-indigo-600 text-white border-indigo-500{% else %}bg-gray-800 text-gray-400 border-gray-700 hover:border-gray-500 hover:text-gray-200{% endif %}"
+                            class="disc-pill btn btn-sm {% if value in athlete.disciplines %}btn-primary active{% else %}btn-secondary{% endif %}"
                             data-value="{{ value }}"
                             data-hidden="disciplines_raw_edit"
                             onclick="discPillToggle(this)">
@@ -44,24 +43,23 @@
         </div>
         {{ form_row(form.notes) }}
         {% if athlete.photo %}
-            <div>
-                <p class="text-sm text-gray-400 mb-2">Photo actuelle :</p>
-                <img src="/uploads/athletes/{{ athlete.photo }}" class="w-16 h-16 rounded-lg object-cover">
+            <div class="form-group">
+                <label class="form-label">Photo actuelle</label>
+                <img src="/uploads/athletes/{{ athlete.photo }}" style="width:64px;height:64px;border-radius:var(--radius-sm);object-fit:cover;">
             </div>
         {% endif %}
         {{ form_row(form.photoFile) }}
-        <div class="flex gap-3 pt-2">
-            <button type="submit" class="bg-indigo-600 hover:bg-indigo-500 text-white px-5 py-2.5 rounded-lg text-sm font-medium transition-colors">
-                Enregistrer
-            </button>
-            <a href="{{ path('app_athlete_show', {id: athlete.id}) }}" class="bg-gray-800 hover:bg-gray-700 text-gray-300 px-5 py-2.5 rounded-lg text-sm font-medium transition-colors">
-                Annuler
-            </a>
+        <div style="display:flex;gap:10px;padding-top:8px;">
+            <button type="submit" class="btn btn-primary">Enregistrer</button>
+            <a href="{{ path('app_athlete_show', {id: athlete.id}) }}" class="btn btn-secondary">Annuler</a>
         </div>
         {{ form_end(form) }}
     </div>
 </div>
 
+<style>
+.disc-pill.active { background: linear-gradient(135deg, var(--accent), #8b5cf6) !important; color: white !important; border-color: var(--accent) !important; }
+</style>
 <script>
 function discPillToggle(btn) {
     var hiddenInput = document.getElementById(btn.dataset.hidden);
@@ -71,12 +69,10 @@ function discPillToggle(btn) {
     var idx = selected.indexOf(val);
     if (idx === -1) {
         selected.push(val);
-        btn.classList.remove('bg-gray-800', 'text-gray-400', 'border-gray-700');
-        btn.classList.add('bg-indigo-600', 'text-white', 'border-indigo-500');
+        btn.classList.add('active');
     } else {
         selected.splice(idx, 1);
-        btn.classList.remove('bg-indigo-600', 'text-white', 'border-indigo-500');
-        btn.classList.add('bg-gray-800', 'text-gray-400', 'border-gray-700');
+        btn.classList.remove('active');
     }
     hiddenInput.value = JSON.stringify(selected);
 }

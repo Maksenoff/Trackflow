@@ -2,9 +2,9 @@
 {% block title %}{{ competition.title }}{% endblock %}
 
 {% block breadcrumb %}
-    <a href="{{ path('app_competition_calendar', {month: competition.date|date('n'), year: competition.date|date('Y')}) }}" class="hover:text-white transition-colors">Compétitions</a>
-    <span class="mx-2 text-gray-600">/</span>
-    <span class="text-white font-medium">{{ competition.title }}</span>
+    <a href="{{ path('app_competition_calendar', {month: competition.date|date('n'), year: competition.date|date('Y')}) }}">Compétitions</a>
+    <span class="sep">/</span>
+    <span class="current">{{ competition.title }}</span>
 {% endblock %}
 
 {% block body %}
@@ -15,7 +15,7 @@
 {% endfor %}
 {% set myRegInit = myRegistration ? {id: myRegistration.id, disciplines: myRegistration.disciplines} : null %}
 
-<div class="space-y-5"
+<div style="display:flex;flex-direction:column;gap:20px;"
      x-data="competitionPage({
          registerUrl:      '{{ path('app_competition_register',      {id: competition.id}) }}',
          unregisterUrl:    '{{ path('app_competition_unregister',    {id: competition.id}) }}',
@@ -29,35 +29,34 @@
      })">
 
 {# ── Header ─────────────────────────────────────────────────────────── #}
-<div class="bg-gray-900 border border-gray-800 rounded-xl overflow-hidden">
-    <div class="h-1.5" style="background: {{ competition.colorBg }}"></div>
-    <div class="p-6">
-        <div class="flex items-start justify-between gap-4">
+<div class="card" style="overflow:hidden;">
+    <div style="height:3px;background:{{ competition.colorBg }};"></div>
+    <div class="card-body">
+        <div style="display:flex;flex-wrap:wrap;align-items:flex-start;justify-content:space-between;gap:16px;">
 
             {# Gauche : titre, badges, méta #}
-            <div class="flex-1">
-                <div class="flex items-center flex-wrap gap-2 mb-2">
+            <div style="flex:1;min-width:0;">
+                <div style="display:flex;align-items:center;flex-wrap:wrap;gap:8px;margin-bottom:10px;">
                     {% if competition.competitionType %}
-                        <span class="text-xs font-semibold px-2.5 py-1 rounded-full"
-                              style="background:{{ competition.colorBg }}22; color:{{ competition.colorBg }}; border:1px solid {{ competition.colorBg }}44">
+                        <span style="font-size:11px;font-weight:600;padding:4px 10px;border-radius:99px;background:{{ competition.colorBg }}22;color:{{ competition.colorBg }};border:1px solid {{ competition.colorBg }}44;">
                             {{ competition.typeLabel }}
                         </span>
                     {% endif %}
                     {% if competition.isPast() %}
-                        <span class="text-xs text-gray-500 bg-gray-800 px-2 py-0.5 rounded-full">Passée</span>
+                        <span class="badge">Passée</span>
                     {% else %}
-                        <span class="text-xs text-emerald-400 bg-emerald-900/30 border border-emerald-800/50 px-2 py-0.5 rounded-full">À venir</span>
+                        <span class="badge badge-green">À venir</span>
                     {% endif %}
                 </div>
-                <h1 class="text-2xl font-bold text-white mb-2">{{ competition.title }}</h1>
-                <div class="flex flex-wrap items-center gap-5 text-sm text-gray-400">
-                    <span class="flex items-center gap-1.5">
-                        <svg class="w-4 h-4 shrink-0 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"/></svg>
+                <h1 style="font-size:22px;font-weight:700;color:var(--text-1);margin:0 0 10px;">{{ competition.title }}</h1>
+                <div style="display:flex;flex-wrap:wrap;align-items:center;gap:16px;font-size:13px;color:var(--text-2);">
+                    <span style="display:flex;align-items:center;gap:6px;">
+                        <svg width="14" height="14" fill="none" stroke="var(--text-3)" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"/></svg>
                         {{ competition.date|date_fr('l d F Y')|capitalize }}
                     </span>
                     {% if competition.location %}
-                    <span class="flex items-center gap-1.5">
-                        <svg class="w-4 h-4 shrink-0 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"/></svg>
+                    <span style="display:flex;align-items:center;gap:6px;">
+                        <svg width="14" height="14" fill="none" stroke="var(--text-3)" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"/></svg>
                         {{ competition.location }}
                     </span>
                     {% endif %}
@@ -66,18 +65,16 @@
 
             {# Droite : actions #}
             {% if canEdit %}
-            <div class="flex gap-2 shrink-0">
-                <a href="{{ path('app_competition_edit', {id: competition.id}) }}"
-                   class="flex items-center gap-1.5 bg-gray-800 hover:bg-gray-700 text-gray-300 px-3 py-2 rounded-lg text-sm transition-colors">
-                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"/></svg>
+            <div style="display:flex;gap:8px;flex-shrink:0;">
+                <a href="{{ path('app_competition_edit', {id: competition.id}) }}" class="btn btn-secondary btn-sm">
+                    <svg width="13" height="13" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"/></svg>
                     Modifier
                 </a>
                 {% if is_granted('ROLE_ADMIN') %}
                 <form action="{{ path('app_competition_delete', {id: competition.id}) }}" method="post" data-turbo="false">
                     <input type="hidden" name="_token" value="{{ csrf_token('delete-competition' ~ competition.id) }}">
-                    <button type="submit" onclick="return confirm('Supprimer cette compétition ?')"
-                            class="flex items-center gap-1.5 bg-gray-800 hover:bg-red-900/40 hover:text-red-400 text-gray-300 px-3 py-2 rounded-lg text-sm transition-colors">
-                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/></svg>
+                    <button type="submit" onclick="return confirm('Supprimer cette compétition ?')" class="btn btn-danger btn-sm">
+                        <svg width="13" height="13" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/></svg>
                         Supprimer
                     </button>
                 </form>
@@ -87,113 +84,118 @@
         </div>
 
         {# Stats rapides #}
-        <div class="grid grid-cols-3 gap-4 mt-5 pt-5 border-t border-gray-800">
+        <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:16px;margin-top:20px;padding-top:20px;border-top:1px solid var(--border);">
             <div>
-                <p class="text-2xl font-bold text-white" x-text="registrations.length">{{ registrationsData|length }}</p>
-                <p class="text-sm text-gray-400">Inscrit{{ registrationsData|length > 1 ? 's' : '' }}</p>
+                <p class="section-title" x-text="registrations.length">{{ registrationsData|length }}</p>
+                <p style="font-size:13px;color:var(--text-2);margin:4px 0 0;">Inscrit{{ registrationsData|length > 1 ? 's' : '' }}</p>
             </div>
             <div>
-                <p class="text-2xl font-bold text-white">
-                    {{ competition.documentFilename ? '1' : '—' }}
-                </p>
-                <p class="text-sm text-gray-400">Circulaire</p>
+                <p class="section-title">{{ competition.documentFilename ? '1' : '—' }}</p>
+                <p style="font-size:13px;color:var(--text-2);margin:4px 0 0;">Circulaire</p>
             </div>
             <div>
-                <p class="text-2xl font-bold" style="color:{{ competition.colorBg }}">
+                <p style="font-size:20px;font-weight:700;margin:0;color:{{ competition.colorBg }};">
                     {{ competition.isPast() ? 'Terminée' : 'À venir' }}
                 </p>
-                <p class="text-sm text-gray-400">Statut</p>
+                <p style="font-size:13px;color:var(--text-2);margin:4px 0 0;">Statut</p>
             </div>
         </div>
     </div>
 </div>
 
 {# ── Barre d'onglets ─────────────────────────────────────────────────── #}
-<div class="flex gap-1 bg-gray-900 border border-gray-800 rounded-xl p-1">
+<div class="tf-tabs">
     <button @click="activeTab = 'infos'"
-            :class="activeTab === 'infos' ? 'bg-gray-700 text-white' : 'text-gray-400 hover:text-white'"
-            class="flex-1 flex items-center justify-center gap-2 py-2 px-4 rounded-lg text-sm font-medium transition-colors">
-        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+            class="tf-tab"
+            :class="activeTab === 'infos' ? 'active' : ''">
+        <svg width="14" height="14" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
         Infos pratiques
     </button>
     <button @click="activeTab = 'inscriptions'"
-            :class="activeTab === 'inscriptions' ? 'bg-gray-700 text-white' : 'text-gray-400 hover:text-white'"
-            class="flex-1 flex items-center justify-center gap-2 py-2 px-4 rounded-lg text-sm font-medium transition-colors">
-        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0z"/></svg>
+            class="tf-tab"
+            :class="activeTab === 'inscriptions' ? 'active' : ''">
+        <svg width="14" height="14" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0z"/></svg>
         Inscriptions
-        <span class="text-xs font-semibold px-1.5 py-0.5 rounded-full transition-colors"
-              :class="activeTab === 'inscriptions' ? 'bg-gray-600 text-gray-200' : 'bg-gray-800 text-gray-500'"
+        <span style="font-size:11px;font-weight:600;padding:2px 6px;border-radius:99px;transition:background .15s,color .15s;"
+              :style="activeTab === 'inscriptions' ? 'background:rgba(255,255,255,.15);color:var(--text-1)' : 'background:var(--bg-2);color:var(--text-3)'"
               x-text="registrations.length"></span>
     </button>
 </div>
 
 {# ── Onglet Infos ────────────────────────────────────────────────────── #}
-<div x-show="activeTab === 'infos'" x-transition class="space-y-5">
+<div x-show="activeTab === 'infos'" x-transition style="display:flex;flex-direction:column;gap:20px;">
 
     {# Liens #}
-    <div class="bg-gray-900 border border-gray-800 rounded-xl p-6 space-y-5">
-        <h2 class="text-xs font-semibold text-gray-500 uppercase tracking-wider">Ressources</h2>
+    <div class="card card-body" style="display:flex;flex-direction:column;gap:20px;">
+        <h2 style="font-size:11px;font-weight:600;color:var(--text-3);text-transform:uppercase;letter-spacing:.06em;margin:0;">Ressources</h2>
 
-        <div class="flex items-center gap-4">
-            <div class="w-9 h-9 rounded-lg bg-gray-800 flex items-center justify-center shrink-0">
-                <svg class="w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13.828 10.172a4 4 0 00-5.656 0l-4 4a4 4 0 105.656 5.656l1.102-1.101m-.758-4.899a4 4 0 005.656 0l4-4a4 4 0 00-5.656-5.656l-1.1 1.1"/></svg>
+        <div style="display:flex;align-items:center;gap:16px;">
+            <div style="width:36px;height:36px;border-radius:10px;background:var(--bg-2);border:1px solid var(--border);display:flex;align-items:center;justify-content:center;flex-shrink:0;">
+                <svg width="14" height="14" fill="none" stroke="var(--text-2)" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13.828 10.172a4 4 0 00-5.656 0l-4 4a4 4 0 105.656 5.656l1.102-1.101m-.758-4.899a4 4 0 005.656 0l4-4a4 4 0 00-5.656-5.656l-1.1 1.1"/></svg>
             </div>
-            <div class="flex-1 min-w-0">
-                <p class="text-xs text-gray-500 mb-0.5">Site officiel</p>
+            <div style="flex:1;min-width:0;">
+                <p style="font-size:11px;color:var(--text-3);margin:0 0 3px;">Site officiel</p>
                 {% if competition.websiteUrl %}
                     <a href="{{ competition.websiteUrl }}" target="_blank" rel="noopener noreferrer"
-                       class="text-sm text-amber-400 hover:text-amber-300 break-all transition-colors">{{ competition.websiteUrl }}</a>
+                       style="font-size:13px;color:#fbbf24;text-decoration:none;word-break:break-all;transition:opacity .15s;"
+                       onmouseover="this.style.opacity='.7'" onmouseout="this.style.opacity='1'">{{ competition.websiteUrl }}</a>
                 {% elseif canEdit %}
-                    <a href="{{ path('app_competition_edit', {id: competition.id}) }}" class="text-sm text-gray-600 hover:text-gray-400 transition-colors">Ajouter un lien →</a>
+                    <a href="{{ path('app_competition_edit', {id: competition.id}) }}"
+                       style="font-size:13px;color:var(--text-3);text-decoration:none;transition:color .15s;"
+                       onmouseover="this.style.color='var(--text-2)'" onmouseout="this.style.color='var(--text-3)'">Ajouter un lien →</a>
                 {% else %}
-                    <span class="text-sm text-gray-600">Non renseigné</span>
+                    <span style="font-size:13px;color:var(--text-3);">Non renseigné</span>
                 {% endif %}
             </div>
         </div>
 
-        <div class="flex items-center gap-4">
-            <div class="w-9 h-9 rounded-lg bg-gray-800 flex items-center justify-center shrink-0">
-                <svg class="w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg>
+        <div style="display:flex;align-items:center;gap:16px;">
+            <div style="width:36px;height:36px;border-radius:10px;background:var(--bg-2);border:1px solid var(--border);display:flex;align-items:center;justify-content:center;flex-shrink:0;">
+                <svg width="14" height="14" fill="none" stroke="var(--text-2)" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg>
             </div>
-            <div class="flex-1">
-                <p class="text-xs text-gray-500 mb-0.5">Circulaire</p>
+            <div style="flex:1;">
+                <p style="font-size:11px;color:var(--text-3);margin:0 0 3px;">Circulaire</p>
                 {% if competition.documentFilename %}
                     <a href="{{ path('app_competition_document', {id: competition.id}) }}"
-                       class="inline-flex items-center gap-2 text-sm text-amber-400 hover:text-amber-300 transition-colors">
-                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"/></svg>
+                       style="display:inline-flex;align-items:center;gap:8px;font-size:13px;color:#fbbf24;text-decoration:none;transition:opacity .15s;"
+                       onmouseover="this.style.opacity='.7'" onmouseout="this.style.opacity='1'">
+                        <svg width="14" height="14" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"/></svg>
                         Télécharger la circulaire
                     </a>
                 {% elseif canEdit %}
-                    <a href="{{ path('app_competition_edit', {id: competition.id}) }}" class="text-sm text-gray-600 hover:text-gray-400 transition-colors">Ajouter une circulaire →</a>
+                    <a href="{{ path('app_competition_edit', {id: competition.id}) }}"
+                       style="font-size:13px;color:var(--text-3);text-decoration:none;transition:color .15s;"
+                       onmouseover="this.style.color='var(--text-2)'" onmouseout="this.style.color='var(--text-3)'">Ajouter une circulaire →</a>
                 {% else %}
-                    <span class="text-sm text-gray-600">Non disponible</span>
+                    <span style="font-size:13px;color:var(--text-3);">Non disponible</span>
                 {% endif %}
             </div>
         </div>
     </div>
 
     {# Notes #}
-    <div class="bg-gray-900 border border-gray-800 rounded-xl overflow-hidden">
-        <div class="px-6 py-4 border-b border-gray-800 flex items-center justify-between">
-            <h2 class="text-sm font-semibold text-white flex items-center gap-2">
-                <svg class="w-4 h-4 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"/></svg>
+    <div class="card" style="overflow:hidden;">
+        <div style="padding:16px 20px;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;">
+            <h2 style="font-size:13px;font-weight:600;color:var(--text-1);margin:0;display:flex;align-items:center;gap:8px;">
+                <svg width="14" height="14" fill="none" stroke="var(--text-3)" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"/></svg>
                 Notes
             </h2>
             {% if canEdit %}
             <a href="{{ path('app_competition_edit', {id: competition.id}) }}"
-               class="text-xs text-gray-500 hover:text-gray-300 transition-colors">Modifier</a>
+               style="font-size:12px;color:var(--text-3);text-decoration:none;transition:color .15s;"
+               onmouseover="this.style.color='var(--text-2)'" onmouseout="this.style.color='var(--text-3)'">Modifier</a>
             {% endif %}
         </div>
-        <div class="p-6">
+        <div style="padding:20px;">
             {% if competition.description %}
-                <pre class="text-gray-300 text-sm leading-relaxed whitespace-pre-wrap font-sans">{{ competition.description }}</pre>
+                <pre style="color:var(--text-2);font-size:13px;line-height:1.7;white-space:pre-wrap;font-family:inherit;margin:0;">{{ competition.description }}</pre>
             {% else %}
-                <div class="text-center py-6">
-                    <svg class="w-8 h-8 text-gray-700 mx-auto mb-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg>
-                    <p class="text-gray-500 text-sm">Aucune note pour l'instant.</p>
+                <div class="empty-state" style="padding:24px 20px;">
+                    <svg width="28" height="28" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg>
+                    <p>Aucune note pour l'instant.</p>
                     {% if canEdit %}
                     <a href="{{ path('app_competition_edit', {id: competition.id}) }}"
-                       class="inline-block mt-2 text-xs text-amber-400 hover:text-amber-300 transition-colors">Ajouter des notes →</a>
+                       style="font-size:12px;color:#fbbf24;text-decoration:none;margin-top:6px;display:inline-block;">Ajouter des notes →</a>
                     {% endif %}
                 </div>
             {% endif %}
@@ -203,51 +205,47 @@
 </div>
 
 {# ── Onglet Inscriptions ─────────────────────────────────────────────── #}
-<div x-show="activeTab === 'inscriptions'" x-transition class="space-y-4">
+<div x-show="activeTab === 'inscriptions'" x-transition style="display:flex;flex-direction:column;gap:16px;">
 
     {# Toast #}
     <div x-show="toast"
-         x-transition:enter="transition ease-out duration-200" x-transition:enter-start="opacity-0 -translate-y-1" x-transition:enter-end="opacity-100 translate-y-0"
+         x-transition:enter="transition ease-out duration-200" x-transition:enter-start="opacity-0" x-transition:enter-end="opacity-100"
          x-transition:leave="transition ease-in duration-150" x-transition:leave-end="opacity-0"
-         :class="toastError ? 'bg-red-900/40 border-red-800/50 text-red-300' : 'bg-emerald-900/40 border-emerald-800/50 text-emerald-300'"
-         class="px-4 py-3 rounded-xl border text-sm font-medium"
-         x-text="toast" style="display:none"></div>
+         :style="toastError ? 'background:rgba(239,68,68,.08);border:1px solid rgba(239,68,68,.25);color:#f87171' : 'background:rgba(52,211,153,.08);border:1px solid rgba(52,211,153,.25);color:#34d399'"
+         style="padding:12px 16px;border-radius:12px;font-size:13px;font-weight:500;display:none;"
+         x-text="toast"></div>
 
     {# Mon inscription #}
-    <div class="bg-gray-900 border border-gray-800 rounded-xl overflow-hidden">
-        <div class="px-6 py-4 border-b border-gray-800">
-            <h2 class="text-sm font-semibold text-white">Mon inscription</h2>
+    <div class="card" style="overflow:hidden;">
+        <div style="padding:16px 20px;border-bottom:1px solid var(--border);">
+            <h2 style="font-size:13px;font-weight:600;color:var(--text-1);margin:0;">Mon inscription</h2>
         </div>
-        <div class="p-6">
+        <div style="padding:20px;">
 
             {# Inscrit #}
             <template x-if="myReg">
-                <div class="space-y-4">
-                    <div class="flex items-start gap-4 p-4 rounded-xl"
-                         style="background:{{ competition.colorBg }}0d; border:1px solid {{ competition.colorBg }}28">
-                        <div class="w-9 h-9 rounded-full flex items-center justify-center shrink-0" style="background:{{ competition.colorBg }}22">
-                            <svg class="w-4 h-4" style="color:{{ competition.colorBg }}" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M5 13l4 4L19 7"/></svg>
+                <div style="display:flex;flex-direction:column;gap:16px;">
+                    <div style="display:flex;align-items:flex-start;gap:16px;padding:16px;border-radius:12px;background:{{ competition.colorBg }}0d;border:1px solid {{ competition.colorBg }}28;">
+                        <div style="width:36px;height:36px;border-radius:50%;display:flex;align-items:center;justify-content:center;flex-shrink:0;background:{{ competition.colorBg }}22;">
+                            <svg width="14" height="14" fill="none" stroke="{{ competition.colorBg }}" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M5 13l4 4L19 7"/></svg>
                         </div>
-                        <div class="flex-1">
-                            <p class="text-sm font-semibold text-white mb-2">Tu es inscrit</p>
-                            <div class="flex flex-wrap gap-2">
+                        <div style="flex:1;">
+                            <p style="font-size:13px;font-weight:600;color:var(--text-1);margin:0 0 8px;">Tu es inscrit</p>
+                            <div style="display:flex;flex-wrap:wrap;gap:8px;">
                                 <template x-for="d in myReg.disciplines" :key="d">
-                                    <span class="inline-flex items-center gap-1.5 text-sm font-medium px-2.5 py-1 rounded-lg"
-                                          style="background:{{ competition.colorBg }}18; color:{{ competition.colorBg }}; border:1px solid {{ competition.colorBg }}35"
+                                    <span style="display:inline-flex;align-items:center;font-size:13px;font-weight:500;padding:4px 10px;border-radius:8px;background:{{ competition.colorBg }}18;color:{{ competition.colorBg }};border:1px solid {{ competition.colorBg }}35;"
                                           x-text="disciplineLabels[d] || d"></span>
                                 </template>
                             </div>
                         </div>
                     </div>
-                    <div class="flex gap-3">
-                        <button @click="openModal()"
-                                class="flex items-center gap-2 bg-gray-800 hover:bg-gray-700 text-gray-300 px-4 py-2.5 rounded-lg text-sm font-medium transition-colors">
-                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"/></svg>
+                    <div style="display:flex;gap:12px;">
+                        <button @click="openModal()" class="btn btn-secondary">
+                            <svg width="14" height="14" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"/></svg>
                             Modifier les disciplines
                         </button>
-                        <button @click="unregister()" :disabled="loading"
-                                class="flex items-center gap-2 text-red-400 bg-red-900/20 hover:bg-red-900/35 border border-red-800/40 px-4 py-2.5 rounded-lg text-sm font-medium transition-colors disabled:opacity-40">
-                            <svg x-show="loading" class="w-4 h-4 animate-spin" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"/><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8z"/></svg>
+                        <button @click="unregister()" :disabled="loading" class="btn btn-danger">
+                            <svg x-show="loading" width="14" height="14" fill="none" viewBox="0 0 24 24" style="animation:spin 1s linear infinite"><circle cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4" style="opacity:.25"/><path fill="currentColor" d="M4 12a8 8 0 018-8v8z" style="opacity:.75"/></svg>
                             Annuler l'inscription
                         </button>
                     </div>
@@ -256,12 +254,12 @@
 
             {# Non inscrit, peut s'inscrire #}
             <template x-if="!myReg && canRegister">
-                <div class="text-center py-4">
-                    <p class="text-sm text-gray-400 mb-4">Tu n'es pas encore inscrit à cette compétition.</p>
+                <div style="text-align:center;padding:16px 0;">
+                    <p style="font-size:13px;color:var(--text-2);margin:0 0 16px;">Tu n'es pas encore inscrit à cette compétition.</p>
                     <button @click="openModal()"
-                            class="inline-flex items-center gap-2 px-6 py-2.5 rounded-xl text-sm font-semibold text-white transition-colors"
-                            style="background:{{ competition.colorBg }}">
-                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/></svg>
+                            style="display:inline-flex;align-items:center;gap:8px;padding:10px 24px;border-radius:12px;font-size:13px;font-weight:600;color:#fff;border:none;cursor:pointer;transition:opacity .15s;background:{{ competition.colorBg }};"
+                            onmouseover="this.style.opacity='.85'" onmouseout="this.style.opacity='1'">
+                        <svg width="14" height="14" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/></svg>
                         S'inscrire
                     </button>
                 </div>
@@ -269,8 +267,8 @@
 
             {# Compétition passée ou pas de profil #}
             <template x-if="!myReg && !canRegister">
-                <div class="text-center py-4">
-                    <p class="text-sm text-gray-500">
+                <div style="text-align:center;padding:16px 0;">
+                    <p style="font-size:13px;color:var(--text-3);">
                         {{ competition.isPast() ? 'Cette compétition est terminée.' : 'Associez un profil athlète pour vous inscrire.' }}
                     </p>
                 </div>
@@ -279,49 +277,51 @@
     </div>
 
     {# Liste des inscrits #}
-    <div class="bg-gray-900 border border-gray-800 rounded-xl overflow-hidden">
-        <div class="px-6 py-4 border-b border-gray-800 flex items-center justify-between">
-            <h2 class="text-sm font-semibold text-white">Liste des inscrits</h2>
-            <span class="text-xs font-medium text-gray-400 bg-gray-800 px-2.5 py-1 rounded-full"
+    <div class="card" style="overflow:hidden;">
+        <div style="padding:16px 20px;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;">
+            <h2 style="font-size:13px;font-weight:600;color:var(--text-1);margin:0;">Liste des inscrits</h2>
+            <span class="badge"
                   x-text="registrations.length + ' inscrit' + (registrations.length > 1 ? 's' : '')">
                 {{ registrationsData|length }} inscrit{{ registrationsData|length > 1 ? 's' : '' }}
             </span>
         </div>
 
         <template x-if="registrations.length === 0">
-            <div class="px-6 py-12 text-center">
-                <svg class="w-10 h-10 text-gray-700 mx-auto mb-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0z"/></svg>
-                <p class="text-gray-500 text-sm">Aucune inscription pour l'instant.</p>
+            <div class="empty-state" style="padding:40px;">
+                <svg width="32" height="32" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0z"/></svg>
+                <p>Aucune inscription pour l'instant.</p>
             </div>
         </template>
 
-        <div class="divide-y divide-gray-800/60">
+        <div>
             <template x-for="reg in registrations" :key="reg.id">
-                <div class="px-6 py-4 flex items-center gap-4 transition-colors"
-                     :class="reg.isOwn ? 'bg-gray-800/20' : 'hover:bg-gray-800/10'">
+                <div style="padding:16px 20px;display:flex;align-items:center;gap:16px;border-bottom:1px solid var(--border);transition:background .15s;"
+                     :style="reg.isOwn ? 'background:rgba(var(--accent-rgb),.05)' : ''"
+                     onmouseover="if(!this._own)this.style.background='var(--bg-hover)'"
+                     onmouseout="if(!this._own)this.style.background=''">
 
                     {# Avatar #}
                     <template x-if="reg.athletePhoto">
                         <img :src="'/uploads/athletes/' + reg.athletePhoto"
-                             class="w-10 h-10 rounded-full object-cover shrink-0">
+                             style="width:40px;height:40px;border-radius:50%;object-fit:cover;flex-shrink:0;">
                     </template>
                     <template x-if="!reg.athletePhoto">
-                        <div class="w-10 h-10 rounded-full bg-gray-800 border border-gray-700 flex items-center justify-center text-sm font-bold text-gray-400 shrink-0"
+                        <div class="avatar"
+                             style="background:var(--bg-2);border:1px solid var(--border);color:var(--text-2);font-size:12px;font-weight:700;flex-shrink:0;"
                              x-text="reg.athleteName.split(' ').map(p => p[0] || '').join('').slice(0,2).toUpperCase()"></div>
                     </template>
 
                     {# Nom + disciplines #}
-                    <div class="flex-1 min-w-0">
-                        <div class="flex items-center gap-2 mb-1.5">
-                            <span class="text-sm font-semibold text-white truncate" x-text="reg.athleteName"></span>
+                    <div style="flex:1;min-width:0;">
+                        <div style="display:flex;align-items:center;gap:8px;margin-bottom:6px;">
+                            <span style="font-size:13px;font-weight:600;color:var(--text-1);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;" x-text="reg.athleteName"></span>
                             <template x-if="reg.isOwn">
-                                <span class="text-xs px-1.5 py-0.5 rounded-md font-semibold shrink-0"
-                                      style="background:{{ competition.colorBg }}20; color:{{ competition.colorBg }}">Toi</span>
+                                <span style="font-size:11px;padding:2px 6px;border-radius:6px;font-weight:600;flex-shrink:0;background:{{ competition.colorBg }}20;color:{{ competition.colorBg }};">Toi</span>
                             </template>
                         </div>
-                        <div class="flex flex-wrap gap-1.5">
+                        <div style="display:flex;flex-wrap:wrap;gap:6px;">
                             <template x-for="d in reg.disciplines" :key="d">
-                                <span class="text-xs px-2 py-0.5 rounded-md font-medium bg-gray-800 text-gray-300 border border-gray-700/50"
+                                <span style="font-size:11px;padding:2px 8px;border-radius:6px;font-weight:500;background:var(--bg-2);color:var(--text-2);border:1px solid var(--border);"
                                       x-text="disciplineLabels[d] || d"></span>
                             </template>
                         </div>
@@ -332,8 +332,11 @@
                         <button @click="unregisterAny(reg.id, reg.unregToken)"
                                 :disabled="loading"
                                 title="Retirer l'inscription"
-                                class="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium text-gray-400 border border-gray-700 hover:text-red-400 hover:border-red-800/60 hover:bg-red-900/20 transition-colors disabled:opacity-40 shrink-0">
-                            <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
+                                class="btn btn-sm"
+                                style="color:var(--text-3);border:1px solid var(--border);flex-shrink:0;transition:all .15s;"
+                                onmouseover="this.style.color='#f87171';this.style.borderColor='rgba(239,68,68,.4)';this.style.background='rgba(239,68,68,.1)'"
+                                onmouseout="this.style.color='var(--text-3)';this.style.borderColor='var(--border)';this.style.background=''">
+                            <svg width="12" height="12" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
                             Retirer
                         </button>
                     </template>
@@ -348,60 +351,60 @@
 <div x-show="modalOpen"
      x-transition:enter="transition ease-out duration-200" x-transition:enter-start="opacity-0" x-transition:enter-end="opacity-100"
      x-transition:leave="transition ease-in duration-150" x-transition:leave-end="opacity-0"
-     class="fixed inset-0 z-50 flex items-end sm:items-center justify-center p-0 sm:p-4 bg-black/65 backdrop-blur-sm"
-     @click.self="modalOpen = false" style="display:none">
+     class="modal-backdrop"
+     @click.self="modalOpen = false" style="display:none;">
 
-    <div x-transition:enter="transition ease-out duration-200" x-transition:enter-start="translate-y-4 opacity-0" x-transition:enter-end="translate-y-0 opacity-100"
-         class="bg-gray-900 border border-gray-700/80 rounded-t-2xl sm:rounded-2xl w-full sm:max-w-lg flex flex-col"
-         style="max-height:88vh" @click.stop>
+    <div class="modal" style="max-width:540px;display:flex;flex-direction:column;max-height:88vh;" @click.stop>
 
-        <div class="flex items-center justify-between px-6 py-4 border-b border-gray-800 shrink-0">
+        <div class="modal-header" style="flex-shrink:0;">
             <div>
-                <h3 class="text-base font-bold text-white">Choisir les disciplines</h3>
-                <p class="text-xs text-gray-500 mt-0.5">{{ competition.title }}</p>
+                <h3 class="modal-title">Choisir les disciplines</h3>
+                <p style="font-size:12px;color:var(--text-3);margin:3px 0 0;">{{ competition.title }}</p>
             </div>
-            <button @click="modalOpen = false"
-                    class="w-8 h-8 flex items-center justify-center rounded-lg text-gray-500 hover:text-white hover:bg-gray-800 transition-colors">
-                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
+            <button @click="modalOpen = false" class="btn btn-ghost btn-sm" style="padding:6px;">
+                <svg width="16" height="16" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
             </button>
         </div>
 
-        <div class="overflow-y-auto flex-1 px-6 py-5 space-y-5">
+        <div style="overflow-y:auto;flex:1;padding:20px;display:flex;flex-direction:column;gap:20px;">
             {% for groupName, codes in disciplineGroups %}
             <div>
-                <p class="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-2.5">{{ groupName }}</p>
-                <div class="flex flex-wrap gap-2">
+                <p style="font-size:11px;font-weight:600;color:var(--text-3);text-transform:uppercase;letter-spacing:.06em;margin:0 0 10px;">{{ groupName }}</p>
+                <div style="display:flex;flex-wrap:wrap;gap:8px;">
                     {% for code in codes %}
                     {% set label = disciplineLabels[code] ?? code %}
                     <button type="button"
                             @click="toggleDisc('{{ code }}')"
-                            class="px-3 py-1.5 rounded-lg text-sm font-medium transition-all border"
-                            :class="selected.includes('{{ code }}') ? '' : 'text-gray-400 border-gray-700 hover:border-gray-500 hover:text-gray-200'"
-                            :style="selected.includes('{{ code }}') ? 'background:{{ competition.colorBg }}25; border-color:{{ competition.colorBg }}; color:{{ competition.colorBg }}' : ''">
+                            style="padding:6px 14px;border-radius:8px;font-size:13px;font-weight:500;transition:all .15s;cursor:pointer;"
+                            :style="selected.includes('{{ code }}')
+                                ? 'background:{{ competition.colorBg }}25;border:1px solid {{ competition.colorBg }};color:{{ competition.colorBg }}'
+                                : 'background:var(--bg-2);border:1px solid var(--border);color:var(--text-2)'">
                         {{ label|capitalize }}
                     </button>
                     {% endfor %}
                 </div>
                 {% if groupName == 'Autre' %}
-                <div x-show="selected.includes('autre')" x-transition class="mt-2">
+                <div x-show="selected.includes('autre')" x-transition style="margin-top:10px;display:none;">
                     <textarea x-model="autreText" placeholder="Précise la discipline…" rows="2"
-                              class="w-full bg-gray-800 border border-gray-700 focus:border-indigo-500 rounded-lg px-3 py-2 text-sm text-white placeholder-gray-500 outline-none resize-none transition-colors"></textarea>
+                              class="form-input" style="resize:none;"></textarea>
                 </div>
                 {% endif %}
             </div>
             {% endfor %}
         </div>
 
-        <div class="px-6 py-4 border-t border-gray-800 flex items-center justify-between gap-4 shrink-0">
-            <span class="text-sm text-gray-400">
-                <span x-text="selected.length" class="font-semibold text-white"></span>
+        <div style="padding:16px 20px;border-top:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;gap:16px;flex-shrink:0;">
+            <span style="font-size:13px;color:var(--text-2);">
+                <span style="font-weight:600;color:var(--text-1);" x-text="selected.length"></span>
                 <span x-text="selected.length > 1 ? ' disciplines' : ' discipline'"></span>
             </span>
             <button @click="submitRegister()"
                     :disabled="selected.length === 0 || loading"
-                    class="flex items-center gap-2 px-6 py-2.5 rounded-xl text-sm font-bold text-white disabled:opacity-40 disabled:cursor-not-allowed transition-all"
-                    style="background:{{ competition.colorBg }}">
-                <svg x-show="loading" class="w-4 h-4 animate-spin" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"/><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8z"/></svg>
+                    style="display:flex;align-items:center;gap:8px;padding:10px 24px;border-radius:12px;font-size:13px;font-weight:700;color:#fff;border:none;cursor:pointer;transition:opacity .15s;background:{{ competition.colorBg }};"
+                    :style="(selected.length === 0 || loading) ? 'opacity:.4;cursor:not-allowed' : ''"
+                    onmouseover="if(this.style.opacity !== '0.4')this.style.filter='brightness(.9)'"
+                    onmouseout="this.style.filter=''">
+                <svg x-show="loading" width="14" height="14" fill="none" viewBox="0 0 24 24" style="animation:spin 1s linear infinite"><circle cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4" style="opacity:.25"/><path fill="currentColor" d="M4 12a8 8 0 018-8v8z" style="opacity:.75"/></svg>
                 <span x-text="myReg ? 'Mettre à jour' : 'Confirmer l\'inscription'"></span>
             </button>
         </div>
