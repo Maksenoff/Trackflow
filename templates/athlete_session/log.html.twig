@@ -8,75 +8,152 @@
 {% endblock %}
 
 {% block body %}
+<style>
+@property --dp {
+    syntax: '<percentage>';
+    inherits: false;
+    initial-value: 50%;
+}
+.diff-range {
+    -webkit-appearance: none;
+    appearance: none;
+    width: 100%;
+    height: 8px;
+    border-radius: 99px;
+    outline: none;
+    cursor: pointer;
+    border: none;
+    background: linear-gradient(90deg, var(--diff-c, #fbbf24) var(--dp), var(--border-strong) var(--dp));
+    transition: --dp .18s ease-out;
+}
+.diff-range::-webkit-slider-thumb {
+    -webkit-appearance: none;
+    width: 24px;
+    height: 24px;
+    border-radius: 50%;
+    background: var(--bg-card-solid);
+    border: 3px solid var(--diff-c, #6366f1);
+    cursor: grab;
+    box-shadow: 0 0 0 5px var(--diff-a, rgba(99,102,241,.15)), 0 2px 8px rgba(0,0,0,.3);
+    transition: box-shadow .2s, border-color .25s, transform .15s;
+}
+.diff-range::-webkit-slider-thumb:hover {
+    box-shadow: 0 0 0 8px var(--diff-a, rgba(99,102,241,.2)), 0 2px 8px rgba(0,0,0,.3);
+}
+.diff-range::-webkit-slider-thumb:active {
+    cursor: grabbing;
+    transform: scale(1.12);
+    box-shadow: 0 0 0 10px var(--diff-a, rgba(99,102,241,.25)), 0 2px 8px rgba(0,0,0,.3);
+}
+.diff-range::-moz-range-thumb {
+    width: 22px;
+    height: 22px;
+    border-radius: 50%;
+    background: var(--bg-card-solid);
+    border: 3px solid var(--diff-c, #6366f1);
+    cursor: grab;
+    box-shadow: 0 0 0 5px var(--diff-a, rgba(99,102,241,.15));
+}
+.diff-range::-moz-range-track { height: 8px; border-radius: 99px; }
+.diff-submit {
+    width: 100%;
+    padding: 15px;
+    border: none;
+    border-radius: 14px;
+    color: #fff;
+    font-weight: 700;
+    font-size: 15px;
+    letter-spacing: .01em;
+    cursor: pointer;
+    transition: transform .15s ease-out, box-shadow .2s, filter .15s, background .3s;
+}
+.diff-submit:hover  { transform: translateY(-2px); filter: brightness(1.1); }
+.diff-submit:active { transform: translateY(0) scale(.98); filter: brightness(.92); }
+</style>
+
 <div style="max-width:640px;margin:0 auto;display:flex;flex-direction:column;gap:20px;">
 
     {# Session info card #}
     <div class="card" style="overflow:hidden;">
         <div style="height:3px;background:{{ session.colorBg }};"></div>
         <div class="card-body">
-            <div style="display:flex;align-items:flex-start;justify-content:space-between;gap:16px;">
-                <div>
-                    <h2 style="font-size:17px;font-weight:700;color:var(--text-1);margin:0 0 10px;">{{ session.title }}</h2>
-                    <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap;">
-                        <span style="font-size:11px;font-weight:600;padding:3px 10px;border-radius:99px;
-                                     background:{{ session.colorBg }}22;color:{{ session.colorBg }};">
-                            {{ session.typeLabel }}
-                        </span>
-                        <span style="font-size:13px;color:var(--text-2);">{{ session.date|date('d/m/Y') }}</span>
-                        {% if session.durationMinutes %}
-                            <span style="font-size:13px;color:var(--text-2);">{{ session.durationMinutes }} min</span>
-                        {% endif %}
-                    </div>
-                    {% if session.description %}
-                        <p style="font-size:13px;color:var(--text-2);margin:12px 0 0;line-height:1.6;">{{ session.description }}</p>
-                    {% endif %}
-                </div>
+            <h2 style="font-size:17px;font-weight:700;color:var(--text-1);margin:0 0 10px;">{{ session.title }}</h2>
+            <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap;">
+                <span style="font-size:11px;font-weight:600;padding:3px 10px;border-radius:99px;background:{{ session.colorBg }}22;color:{{ session.colorBg }};">
+                    {{ session.typeLabel }}
+                </span>
+                <span style="font-size:13px;color:var(--text-2);">{{ session.date|date('d/m/Y') }}</span>
+                {% if session.durationMinutes %}
+                    <span style="font-size:13px;color:var(--text-2);">{{ session.durationMinutes }} min</span>
+                {% endif %}
             </div>
+            {% if session.description %}
+                <p style="font-size:13px;color:var(--text-2);margin:12px 0 0;line-height:1.6;">{{ session.description }}</p>
+            {% endif %}
         </div>
     </div>
 
-    {# Feedback form #}
-    <div class="card card-body">
-        <h3 style="font-weight:600;color:var(--text-1);margin:0 0 20px;font-size:15px;">Ton ressenti pour {{ athlete.firstName }}</h3>
+    {# Feedback form — Alpine scope couvre toute la card pour le bouton #}
+    <div class="card" style="overflow:hidden;"
+         x-data="{
+             val: 5,
+             c:  ['#6366f1','#34d399','#34d399','#a3e635','#a3e635','#fbbf24','#fbbf24','#fb923c','#fb923c','#f87171','#f87171'],
+             ca: ['rgba(99,102,241,.15)','rgba(52,211,153,.15)','rgba(52,211,153,.15)','rgba(163,230,53,.15)','rgba(163,230,53,.15)','rgba(251,191,36,.15)','rgba(251,191,36,.15)','rgba(251,146,60,.15)','rgba(251,146,60,.15)','rgba(248,113,113,.15)','rgba(248,113,113,.15)'],
+             l:  ['Repos','Très facile','Très facile','Facile','Facile','Modéré','Modéré','Difficile','Difficile','Épuisant','Maximum'],
+             get color() { return this.c[this.val]; },
+             get alpha() { return this.ca[this.val]; },
+             get pct()   { return this.val * 10; }
+         }"
+         :style="'--diff-c:'+color+';--diff-a:'+alpha">
 
-        {{ form_start(form, {attr: {style: 'display:flex;flex-direction:column;gap:20px;'}}) }}
+        {# Barre de couleur dynamique selon la difficulté #}
+        <div style="height:3px;transition:background .3s;" :style="'background:'+color"></div>
 
-        {# Difficulty slider #}
-        <div x-data="{ val: 5 }">
-            <p class="form-label">
-                Difficulté ressentie — <span style="color:var(--accent);font-weight:700;" x-text="val + '/10'"></span>
-            </p>
-            <div style="display:flex;align-items:center;gap:16px;margin-top:10px;">
-                <input type="range" min="0" max="10" step="1" x-model="val"
-                       name="{{ form.difficulty.vars.full_name }}"
-                       id="{{ form.difficulty.vars.id }}"
-                       style="flex:1;height:6px;border-radius:99px;cursor:pointer;accent-color:var(--accent);">
-                <div style="display:flex;gap:3px;flex-shrink:0;">
-                    <template x-for="i in 11" :key="i-1">
-                        <div style="width:20px;height:20px;border-radius:6px;display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:700;transition:background .15s,color .15s;"
-                             :style="(i-1) <= val ? 'background:var(--accent);color:#fff;' : 'background:var(--bg-2);color:var(--text-3);'"
-                             x-text="i-1"></div>
-                    </template>
+        <div class="card-body" style="display:flex;flex-direction:column;gap:24px;">
+            <h3 style="font-weight:600;color:var(--text-1);margin:0;font-size:15px;">Ton ressenti pour {{ athlete.firstName }}</h3>
+
+            {{ form_start(form, {attr: {style: 'display:contents;'}}) }}
+
+            {# Difficulty range slider #}
+            <div>
+                <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:20px;">
+                    <p class="form-label" style="margin:0;">Difficulté ressentie</p>
+                    <div style="display:flex;align-items:center;gap:8px;">
+                        <span style="font-size:13px;font-weight:600;transition:color .25s;" :style="'color:'+color" x-text="l[val]"></span>
+                        <div style="display:flex;align-items:baseline;gap:2px;">
+                            <span style="font-size:38px;font-weight:800;font-family:monospace;line-height:1;transition:color .25s;" :style="'color:'+color" x-text="val"></span>
+                            <span style="font-size:15px;color:var(--text-3);font-weight:500;">/10</span>
+                        </div>
+                    </div>
                 </div>
+                <input type="range" min="0" max="10" step="1" x-model="val"
+                       class="diff-range"
+                       :style="'--dp:'+pct+'%'"
+                       name="{{ form.difficulty.vars.full_name }}"
+                       id="{{ form.difficulty.vars.id }}">
+                <div style="display:flex;justify-content:space-between;font-size:11px;color:var(--text-3);margin-top:8px;padding:0 2px;">
+                    <span>Repos</span><span>Modéré</span><span>Maximum</span>
+                </div>
+                {% do form.difficulty.setRendered() %}
             </div>
-            <div style="display:flex;justify-content:space-between;font-size:11px;color:var(--text-3);margin-top:6px;">
-                <span>Très facile</span>
-                <span>Modéré</span>
-                <span>Maximal</span>
+
+            {{ form_row(form.comment) }}
+
+            {# Submit button coloré selon la difficulté #}
+            <div>
+                <button type="submit" class="diff-submit"
+                        :style="'background:'+color+';box-shadow:0 4px 20px '+alpha">
+                    Enregistrer mon ressenti
+                </button>
+                <a href="{{ path('app_athlete_show', {id: athlete.id}) }}"
+                   style="display:block;text-align:center;font-size:12px;color:var(--text-3);text-decoration:none;margin-top:10px;transition:color .15s;"
+                   onmouseover="this.style.color='var(--text-2)'" onmouseout="this.style.color='var(--text-3)'">
+                    Annuler
+                </a>
             </div>
-            {% do form.difficulty.setRendered() %}
-        </div>
 
-        {{ form_row(form.comment) }}
-
-        <div style="display:flex;gap:12px;padding-top:4px;">
-            <button type="submit" class="btn btn-primary">
-                <svg width="14" height="14" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/></svg>
-                Enregistrer mon ressenti
-            </button>
-            <a href="{{ path('app_athlete_show', {id: athlete.id}) }}" class="btn btn-secondary">Annuler</a>
+            {{ form_end(form) }}
         </div>
-        {{ form_end(form) }}
     </div>
 </div>
 {% endblock %}

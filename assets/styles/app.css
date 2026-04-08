@@ -7,22 +7,56 @@
 
 @layer components {
     .form-input {
-        @apply w-full bg-gray-800 border border-gray-700 text-white rounded-lg px-3 py-2.5 text-sm
-               focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent
-               placeholder:text-gray-500 transition-colors;
+        width: 100%;
+        background: var(--bg);
+        border: 1px solid var(--border-strong);
+        color: var(--text-1);
+        border-radius: var(--radius-sm, 8px);
+        padding: 10px 14px;
+        font-size: 14px;
+        outline: none;
+        transition: border-color .15s, box-shadow .15s, background .2s, color .2s;
     }
+    .form-input:focus {
+        border-color: var(--accent);
+        box-shadow: 0 0 0 3px var(--accent-subtle);
+    }
+    .form-input::placeholder { color: var(--text-3); }
 
     .form-select {
-        @apply w-full bg-gray-800 border border-gray-700 text-white rounded-lg px-3 py-2.5 text-sm
-               focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent
-               transition-colors;
+        width: 100%;
+        background: var(--bg);
+        border: 1px solid var(--border-strong);
+        color: var(--text-1);
+        border-radius: var(--radius-sm, 8px);
+        padding: 10px 14px;
+        font-size: 14px;
+        outline: none;
+        cursor: pointer;
+        transition: border-color .15s, box-shadow .15s, background .2s, color .2s;
+    }
+    .form-select:focus {
+        border-color: var(--accent);
+        box-shadow: 0 0 0 3px var(--accent-subtle);
     }
 
     .form-textarea {
-        @apply w-full bg-gray-800 border border-gray-700 text-white rounded-lg px-3 py-2.5 text-sm
-               focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent
-               placeholder:text-gray-500 resize-none transition-colors;
+        width: 100%;
+        background: var(--bg);
+        border: 1px solid var(--border-strong);
+        color: var(--text-1);
+        border-radius: var(--radius-sm, 8px);
+        padding: 10px 14px;
+        font-size: 14px;
+        outline: none;
+        resize: vertical;
+        transition: border-color .15s, box-shadow .15s, background .2s, color .2s;
     }
+    .form-textarea:focus {
+        border-color: var(--accent);
+        box-shadow: 0 0 0 3px var(--accent-subtle);
+    }
+    .form-textarea::placeholder { color: var(--text-3); }
 
     .form-checkbox {
         @apply w-4 h-4 rounded focus:ring-indigo-500 focus:ring-2 accent-indigo-600;

@@ -126,22 +126,29 @@
             {% endfor %}
             {% if countDiff > 0 %}
                 {% set avgDiff = (totalDiff / countDiff)|round(1) %}
-                <div class="card card-body" style="display:flex;align-items:center;gap:20px;">
-                    <div style="flex-shrink:0;">
-                        <p style="font-size:10px;color:var(--text-3);text-transform:uppercase;letter-spacing:.06em;margin:0 0 6px;">Difficulté moyenne</p>
-                        <p style="font-size:28px;font-weight:700;font-family:monospace;margin:0;line-height:1;
-                                  color:{% if avgDiff <= 3 %}#34d399{% elseif avgDiff <= 6 %}#fbbf24{% else %}#f87171{% endif %};">
-                            {{ avgDiff }}<span style="font-size:13px;font-weight:400;color:var(--text-3);">/10</span>
-                        </p>
-                    </div>
-                    <div style="flex:1;">
-                        <div style="display:flex;gap:3px;margin-bottom:6px;">
-                            {% for i in 0..10 %}
-                                <div style="flex:1;height:6px;border-radius:99px;
-                                            background:{% if i <= avgDiff %}{% if avgDiff <= 3 %}#34d399{% elseif avgDiff <= 6 %}#fbbf24{% else %}#f87171{% endif %}{% else %}var(--border-2){% endif %};"></div>
-                            {% endfor %}
+                {% set avgColor = avgDiff <= 2 ? '#34d399' : (avgDiff <= 4 ? '#a3e635' : (avgDiff <= 6 ? '#fbbf24' : (avgDiff <= 8 ? '#fb923c' : '#f87171'))) %}
+                {% set avgLabel = avgDiff <= 2 ? 'Très facile' : (avgDiff <= 4 ? 'Facile' : (avgDiff <= 6 ? 'Modéré' : (avgDiff <= 8 ? 'Difficile' : 'Maximum'))) %}
+                <div class="card" style="overflow:hidden;border-color:{{ avgColor }}33;">
+                    <div style="height:2px;background:linear-gradient(90deg,{{ avgColor }},{{ avgColor }}00);"></div>
+                    <div class="card-body" style="display:flex;align-items:center;gap:24px;">
+                        <div style="flex-shrink:0;text-align:center;">
+                            <p style="font-size:10px;color:var(--text-3);text-transform:uppercase;letter-spacing:.08em;margin:0 0 4px;font-weight:600;">RPE moyen</p>
+                            <p style="font-size:40px;font-weight:800;font-family:monospace;margin:0;line-height:1;color:{{ avgColor }};">
+                                {{ avgDiff }}<span style="font-size:16px;font-weight:400;color:var(--text-3);">/10</span>
+                            </p>
+                            <p style="font-size:12px;font-weight:600;margin:4px 0 0;color:{{ avgColor }};">{{ avgLabel }}</p>
                         </div>
-                        <p style="font-size:12px;color:var(--text-3);margin:0;">{{ countDiff }} retour{% if countDiff > 1 %}s{% endif %}</p>
+                        <div style="flex:1;">
+                            <div style="display:flex;gap:4px;margin-bottom:8px;">
+                                {% for i in 1..10 %}
+                                    <div style="flex:1;height:8px;border-radius:4px;transition:background .2s;
+                                                background:{% if i <= avgDiff %}{{ avgColor }}{% else %}var(--border-2){% endif %};"></div>
+                                {% endfor %}
+                            </div>
+                            <p style="font-size:12px;color:var(--text-3);margin:0;">
+                                {{ countDiff }} retour{% if countDiff > 1 %}s{% endif %} sur {{ session.athleteSessions|length }} athlète{% if session.athleteSessions|length > 1 %}s{% endif %}
+                            </p>
+                        </div>
                     </div>
                 </div>
             {% endif %}
@@ -168,11 +175,17 @@
                                 </div>
                             </div>
                             {% if asl.difficulty is not null %}
+                                {% set d = asl.difficulty %}
+                                {% set dColor = d <= 2 ? '#34d399' : (d <= 4 ? '#a3e635' : (d <= 6 ? '#fbbf24' : (d <= 8 ? '#fb923c' : '#f87171'))) %}
                                 <div style="text-align:right;flex-shrink:0;">
-                                    <p style="font-size:22px;font-weight:700;font-family:monospace;margin:0;line-height:1;
-                                              color:{% if asl.difficulty <= 3 %}#34d399{% elseif asl.difficulty <= 6 %}#fbbf24{% else %}#f87171{% endif %};">
-                                        {{ asl.difficulty }}<span style="font-size:11px;font-weight:400;color:var(--text-3);">/10</span>
+                                    <p style="font-size:26px;font-weight:800;font-family:monospace;margin:0;line-height:1;color:{{ dColor }};">
+                                        {{ d }}<span style="font-size:11px;font-weight:400;color:var(--text-3);">/10</span>
                                     </p>
+                                    <div style="display:flex;gap:2px;margin-top:6px;justify-content:flex-end;">
+                                        {% for j in 1..10 %}
+                                            <div style="width:12px;height:4px;border-radius:2px;background:{{ j <= d ? dColor : 'var(--border-2)' }};"></div>
+                                        {% endfor %}
+                                    </div>
                                 </div>
                             {% endif %}
                         </div>
