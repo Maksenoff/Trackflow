@@ -35,3 +35,6 @@ La base de données SQLite (`var/data_dev.db`) est incluse dans le repo — aucu
 - `.env` est déjà configuré pour SQLite en mode `dev`
 - Les uploads (photos athlètes, vidéos) sont dans `public/uploads/` — également inclus
 - Pour relancer Tailwind en watch : `npm run watch` dans un terminal séparé
+
+
+<!-- Trigger CI deploy -->
