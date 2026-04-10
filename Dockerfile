@@ -16,30 +16,35 @@ COPY --from=composer:2 /usr/bin/composer /usr/bin/composer
 # Copy application files
 COPY . .
 
-# Install PHP dependencies (no-scripts to skip cache:clear which needs real DB)
+# Install PHP dependencies (no scripts pour éviter accès DB)
 RUN composer install --no-dev --optimize-autoloader --no-scripts --no-interaction
 
-# Install importmap vendor assets (Alpine.js, etc.)
-RUN APP_ENV=prod APP_SECRET=buildsecret DATABASE_URL="postgresql://u:p@localhost/db?serverVersion=16" php bin/console importmap:install
+# 👉 FAKE DATABASE_URL pour le build uniquement
+ENV APP_ENV=prod
+ENV APP_SECRET=buildsecret
+ENV DATABASE_URL="postgresql://dummy:dummy@127.0.0.1:5432/dummy?serverVersion=16"
+
+# Install importmap assets
+RUN php bin/console importmap:install
 
 # Install Node dependencies
 RUN npm ci
 
-# Pre-download Tailwind CSS binary for linux/amd64 (used by symfonycasts/tailwind-bundle)
+# Pre-download Tailwind CSS
 RUN mkdir -p var/tailwind \
  && curl -sLo var/tailwind/tailwindcss https://github.com/tailwindlabs/tailwindcss/releases/latest/download/tailwindcss-linux-x64 \
  && chmod +x var/tailwind/tailwindcss
 
-# Build Tailwind CSS - serverVersion=16 avoids Doctrine DB connection attempt
-RUN APP_ENV=prod APP_SECRET=buildsecret DATABASE_URL="postgresql://u:p@localhost/db?serverVersion=16" php bin/console tailwind:build --minify
+# Build Tailwind CSS
+RUN php bin/console tailwind:build --minify
 
 # Compile asset map
-RUN APP_ENV=prod APP_SECRET=buildsecret DATABASE_URL="postgresql://u:p@localhost/db?serverVersion=16" php bin/console asset-map:compile 2>/dev/null || true
+RUN php bin/console asset-map:compile 2>/dev/null || true
 
-# Ensure var directory exists with correct permissions
+# Permissions
 RUN mkdir -p var/cache var/log && chmod -R 777 var
 
-# Entrypoint : migrate puis démarrer FrankenPHP
+# Entrypoint
 COPY docker-entrypoint.sh /usr/local/bin/docker-entrypoint.sh
 RUN chmod +x /usr/local/bin/docker-entrypoint.sh
 
