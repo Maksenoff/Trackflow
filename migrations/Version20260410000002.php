@@ -47,7 +47,7 @@ final class Version20260410000002 extends AbstractMigration
             $this->addSql('ALTER INDEX IF EXISTS IDX_USER_ATHLETE RENAME TO IDX_APP_USER_ATHLETE');
         } else {
             // Table doesn't exist at all - create it fresh
-            $this->addSql(\'CREATE TABLE app_user (
+            $this->addSql('CREATE TABLE app_user (
                 id SERIAL PRIMARY KEY,
                 email VARCHAR(180) NOT NULL,
                 first_name VARCHAR(100) NOT NULL,
