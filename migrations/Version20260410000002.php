@@ -55,9 +55,9 @@ final class Version20260410000002 extends AbstractMigration
                 roles JSON NOT NULL,
                 password TEXT NOT NULL,
                 linked_athlete_id INT REFERENCES athlete(id) ON DELETE SET NULL
-            )\');
-            $this->addSql(\'CREATE UNIQUE INDEX UNIQ_APP_USER_EMAIL ON app_user (email)\');
-            $this->addSql(\'CREATE INDEX IDX_APP_USER_ATHLETE ON app_user (linked_athlete_id)\');
+            )');
+            $this->addSql('CREATE UNIQUE INDEX UNIQ_APP_USER_EMAIL ON app_user (email)');
+            $this->addSql('CREATE INDEX IDX_APP_USER_ATHLETE ON app_user (linked_athlete_id)');
         }
     }
 
