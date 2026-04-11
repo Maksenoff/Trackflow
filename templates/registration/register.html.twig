@@ -263,24 +263,27 @@
     </div>
 
     <script>
-    const TF_Login = {
-        toggleTheme() {
-            const html = document.documentElement;
-            const isDark = html.getAttribute('data-theme') === 'dark';
-            const next = isDark ? 'light' : 'dark';
-            html.setAttribute('data-theme', next);
-            localStorage.setItem('tf-theme', next);
-            document.getElementById('ltt-sun').style.display = isDark ? 'block' : 'none';
-            document.getElementById('ltt-moon').style.display = isDark ? 'none' : 'block';
-        },
-        init() {
-            const saved = localStorage.getItem('tf-theme') || 'dark';
-            document.documentElement.setAttribute('data-theme', saved);
-            document.getElementById('ltt-sun').style.display = saved === 'light' ? 'block' : 'none';
-            document.getElementById('ltt-moon').style.display = saved === 'dark' ? 'block' : 'none';
-        }
-    };
-    TF_Login.init();
+    <script>
+window.TF_Login = window.TF_Login || {
+    toggleTheme() {
+        const html = document.documentElement;
+        const isDark = html.getAttribute('data-theme') === 'dark';
+        const next = isDark ? 'light' : 'dark';
+        html.setAttribute('data-theme', next);
+        localStorage.setItem('tf-theme', next);
+        document.getElementById('ltt-sun').style.display = isDark ? 'block' : 'none';
+        document.getElementById('ltt-moon').style.display = isDark ? 'none' : 'block';
+    },
+    init() {
+        const saved = localStorage.getItem('tf-theme') || 'dark';
+        document.documentElement.setAttribute('data-theme', saved);
+        document.getElementById('ltt-sun').style.display = saved === 'light' ? 'block' : 'none';
+        document.getElementById('ltt-moon').style.display = saved === 'dark' ? 'block' : 'none';
+    }
+};
+
+window.TF_Login.init();
+</script>
     </script>
 
 </body>
