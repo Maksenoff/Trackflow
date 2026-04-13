@@ -2,7 +2,10 @@ FROM dunglas/frankenphp
 
 WORKDIR /app
 
-# Install PHP extensions
+# Install PHP extensions (hors postgres)
+RUN install-php-extensions opcache intl zip
+
+# Install PostgreSQL driver (FIABLE)
 RUN apt-get update \
  && apt-get install -y libpq-dev \
  && docker-php-ext-install pdo_pgsql pgsql \
