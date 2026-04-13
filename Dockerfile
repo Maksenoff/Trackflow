@@ -3,7 +3,7 @@ FROM dunglas/frankenphp
 WORKDIR /app
 
 # Install PHP extensions
-RUN install-php-extensions pdo_pgsql opcache intl zip
+RUN install-php-extensions pdo_pgsql pgsql opcache intl zip
 
 # Install Node.js
 RUN curl -fsSL https://deb.nodesource.com/setup_22.x | bash - \
