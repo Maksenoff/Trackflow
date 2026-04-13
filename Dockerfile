@@ -45,6 +45,12 @@ RUN mkdir -p var/tailwind \
 RUN php bin/console tailwind:build --minify
 RUN php bin/console asset-map:compile 2>/dev/null || true
 
+
+#Temp
+RUN php -m | sort
+RUN php --ri pdo_pgsql || true
+
+
 # Permissions
 RUN mkdir -p var/cache var/log && chmod -R 777 var
 
