@@ -33,7 +33,7 @@ ENV DATABASE_URL="postgresql://dummy:dummy@127.0.0.1:5432/dummy?serverVersion=16
 # Install Symfony assets
 RUN php bin/console importmap:install
 
-RUN docker-php-ext-install pdo pdo_mysql
+RUN docker-php-ext-install pdo pdo_pgsql
 
 # Install Node dependencies
 RUN npm ci
