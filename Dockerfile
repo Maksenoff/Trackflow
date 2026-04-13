@@ -2,15 +2,12 @@ FROM dunglas/frankenphp
 
 WORKDIR /app
 
-# Install PHP extensions (hors postgres)
-RUN install-php-extensions opcache intl zip
-
-# Install PostgreSQL driver (FIABLE)
-RUN apt-get update \
- && apt-get install -y libpq-dev \
- && docker-php-ext-install pdo_pgsql pgsql \
- && docker-php-ext-enable pdo_pgsql pgsql \
- && rm -rf /var/lib/apt/lists/*
+RUN install-php-extensions \
+    pdo_pgsql \
+    pgsql \
+    opcache \
+    intl \
+    zip
 
 # Install Node.js
 RUN curl -fsSL https://deb.nodesource.com/setup_22.x | bash - \
