@@ -2,8 +2,13 @@ FROM dunglas/frankenphp
 
 WORKDIR /app
 
-RUN apt-get update && apt-get install -y libpq-dev \
- && install-php-extensions pdo_pgsql pgsql \
+RUN apt-get update && apt-get install -y \
+    git unzip libpq-dev \
+ && install-php-extensions \
+    pdo_pgsql \
+    pgsql \
+    intl \
+    zip \
  && php -m | grep pgsql
 
 # Install Node.js
