@@ -53,5 +53,3 @@ EXPOSE 8080
 ENV SERVER_NAME=:8080
 
 ENTRYPOINT ["docker-entrypoint.sh"]
-
-ENTRYPOINT ["docker-entrypoint.sh"]
