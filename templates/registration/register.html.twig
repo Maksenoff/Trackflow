@@ -206,7 +206,7 @@
                 <div class="form-field" x-data="{ show1: false }">
                     <label for="{{ form.plainPassword.first.vars.id }}">Mot de passe</label>
                     <div class="pw-wrap">
-                        <input :type="show1 ? 'text' : 'password'" class="pw-input"
+                        <input type="password" :type="show1 ? 'text' : 'password'" class="pw-input"
                                name="{{ form.plainPassword.first.vars.full_name }}"
                                id="{{ form.plainPassword.first.vars.id }}"
                                placeholder="Min. 8 caractères"
@@ -229,7 +229,7 @@
                 <div class="form-field" x-data="{ show2: false }">
                     <label for="{{ form.plainPassword.second.vars.id }}">Confirmer le mot de passe</label>
                     <div class="pw-wrap">
-                        <input :type="show2 ? 'text' : 'password'" class="pw-input"
+                        <input type="password" :type="show2 ? 'text' : 'password'" class="pw-input"
                                name="{{ form.plainPassword.second.vars.full_name }}"
                                id="{{ form.plainPassword.second.vars.id }}"
                                placeholder="Répétez le mot de passe"
