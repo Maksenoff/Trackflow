@@ -6,5 +6,9 @@
 :8080 {
 	root * /app/public
 	encode zstd br gzip
+
+	# Azure App Service health check - must return 200 or container restarts
+	respond /robots933456.txt 200
+
 	php_server
 }
