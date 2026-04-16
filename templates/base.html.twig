@@ -1474,13 +1474,80 @@ const TF = {
             link.addEventListener('click', () => TF.closeSidebar());
         });
         document.getElementById('tf-overlay')?.addEventListener('click', () => TF.closeSidebar());
-    }
+    },
+
+    /* ── Swipe to dismiss ──────────────────────────────────────────────
+       Ajoute le glissement tactile sur un élément panneau.
+       direction : 'down' (tiroir bas→haut), 'left' (sidebar gauche)
+       closeFn   : fonction appelée quand le seuil est atteint
+    ──────────────────────────────────────────────────────────────────── */
+    swipeDismiss(el, direction, closeFn) {
+        let t0x, t0y, dragging = false;
+        const isVertical = direction === 'down';
+
+        el.addEventListener('touchstart', e => {
+            // Ne pas démarrer si l'élément n'est pas visible/ouvert
+            if (!el.classList.contains('open')) return;
+            t0x = e.touches[0].clientX;
+            t0y = e.touches[0].clientY;
+            dragging = false;
+            el.style.transition = 'none';
+        }, { passive: true });
+
+        el.addEventListener('touchmove', e => {
+            if (!el.classList.contains('open')) return;
+            const dx = e.touches[0].clientX - t0x;
+            const dy = e.touches[0].clientY - t0y;
+            const primary   = isVertical ? dy : dx;
+            const secondary = isVertical ? dx : dy;
+
+            // Confirmer la direction dominante
+            if (!dragging && Math.abs(primary) > 8) {
+                dragging = Math.abs(primary) > Math.abs(secondary);
+            }
+            if (!dragging) return;
+
+            // N'appliquer que dans le sens du dismiss (bas ou gauche)
+            const delta = isVertical ? Math.max(0, dy) : Math.min(0, dx);
+            if (delta === 0) return;
+            el.style.transform = isVertical
+                ? `translateY(${delta}px)`
+                : `translateX(${delta}px)`;
+        }, { passive: true });
+
+        el.addEventListener('touchend', e => {
+            if (!dragging) { el.style.transition = ''; return; }
+            const dx = e.changedTouches[0].clientX - t0x;
+            const dy = e.changedTouches[0].clientY - t0y;
+            const delta = isVertical ? dy : -dx; // positif = vers dismiss
+
+            // Restaurer la transition CSS avant toute modification
+            el.style.transition = '';
+            el.style.transform  = '';
+
+            if (delta > 80) {
+                closeFn();
+            }
+            dragging = false;
+        }, { passive: true });
+    },
+
+    initSwipeGestures() {
+        // Tiroir profil : glisser vers le bas pour fermer
+        const drawer = document.getElementById('tf-profile-drawer');
+        if (drawer) this.swipeDismiss(drawer, 'down', () => this.closeProfileDrawer());
+
+        // Sidebar mobile : glisser vers la gauche pour fermer
+        const sidebar = document.getElementById('tf-sidebar');
+        if (sidebar) this.swipeDismiss(sidebar, 'left', () => this.closeSidebar());
+    },
 };
 
 // Setup unique (listeners enregistrés une seule fois)
 document.addEventListener('DOMContentLoaded', () => {
     TF.initTheme();
     TF.initTransitions();
+    TF.initSwipeGestures();
 });
 
 // Init par page — premier chargement ET chaque navigation Turbo
