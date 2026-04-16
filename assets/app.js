@@ -65,14 +65,17 @@ function initCharts() {
     });
 }
 
-// Détruire les charts avant que Turbo mette la page en cache
-// pour éviter les erreurs "canvas already in use" lors de la restauration
+// Avant que Turbo snapshoppe la page : réinitialiser l'état UI
 document.addEventListener('turbo:before-cache', () => {
+    // Fermer le dropdown profil pour éviter qu'il flash ouvert sur le retour arrière
+    document.querySelectorAll('.tf-dropdown').forEach(el => el.classList.add('hidden'));
+
+    // Détruire les charts pour éviter "canvas already in use"
     document.querySelectorAll('.performance-chart').forEach(canvas => {
         const chart = Chart.getChart(canvas);
         if (chart) chart.destroy();
     });
 });
 
-// Initialiser les charts à chaque navigation Turbo (remplace DOMContentLoaded)
+// Initialiser les charts à chaque navigation Turbo
 document.addEventListener('turbo:load', initCharts);

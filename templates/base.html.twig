@@ -86,6 +86,9 @@
         transition: background var(--transition), color var(--transition);
     }
 
+    /* Alpine: masquer les éléments jusqu'à l'init */
+    [x-cloak] { display: none !important; }
+
     /* ── Page transition — top progress bar ── */
     #tf-transition {
         position: fixed;
@@ -1105,7 +1108,7 @@
                 </svg>
             </button>
 
-            <div class="tf-dropdown" :class="open ? '' : 'hidden'" style="display:block;">
+            <div class="tf-dropdown" x-cloak :class="open ? '' : 'hidden'" style="display:block;">
                 <div class="tf-dropdown-header">
                     <p>{{ app.user.email }}</p>
                 </div>
@@ -1247,39 +1250,27 @@ const TF = {
         const bar     = document.getElementById('tf-transition');
         const content = document.getElementById('tf-content');
 
-        // Entry: complete the bar then fade it out
+        // Première entrée : compléter la barre
         requestAnimationFrame(() => {
             bar.classList.add('complete');
         });
 
-        // Intercept internal link clicks
-        document.addEventListener('click', (e) => {
-            const link = e.target.closest('a[href]');
-            if (!link) return;
-            const href = link.getAttribute('href');
-            if (!href || href.startsWith('#') || href.startsWith('mailto:') || href.startsWith('tel:')) return;
-            if (link.hasAttribute('data-no-transition')) return;
-            if (link.target === '_blank') return;
-            try {
-                const url = new URL(href, window.location.origin);
-                if (url.origin !== window.location.origin) return;
-            } catch { return; }
-
-            e.preventDefault();
-
-            // Reset & start progress bar
+        // Avant chaque navigation Turbo : lancer la barre + fade-out
+        document.addEventListener('turbo:before-visit', () => {
             bar.style.transition = 'none';
-            bar.className = '';
-            bar.style.transform = 'scaleX(0)';
-            bar.style.opacity = '1';
+            bar.className        = '';
+            bar.style.transform  = 'scaleX(0)';
+            bar.style.opacity    = '1';
             void bar.offsetWidth;
             bar.style.transition = '';
             bar.classList.add('loading');
-
-            // Fade out content
             if (content) content.classList.add('exiting');
+        });
 
-            setTimeout(() => { window.location.href = href; }, 290);
+        // Après chaque navigation Turbo : compléter la barre + fade-in
+        document.addEventListener('turbo:load', () => {
+            bar.classList.add('complete');
+            if (content) content.classList.remove('exiting');
         });
     },
 
@@ -1347,10 +1338,14 @@ const TF = {
     }
 };
 
-// Init
+// Setup unique (listeners enregistrés une seule fois)
 document.addEventListener('DOMContentLoaded', () => {
     TF.initTheme();
     TF.initTransitions();
+});
+
+// Init par page — premier chargement ET chaque navigation Turbo
+document.addEventListener('turbo:load', () => {
     TF.initStagger();
     TF.initCountUp();
     TF.initProgressBars();
