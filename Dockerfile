@@ -41,8 +41,7 @@ RUN mkdir -p var/tailwind \
 RUN php bin/console tailwind:build --minify
 RUN php bin/console asset-map:compile
 
-RUN php bin/console importmap:install --no-interaction
-RUN php bin/console asset-map:compile || true
+
 
 # Permissions
 RUN mkdir -p var/cache var/log && chmod -R 777 var
