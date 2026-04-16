@@ -32,6 +32,12 @@ ENV DATABASE_URL="postgresql://dummy:dummy@127.0.0.1:5432/dummy?serverVersion=16
 # Install PHP dependencies
 RUN composer install --no-dev --optimize-autoloader --no-scripts --no-interaction
 
+
+RUN php bin/console importmap:install --no-interaction
+RUN php bin/console asset-map:compile || true
+
+
+
 # Assets & Tailwind
 RUN php bin/console importmap:install
 RUN npm ci
