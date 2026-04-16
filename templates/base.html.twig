@@ -1247,16 +1247,17 @@ const TF = {
 
     /* ── Page transitions ── */
     initTransitions() {
-        const bar     = document.getElementById('tf-transition');
-        const content = document.getElementById('tf-content');
-
-        // Première entrée : compléter la barre
-        requestAnimationFrame(() => {
-            bar.classList.add('complete');
-        });
+        // Première entrée : compléter la barre si elle existe
+        const barInit = document.getElementById('tf-transition');
+        if (barInit) requestAnimationFrame(() => barInit.classList.add('complete'));
 
         // Avant chaque navigation Turbo : lancer la barre + fade-out
+        // On re-requête les éléments à chaque fois (la page source peut être
+        // une page standalone sans #tf-transition, ex. la page login)
         document.addEventListener('turbo:before-visit', () => {
+            const bar     = document.getElementById('tf-transition');
+            const content = document.getElementById('tf-content');
+            if (!bar) return;
             bar.style.transition = 'none';
             bar.className        = '';
             bar.style.transform  = 'scaleX(0)';
@@ -1269,7 +1270,9 @@ const TF = {
 
         // Après chaque navigation Turbo : compléter la barre + fade-in
         document.addEventListener('turbo:load', () => {
-            bar.classList.add('complete');
+            const bar     = document.getElementById('tf-transition');
+            const content = document.getElementById('tf-content');
+            if (bar) bar.classList.add('complete');
             if (content) content.classList.remove('exiting');
         });
     },
