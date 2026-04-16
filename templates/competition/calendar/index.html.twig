@@ -9,12 +9,28 @@
 
 {% block body %}
 <style>
-@media(min-width:768px){
-    .cal-pill-wrap:hover .cal-tooltip { opacity: 1 !important; }
-}
+    /* ── Vue mobile du calendrier ── */
+    @media (max-width: 767px) {
+        .cal-cell { min-height: 48px !important; padding: 4px !important; cursor: pointer; }
+        .cal-cell-empty { min-height: 48px !important; }
+        .cal-pills { display: none !important; }
+        .cal-overflow { display: none !important; }
+        .cal-add-btn { display: none !important; }
+        .cal-dots { display: flex !important; }
+        #mobile-day-panel { display: block !important; }
+        .cal-bottom-nav { display: none; }
+    }
+    @media (min-width: 768px) {
+        .cal-dots { display: none !important; }
+        #mobile-day-panel { display: none !important; }
+        .cal-pill-wrap:hover .cal-tooltip { opacity: 1 !important; }
+    }
+    .cal-cell.cal-selected { outline: 2px solid rgba(245,158,11,0.8); outline-offset: -2px; }
 </style>
+
 <div id="cal-root" style="display:flex;flex-direction:column;gap:20px;"
      x-data="{
+        /* ── Desktop modal ── */
         dayModal: false,
         dayDate: '',
         dayComps: [],
@@ -23,7 +39,39 @@
             this.dayComps = comps;
             this.dayModal = true;
         },
-     }">
+
+        /* ── Mobile panel ── */
+        panelDay: '',
+        panelDateStr: '',
+        panelComps: [],
+        activeDay: null,
+
+        selectDay(day, dayLabel, dateStr, comps, el) {
+            if (window.innerWidth >= 768) {
+                if (comps.length > 0) this.openDay(dayLabel, comps);
+                return;
+            }
+            this.activeDay = day;
+            this.panelDay = dayLabel;
+            this.panelDateStr = dateStr;
+            this.panelComps = comps;
+            document.querySelectorAll('.cal-cell.cal-selected').forEach(c => c.classList.remove('cal-selected'));
+            if (el) el.classList.add('cal-selected');
+            this.$nextTick(() => {
+                var p = document.getElementById('mobile-day-panel');
+                if (p) p.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+            });
+        },
+     }"
+     x-init="
+        if (window.innerWidth < 768) {
+            var todayCell = document.querySelector('[data-today]');
+            if (todayCell) {
+                var d = todayCell.dataset;
+                selectDay(parseInt(d.day), d.dayLabel, d.dateStr, JSON.parse(d.comps), todayCell);
+            }
+        }
+     ">
 
     {# ── Header ── #}
     <div style="display:flex;flex-direction:column;gap:12px;" class="sm:flex-row sm:items-center sm:justify-between">
@@ -81,18 +129,21 @@
     {# ── Grille calendrier ── #}
     <div class="card" style="overflow:hidden;user-select:none;">
 
-        {# En-têtes jours #}
+        {# En-têtes jours — abréviations courtes sur mobile #}
         <div class="grid grid-cols-7" style="border-bottom:1px solid var(--border);">
-            {% for day in ['Lun', 'Mar', 'Mer', 'Jeu', 'Ven', 'Sam', 'Dim'] %}
-                <div style="padding:10px 4px;text-align:center;font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:.05em;color:{{ day in ['Sam', 'Dim'] ? 'var(--text-3)' : 'var(--text-2)' }};">{{ day }}</div>
+            {% for day in [['Lun','L'], ['Mar','M'], ['Mer','M'], ['Jeu','J'], ['Ven','V'], ['Sam','S'], ['Dim','D']] %}
+                <div style="padding:8px 4px;text-align:center;font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:.05em;color:{{ day[0] in ['Sam', 'Dim'] ? 'var(--text-3)' : 'var(--text-2)' }};">
+                    <span class="hidden sm:inline">{{ day[0] }}</span>
+                    <span class="sm:hidden">{{ day[1] }}</span>
+                </div>
             {% endfor %}
         </div>
 
         <div class="grid grid-cols-7 auto-rows-fr">
 
-            {# Cases vides en début #}
+            {# Cases vides début #}
             {% for i in 1..(firstWeekday - 1) %}
-                <div class="min-h-28" style="border-bottom:1px solid var(--border);border-right:1px solid var(--border);background:var(--bg);opacity:.5;"></div>
+                <div class="cal-cell-empty min-h-28" style="border-bottom:1px solid var(--border);border-right:1px solid var(--border);background:var(--bg);opacity:.5;"></div>
             {% endfor %}
 
             {# Cases jours #}
@@ -107,6 +158,7 @@
                 {% set isCurrentWeek = isCurrentMonthView and dayWeekRow == todayWeekRow %}
                 {% set dayComps = byDay[day] ?? [] %}
                 {% set dateStr = year ~ '-' ~ '%02d'|format(month) ~ '-' ~ '%02d'|format(day) %}
+                {% set dayLabel = '%02d'|format(day) ~ '/' ~ '%02d'|format(month) ~ '/' ~ year %}
 
                 {% set allCompData = [] %}
                 {% for c in dayComps %}
@@ -120,24 +172,29 @@
                     }]) %}
                 {% endfor %}
 
-                <div class="min-h-28 group relative"
+                <div class="cal-cell min-h-28 group relative"
                      style="border-bottom:1px solid var(--border);border-right:1px solid var(--border);padding:6px;transition:background .15s;
                      background:{% if isToday %}rgba(245,158,11,.06){% elseif isCurrentWeek %}var(--bg-hover){% elseif isWeekend %}var(--bg){% else %}var(--bg-2){% endif %};"
-                     data-date="{{ dateStr }}">
+                     data-date="{{ dateStr }}"
+                     data-day="{{ day }}"
+                     data-day-label="{{ dayLabel }}"
+                     data-comps="{{ allCompData|json_encode|e('html_attr') }}"
+                     {% if isToday %}data-today{% endif %}
+                     @click="selectDay({{ day }}, '{{ dayLabel }}', '{{ dateStr }}', {{ allCompData|json_encode }}, $el)">
 
-                    {# Numéro + bouton ajout rapide #}
+                    {# Numéro du jour #}
                     <div style="display:flex;align-items:flex-start;justify-content:space-between;margin-bottom:4px;">
-                        <span @click="{{ allCompData|length > 0 ? 'openDay(\'' ~ '%02d'|format(day) ~ '/' ~ '%02d'|format(month) ~ '/' ~ year ~ '\', ' ~ allCompData|json_encode ~ ')' : '' }}"
-                              style="width:26px;height:26px;display:flex;align-items:center;justify-content:center;border-radius:50%;font-size:13px;font-weight:500;transition:all .15s;
-                              {% if isToday %}background:#d97706;color:#fff;font-weight:700;box-shadow:0 0 0 3px rgba(245,158,11,.25);
-                              {% elseif isCurrentWeek %}color:var(--text-1);
-                              {% elseif isWeekend %}color:var(--text-3);
-                              {% else %}color:var(--text-2);{% endif %}
-                              {{ allCompData|length > 0 ? 'cursor:pointer;' : '' }}">
+                        <span style="width:26px;height:26px;display:flex;align-items:center;justify-content:center;border-radius:50%;font-size:13px;font-weight:500;transition:all .15s;
+                            {% if isToday %}background:#d97706;color:#fff;font-weight:700;box-shadow:0 0 0 3px rgba(245,158,11,.25);
+                            {% elseif isCurrentWeek %}color:var(--text-1);
+                            {% elseif isWeekend %}color:var(--text-3);
+                            {% else %}color:var(--text-2);{% endif %}">
                             {{ day }}
                         </span>
                         {% if canEdit %}
                         <a href="{{ path('app_competition_new') }}?date={{ dateStr }}"
+                           @click.stop
+                           class="cal-add-btn"
                            style="opacity:0;width:20px;height:20px;display:flex;align-items:center;justify-content:center;border-radius:6px;color:var(--text-3);text-decoration:none;transition:all .15s;"
                            onmouseover="this.style.color='var(--warning)';this.style.background='var(--bg-hover)'"
                            onmouseout="this.style.color='var(--text-3)';this.style.background='transparent'">
@@ -146,21 +203,32 @@
                         {% endif %}
                     </div>
 
-                    {# Pastilles compétitions #}
-                    <div data-competitions>
+                    {# ── MOBILE : points colorés ── #}
+                    <div class="cal-dots hidden items-center gap-0.5 flex-wrap mt-0.5">
+                        {% for c in dayComps|slice(0, 4) %}
+                            <span class="w-1.5 h-1.5 rounded-full shrink-0" style="background: {{ c.colorBg }}"></span>
+                        {% endfor %}
+                        {% if dayComps|length > 4 %}
+                            <span style="font-size:8px;color:var(--text-3);line-height:1;">+{{ dayComps|length - 4 }}</span>
+                        {% endif %}
+                    </div>
+
+                    {# ── DESKTOP : pastilles texte ── #}
+                    <div class="cal-pills" data-competitions>
                         {% for c in dayComps|slice(0, 3) %}
                             <div class="cal-pill-wrap"
                                  style="position:relative;margin-bottom:2px;{% if canEdit %}cursor:grab;{% endif %}"
                                  {% if canEdit %}draggable="true" data-competition-id="{{ c.id }}"{% endif %}>
                                 <a href="{{ path('app_competition_show', {id: c.id}) }}"
                                    draggable="false"
+                                   @click.stop
                                    style="display:flex;align-items:center;gap:4px;padding:2px 6px;border-radius:4px;font-size:11px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;text-decoration:none;transition:filter .15s;background:{{ c.colorBg }}22;border-left:2px solid {{ c.colorBg }};"
                                    onmouseover="this.style.filter='brightness(1.3)'"
                                    onmouseout="this.style.filter='brightness(1)'">
                                     <span style="overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-weight:500;color:var(--text-1);line-height:1.4;">{{ c.title }}</span>
                                 </a>
 
-                                {# Tooltip au survol #}
+                                {# Tooltip au survol desktop #}
                                 <div class="cal-tooltip"
                                      style="position:absolute;bottom:100%;{% if col >= 5 %}right:0;{% else %}left:0;{% endif %}margin-bottom:6px;z-index:50;width:208px;pointer-events:none;opacity:0;transition:opacity .15s;background:var(--bg-card-solid);border:1px solid var(--border-strong);border-radius:12px;box-shadow:0 8px 32px rgba(0,0,0,.35);overflow:hidden;">
                                     <div style="height:3px;flex-shrink:0;background:{{ c.colorBg }};"></div>
@@ -195,29 +263,73 @@
                         {% endfor %}
                     </div>
 
+                    {# Overflow desktop #}
                     {% if dayComps|length > 3 %}
-                        <p style="font-size:11px;color:var(--text-3);padding:0 4px;cursor:pointer;transition:color .15s;"
+                        <p class="cal-overflow"
+                           style="font-size:11px;color:var(--text-3);padding:0 4px;cursor:pointer;transition:color .15s;"
                            onmouseover="this.style.color='var(--text-2)'"
                            onmouseout="this.style.color='var(--text-3)'"
-                           @click.stop="openDay('{{ '%02d'|format(day) }}/{{ '%02d'|format(month) }}/{{ year }}', {{ allCompData|json_encode }})">
+                           @click.stop="openDay('{{ dayLabel }}', {{ allCompData|json_encode }})">
                             +{{ dayComps|length - 3 }} autres
                         </p>
                     {% endif %}
                 </div>
             {% endfor %}
 
-            {# Cases vides en fin #}
+            {# Cases vides fin #}
             {% set lastCol = ((daysInMonth + firstWeekday - 2) % 7) + 1 %}
             {% if lastCol < 7 %}
                 {% for i in (lastCol + 1)..7 %}
-                    <div style="min-height:7rem;border-bottom:1px solid var(--border);border-right:1px solid var(--border);background:var(--bg);opacity:.5;"></div>
+                    <div class="cal-cell-empty min-h-28" style="border-bottom:1px solid var(--border);border-right:1px solid var(--border);background:var(--bg);opacity:.5;"></div>
                 {% endfor %}
             {% endif %}
         </div>
     </div>
 
-    {# ── Navigation bas de page ── #}
-    <div style="display:flex;align-items:center;justify-content:space-between;">
+    {# ── MOBILE : Panneau jour sélectionné ── #}
+    <div id="mobile-day-panel" class="card" style="display:none;overflow:hidden;">
+
+        <div style="display:flex;align-items:center;justify-content:space-between;padding:12px 16px;border-bottom:1px solid var(--border);">
+            <h3 style="font-size:14px;font-weight:600;color:var(--text-1);margin:0;" x-text="panelDay ? 'Compétitions du ' + panelDay : 'Sélectionne un jour'"></h3>
+            {% if canEdit %}
+            <a x-show="panelDateStr"
+               :href="'{{ path('app_competition_new') }}?date=' + panelDateStr"
+               class="btn btn-primary btn-sm" style="display:none;">
+                <svg width="12" height="12" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/></svg>
+                Ajouter
+            </a>
+            {% endif %}
+        </div>
+
+        <template x-if="panelComps.length === 0">
+            <div style="padding:32px 16px;text-align:center;">
+                <p style="font-size:13px;color:var(--text-3);" x-text="panelDay ? 'Aucune compétition ce jour.' : 'Appuie sur un jour pour voir les compétitions.'"></p>
+            </div>
+        </template>
+
+        <template x-if="panelComps.length > 0">
+            <div>
+                <template x-for="c in panelComps" :key="c.id">
+                    <a :href="c.showUrl" class="list-item" style="text-decoration:none;">
+                        <div style="width:3px;align-self:stretch;border-radius:2px;flex-shrink:0;" :style="'background:' + c.color"></div>
+                        <div style="flex:1;min-width:0;">
+                            <p style="font-weight:600;font-size:13px;color:var(--text-1);margin:0;" x-text="c.title"></p>
+                            <div style="display:flex;align-items:center;gap:8px;margin-top:4px;">
+                                <span style="font-size:11px;font-weight:500;" :style="'color:' + c.color" x-text="c.typeLabel"></span>
+                                <template x-if="c.location">
+                                    <span style="font-size:11px;color:var(--text-3);" x-text="c.location"></span>
+                                </template>
+                            </div>
+                        </div>
+                        <svg width="14" height="14" fill="none" stroke="currentColor" viewBox="0 0 24 24" style="color:var(--text-3);flex-shrink:0;"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/></svg>
+                    </a>
+                </template>
+            </div>
+        </template>
+    </div>
+
+    {# ── Navigation bas de page (desktop) ── #}
+    <div class="cal-bottom-nav" style="display:flex;align-items:center;justify-content:space-between;">
         <a href="{{ path('app_competition_calendar', {month: prevMonth, year: prevYear}) }}" class="btn btn-secondary btn-sm">
             <svg width="14" height="14" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"/></svg>
             Précédent
@@ -228,9 +340,7 @@
         </a>
     </div>
 
-    {# ═══════════════════════════════════════
-       Modal VUE JOUR
-       ═══════════════════════════════════════ #}
+    {# ── Modal desktop (overflow "+N autres") ── #}
     <div x-show="dayModal"
          x-transition:enter="ease-out duration-150" x-transition:enter-start="opacity-0" x-transition:enter-end="opacity-100"
          x-transition:leave="ease-in duration-100" x-transition:leave-start="opacity-100" x-transition:leave-end="opacity-0"
@@ -262,7 +372,7 @@
             </div>
             {% if canEdit %}
             <div style="padding:16px;border-top:1px solid var(--border);">
-                <a :href="'/competitions/new?date=' + dayDate.split('/').reverse().join('-')"
+                <a :href="'{{ path('app_competition_new') }}?date=' + dayDate.split('/').reverse().join('-')"
                    class="btn btn-primary" style="width:100%;justify-content:center;">
                     <svg width="14" height="14" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/></svg>
                     Ajouter une compétition ce jour
@@ -285,6 +395,7 @@
     }
 
     document.addEventListener('dragstart', function(e) {
+        if (window.innerWidth < 768) return;
         var pill = e.target.closest('[data-competition-id]');
         if (!pill) return;
         dragging = {id: pill.dataset.competitionId, el: pill};
@@ -330,45 +441,39 @@
     });
 }());
 
-// ── Tooltips calendrier : position:fixed pour échapper à overflow:hidden ──
 (function() {
-    function initTooltips() {
-        document.querySelectorAll('.cal-pill-wrap').forEach(function(wrap) {
-            if (wrap._tipInit) return;
-            wrap._tipInit = true;
-            var tip = wrap.querySelector('.cal-tooltip');
-            if (!tip) return;
+    document.querySelectorAll('.cal-pill-wrap').forEach(function(wrap) {
+        if (wrap._tipInit) return;
+        wrap._tipInit = true;
+        var tip = wrap.querySelector('.cal-tooltip');
+        if (!tip) return;
 
-            wrap.addEventListener('mouseenter', function() {
-                var r    = wrap.getBoundingClientRect();
-                var tipW = 208;
-                var tipH = tip.offsetHeight || 180;
+        wrap.addEventListener('mouseenter', function() {
+            var r    = wrap.getBoundingClientRect();
+            var tipW = 208;
+            var tipH = tip.offsetHeight || 180;
 
-                tip.style.position = 'fixed';
-                tip.style.width    = tipW + 'px';
-                tip.style.margin   = '0';
+            tip.style.position = 'fixed';
+            tip.style.width    = tipW + 'px';
+            tip.style.margin   = '0';
 
-                // Horizontal
-                if (r.right + tipW > window.innerWidth - 8) {
-                    tip.style.right = (window.innerWidth - r.right) + 'px';
-                    tip.style.left  = 'auto';
-                } else {
-                    tip.style.left  = r.left + 'px';
-                    tip.style.right = 'auto';
-                }
+            if (r.right + tipW > window.innerWidth - 8) {
+                tip.style.right = (window.innerWidth - r.right) + 'px';
+                tip.style.left  = 'auto';
+            } else {
+                tip.style.left  = r.left + 'px';
+                tip.style.right = 'auto';
+            }
 
-                // Vertical : au-dessus si la place le permet, sinon en-dessous
-                if (r.top > tipH + 12) {
-                    tip.style.bottom = (window.innerHeight - r.top + 6) + 'px';
-                    tip.style.top    = 'auto';
-                } else {
-                    tip.style.top    = (r.bottom + 6) + 'px';
-                    tip.style.bottom = 'auto';
-                }
-            });
+            if (r.top > tipH + 12) {
+                tip.style.bottom = (window.innerHeight - r.top + 6) + 'px';
+                tip.style.top    = 'auto';
+            } else {
+                tip.style.top    = (r.bottom + 6) + 'px';
+                tip.style.bottom = 'auto';
+            }
         });
-    }
-    initTooltips();
+    });
 }());
 </script>
 {% endif %}
