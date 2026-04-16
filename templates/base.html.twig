@@ -1117,7 +1117,7 @@
                         </svg>
                         Mon profil
                     </a>
-                {% else %}
+                {% elseif is_granted('ROLE_ATHLETE') %}
                     <a href="{{ path('app_register_link_profile') }}" class="tf-dropdown-item" @click="open=false">
                         <svg width="15" height="15" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2">
                             <path stroke-linecap="round" stroke-linejoin="round" d="M12 4v16m8-8H4"/>

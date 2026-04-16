@@ -7,6 +7,7 @@ use Symfony\Component\Form\AbstractType;
 use Symfony\Component\Form\Extension\Core\Type\ChoiceType;
 use Symfony\Component\Form\Extension\Core\Type\DateType;
 use Symfony\Component\Form\Extension\Core\Type\FileType;
+use Symfony\Component\Form\Extension\Core\Type\TextareaType;
 use Symfony\Component\Form\Extension\Core\Type\TextType;
 use Symfony\Component\Form\FormBuilderInterface;
 use Symfony\Component\OptionsResolver\OptionsResolver;
@@ -41,6 +42,11 @@ class AthleteType extends AbstractType
                 'label' => 'URL profil athle.fr',
                 'required' => false,
                 'attr' => ['class' => 'form-input', 'placeholder' => 'https://www.athle.fr/athletes/XXXXX/resultats'],
+            ])
+            ->add('notes', TextareaType::class, [
+                'label' => 'Notes',
+                'required' => false,
+                'attr' => ['class' => 'form-input', 'rows' => 3, 'placeholder' => 'Informations complémentaires…'],
             ])
             ->add('photoFile', FileType::class, [
                 'label' => 'Photo',
