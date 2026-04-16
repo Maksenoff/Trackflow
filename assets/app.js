@@ -67,8 +67,11 @@ function initCharts() {
 
 // Avant que Turbo snapshoppe la page : réinitialiser l'état UI
 document.addEventListener('turbo:before-cache', () => {
-    // Fermer le dropdown profil pour éviter qu'il flash ouvert sur le retour arrière
+    // Fermer le dropdown profil desktop
     document.querySelectorAll('.tf-dropdown').forEach(el => el.classList.add('hidden'));
+    // Fermer le tiroir profil mobile
+    document.getElementById('tf-profile-drawer')?.classList.remove('open');
+    document.getElementById('tf-profile-overlay')?.classList.remove('show');
 
     // Détruire les charts pour éviter "canvas already in use"
     document.querySelectorAll('.performance-chart').forEach(canvas => {

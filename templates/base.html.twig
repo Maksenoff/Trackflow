@@ -391,6 +391,9 @@
     @media (max-width: 1023px) { #tf-content { padding: 20px 16px; } }
     @media (max-width: 639px)  { #tf-content { padding: 16px 12px; } }
 
+    /* ── Header : caché sur mobile ── */
+    @media (max-width: 1023px) { #tf-header { display: none !important; } }
+
     /* ── Bottom Nav (mobile) ── */
     #tf-bottom-nav {
         display: none;
@@ -418,6 +421,9 @@
         padding: 8px 4px;
         border-radius: var(--radius-sm);
         text-decoration: none;
+        background: none;
+        border: none;
+        cursor: pointer;
         color: var(--text-3);
         font-size: 10px;
         font-weight: 500;
@@ -436,6 +442,44 @@
         background: var(--accent);
     }
     .tf-bn-item:hover:not(.active) { color: var(--text-1); background: var(--bg-hover); }
+
+    /* ── Tiroir Profil mobile ── */
+    #tf-profile-drawer {
+        position: fixed;
+        bottom: 64px; left: 0; right: 0;
+        background: var(--bg-card-solid);
+        border: 1px solid var(--border);
+        border-bottom: none;
+        border-radius: 20px 20px 0 0;
+        z-index: 49;
+        padding: 8px 0 16px;
+        box-shadow: 0 -8px 32px rgba(0,0,0,.35);
+        transform: translateY(100%);
+        transition: transform 0.28s cubic-bezier(0.34,1.2,0.64,1);
+    }
+    #tf-profile-drawer.open { transform: translateY(0); }
+    #tf-profile-overlay {
+        position: fixed; inset: 0;
+        background: rgba(0,0,0,.45);
+        z-index: 48;
+        opacity: 0;
+        pointer-events: none;
+        transition: opacity 0.2s;
+    }
+    #tf-profile-overlay.show { opacity: 1; pointer-events: auto; }
+    .tf-drawer-item {
+        display: flex; align-items: center; gap: 12px;
+        padding: 12px 20px;
+        font-size: 14px; font-weight: 500; color: var(--text-1);
+        text-decoration: none;
+        transition: background var(--transition);
+        cursor: pointer; background: none; border: none; width: 100%; text-align: left;
+    }
+    .tf-drawer-item svg { width: 18px; height: 18px; color: var(--text-2); flex-shrink: 0; }
+    .tf-drawer-item:hover { background: var(--bg-hover); }
+    .tf-drawer-item.danger { color: var(--danger); }
+    .tf-drawer-item.danger svg { color: var(--danger); }
+    .tf-drawer-sep { height: 1px; background: var(--border); margin: 8px 0; }
 
     /* ═══════════════════════════════════════════════════
        COMPOSANTS RÉUTILISABLES
@@ -1174,6 +1218,84 @@
 {# ══════════════════════════════════════
    BOTTOM NAV (mobile)
 ══════════════════════════════════════ #}
+{% set _myAthleteId = app.user.linkedAthlete ? app.user.linkedAthlete.id : null %}
+{% set _currentId = app.request.attributes.get('id') %}
+{% set _isMyProfile = _myAthleteId and _currentId and _currentId == _myAthleteId %}
+
+{# Overlay tiroir #}
+<div id="tf-profile-overlay" onclick="TF.closeProfileDrawer()"></div>
+
+{# Tiroir slide-up profil #}
+<div id="tf-profile-drawer">
+    {# Poignée #}
+    <div style="display:flex;justify-content:center;padding:8px 0 12px;">
+        <div style="width:36px;height:4px;border-radius:99px;background:var(--border-strong);"></div>
+    </div>
+
+    {# User info #}
+    <div style="display:flex;align-items:center;gap:12px;padding:0 20px 12px;border-bottom:1px solid var(--border);margin-bottom:8px;">
+        <div class="tf-avatar" style="width:44px;height:44px;font-size:14px;flex-shrink:0;">
+            {% if app.user.linkedAthlete and app.user.linkedAthlete.photo %}
+                <img src="/uploads/athletes/{{ app.user.linkedAthlete.photo }}" style="width:100%;height:100%;object-fit:cover;">
+            {% else %}
+                {{ app.user.firstName|slice(0,1)|upper }}{{ app.user.lastName|slice(0,1)|upper }}
+            {% endif %}
+        </div>
+        <div style="min-width:0;">
+            <p style="font-size:14px;font-weight:600;color:var(--text-1);margin:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">{{ app.user.firstName }} {{ app.user.lastName }}</p>
+            <p style="font-size:11px;color:var(--text-3);margin:2px 0 0;">
+                {% if is_granted('ROLE_ADMIN') %}Administrateur
+                {% elseif is_granted('ROLE_COACH') %}Coach
+                {% else %}Athlète{% endif %}
+            </p>
+        </div>
+    </div>
+
+    {# Mon profil ou Créer #}
+    {% if app.user.linkedAthlete %}
+        <a href="{{ path('app_athlete_show', {id: app.user.linkedAthlete.id}) }}" class="tf-drawer-item" onclick="TF.closeProfileDrawer()">
+            <svg fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"/></svg>
+            Mon profil
+        </a>
+    {% elseif is_granted('ROLE_ATHLETE') %}
+        <a href="{{ path('app_register_link_profile') }}" class="tf-drawer-item" onclick="TF.closeProfileDrawer()">
+            <svg fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M12 4v16m8-8H4"/></svg>
+            Créer mon profil
+        </a>
+    {% endif %}
+
+    {# Thème #}
+    <button class="tf-drawer-item" onclick="TF.toggleTheme()">
+        <svg class="icon-dark" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M20.354 15.354A9 9 0 018.646 3.646 9.003 9.003 0 0012 21a9.003 9.003 0 008.354-5.646z"/></svg>
+        <svg class="icon-light" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M12 3v1m0 16v1m9-9h-1M4 12H3m15.364 6.364l-.707-.707M6.343 6.343l-.707-.707m12.728 0l-.707.707M6.343 17.657l-.707.707M16 12a4 4 0 11-8 0 4 4 0 018 0z"/></svg>
+        Changer le thème
+    </button>
+
+    {# Admin : accès rapide #}
+    {% if is_granted('ROLE_ADMIN') %}
+        <div class="tf-drawer-sep"></div>
+        <p style="font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.08em;color:var(--text-3);padding:4px 20px 8px;">Administration</p>
+        <a href="{{ path('app_training_type_index') }}" class="tf-drawer-item" onclick="TF.closeProfileDrawer()">
+            <svg fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M7 7h.01M7 3h5c.512 0 1.024.195 1.414.586l7 7a2 2 0 010 2.828l-7 7a2 2 0 01-2.828 0l-7-7A1.994 1.994 0 013 12V7a4 4 0 014-4z"/></svg>
+            Types de séances
+        </a>
+        <a href="{{ path('app_competition_type_index') }}" class="tf-drawer-item" onclick="TF.closeProfileDrawer()">
+            <svg fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M9 12l2 2 4-4M7.835 4.697a3.42 3.42 0 001.946-.806 3.42 3.42 0 014.438 0 3.42 3.42 0 001.946.806 3.42 3.42 0 013.138 3.138 3.42 3.42 0 00.806 1.946 3.42 3.42 0 010 4.438 3.42 3.42 0 00-.806 1.946 3.42 3.42 0 01-3.138 3.138 3.42 3.42 0 00-1.946.806 3.42 3.42 0 01-4.438 0 3.42 3.42 0 00-1.946-.806 3.42 3.42 0 01-3.138-3.138 3.42 3.42 0 00-.806-1.946 3.42 3.42 0 010-4.438 3.42 3.42 0 00.806-1.946 3.42 3.42 0 013.138-3.138z"/></svg>
+            Types de compétitions
+        </a>
+        <a href="{{ path('app_user_index') }}" class="tf-drawer-item" onclick="TF.closeProfileDrawer()">
+            <svg fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z"/></svg>
+            Utilisateurs
+        </a>
+    {% endif %}
+
+    <div class="tf-drawer-sep"></div>
+    <a href="{{ path('app_logout') }}" class="tf-drawer-item danger">
+        <svg fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"/></svg>
+        Se déconnecter
+    </a>
+</div>
+
 <nav id="tf-bottom-nav">
     <a href="{{ path('app_dashboard') }}"
        class="tf-bn-item {% if app.current_route == 'app_dashboard' or app.current_route == 'app_dashboard_athlete' or app.current_route == 'app_dashboard_coach' %}active{% endif %}">
@@ -1183,7 +1305,7 @@
         Accueil
     </a>
     <a href="{{ path('app_athlete_index') }}"
-       class="tf-bn-item {% if app.current_route starts with 'app_athlete' %}active{% endif %}">
+       class="tf-bn-item {% if (app.current_route starts with 'app_athlete') and not _isMyProfile %}active{% endif %}">
         <svg fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2">
             <path stroke-linecap="round" stroke-linejoin="round" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0z"/>
         </svg>
@@ -1203,9 +1325,10 @@
         </svg>
         Compétitions
     </a>
-    <a href="{{ app.user.linkedAthlete ? path('app_athlete_show', {id: app.user.linkedAthlete.id}) : '#' }}"
-       class="tf-bn-item">
-        <div class="tf-avatar" style="width:24px;height:24px;font-size:9px;border-radius:50%;">
+    {# Bouton Profil — ouvre le tiroir #}
+    <button onclick="TF.toggleProfileDrawer()"
+            class="tf-bn-item {% if _isMyProfile %}active{% endif %}">
+        <div class="tf-avatar" style="width:24px;height:24px;font-size:9px;border-radius:50%;flex-shrink:0;">
             {% if app.user.linkedAthlete and app.user.linkedAthlete.photo %}
                 <img src="/uploads/athletes/{{ app.user.linkedAthlete.photo }}" style="width:100%;height:100%;object-fit:cover;">
             {% else %}
@@ -1213,7 +1336,7 @@
             {% endif %}
         </div>
         Profil
-    </a>
+    </button>
 </nav>
 
 {# ══════════════════════════════════════
@@ -1231,6 +1354,19 @@ const TF = {
     initTheme() {
         const saved = localStorage.getItem('tf-theme') || 'dark';
         document.documentElement.setAttribute('data-theme', saved);
+    },
+
+    /* ── Tiroir profil mobile ── */
+    toggleProfileDrawer() {
+        const drawer  = document.getElementById('tf-profile-drawer');
+        const overlay = document.getElementById('tf-profile-overlay');
+        const isOpen  = drawer.classList.contains('open');
+        drawer.classList.toggle('open', !isOpen);
+        overlay.classList.toggle('show', !isOpen);
+    },
+    closeProfileDrawer() {
+        document.getElementById('tf-profile-drawer')?.classList.remove('open');
+        document.getElementById('tf-profile-overlay')?.classList.remove('show');
     },
 
     /* ── Sidebar mobile ── */
