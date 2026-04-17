@@ -394,6 +394,11 @@
     /* ── Header : caché sur mobile ── */
     @media (max-width: 1023px) { #tf-header { display: none !important; } }
 
+    /* ── Éléments mobile-only : cachés sur desktop ── */
+    @media (min-width: 1024px) {
+        #tf-bottom-nav, #tf-profile-drawer, #tf-profile-overlay { display: none !important; }
+    }
+
     /* ── Bottom Nav (mobile) ── */
     #tf-bottom-nav {
         display: none;

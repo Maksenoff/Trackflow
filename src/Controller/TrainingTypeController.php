@@ -20,7 +20,8 @@ class TrainingTypeController extends AbstractController
     #[Route('', name: 'app_training_type_index')]
     public function index(TrainingTypeRepository $repo, Request $request, EntityManagerInterface $em): Response
     {
-        // Inline create form on the same page
+        $isAjax = $request->headers->get('X-Requested-With') === 'XMLHttpRequest';
+
         $newType = new TrainingType();
         $form = $this->createForm(TrainingTypeType::class, $newType);
         $form->handleRequest($request);
@@ -28,8 +29,20 @@ class TrainingTypeController extends AbstractController
         if ($form->isSubmitted() && $form->isValid()) {
             $em->persist($newType);
             $em->flush();
+
+            if ($isAjax) {
+                return $this->json([
+                    'ok'   => true,
+                    'html' => $this->renderView('training_type/_item.html.twig', ['type' => $newType]),
+                ]);
+            }
+
             $this->addFlash('success', 'Type "' . $newType->getName() . '" créé.');
             return $this->redirectToRoute('app_training_type_index');
+        }
+
+        if ($isAjax && $form->isSubmitted()) {
+            return $this->json(['ok' => false], 422);
         }
 
         return $this->render('training_type/index.html.twig', [
@@ -64,11 +77,18 @@ class TrainingTypeController extends AbstractController
     #[Route('/{id}/edit', name: 'app_training_type_edit', methods: ['POST'])]
     public function edit(TrainingType $type, Request $request, EntityManagerInterface $em): Response
     {
+        $isAjax = $request->headers->get('X-Requested-With') === 'XMLHttpRequest';
+
         $form = $this->createForm(TrainingTypeType::class, $type);
         $form->handleRequest($request);
         if ($form->isSubmitted() && $form->isValid()) {
             $em->flush();
+
+            if ($isAjax) {
+                return $this->json(['ok' => true, 'name' => $type->getName(), 'color' => $type->getColor()]);
+            }
         }
+
         return $this->redirectToRoute('app_training_type_index');
     }
 }

@@ -19,6 +19,8 @@ class CompetitionTypeController extends AbstractController
     #[Route('', name: 'app_competition_type_index')]
     public function index(CompetitionTypeRepository $repo, Request $request, EntityManagerInterface $em): Response
     {
+        $isAjax = $request->headers->get('X-Requested-With') === 'XMLHttpRequest';
+
         $newType = new CompetitionType();
         $form    = $this->createForm(CompetitionTypeType::class, $newType);
         $form->handleRequest($request);
@@ -26,8 +28,20 @@ class CompetitionTypeController extends AbstractController
         if ($form->isSubmitted() && $form->isValid()) {
             $em->persist($newType);
             $em->flush();
+
+            if ($isAjax) {
+                return $this->json([
+                    'ok'   => true,
+                    'html' => $this->renderView('competition_type/_item.html.twig', ['type' => $newType]),
+                ]);
+            }
+
             $this->addFlash('success', 'Type "' . $newType->getName() . '" créé.');
             return $this->redirectToRoute('app_competition_type_index');
+        }
+
+        if ($isAjax && $form->isSubmitted()) {
+            return $this->json(['ok' => false], 422);
         }
 
         return $this->render('competition_type/index.html.twig', [
@@ -62,11 +76,18 @@ class CompetitionTypeController extends AbstractController
     #[Route('/{id}/edit', name: 'app_competition_type_edit', methods: ['POST'])]
     public function edit(CompetitionType $type, Request $request, EntityManagerInterface $em): Response
     {
+        $isAjax = $request->headers->get('X-Requested-With') === 'XMLHttpRequest';
+
         $form = $this->createForm(CompetitionTypeType::class, $type);
         $form->handleRequest($request);
         if ($form->isSubmitted() && $form->isValid()) {
             $em->flush();
+
+            if ($isAjax) {
+                return $this->json(['ok' => true, 'name' => $type->getName(), 'color' => $type->getColor()]);
+            }
         }
+
         return $this->redirectToRoute('app_competition_type_index');
     }
 }
