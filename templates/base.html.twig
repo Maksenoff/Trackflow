@@ -1585,21 +1585,24 @@ document.addEventListener('turbo:load', () => {
             bottom:80px;
             right:18px;
             z-index:900;
-            width:44px;
-            height:44px;
+            width:40px;
+            height:40px;
             border-radius:50%;
-            background:var(--accent);
-            color:#fff;
-            border:none;
+            background:rgba(var(--accent-rgb,99,102,241),.18);
+            backdrop-filter:blur(10px);
+            -webkit-backdrop-filter:blur(10px);
+            color:var(--accent);
+            border:1.5px solid rgba(var(--accent-rgb,99,102,241),.35);
             cursor:pointer;
             display:flex;
             align-items:center;
             justify-content:center;
-            box-shadow:0 4px 16px rgba(0,0,0,.25);
-            transition:transform .15s,box-shadow .15s;
+            box-shadow:0 2px 12px rgba(0,0,0,.12);
+            transition:transform .15s,box-shadow .15s,background .15s,opacity .15s;
+            opacity:.7;
         "
-        onmouseenter="this.style.transform='scale(1.1)';this.style.boxShadow='0 6px 20px rgba(0,0,0,.35)'"
-        onmouseleave="this.style.transform='scale(1)';this.style.boxShadow='0 4px 16px rgba(0,0,0,.25)'">
+        onmouseenter="this.style.transform='scale(1.1)';this.style.opacity='1';this.style.background='var(--accent)';this.style.color='#fff';this.style.boxShadow='0 4px 18px rgba(0,0,0,.22)'"
+        onmouseleave="this.style.transform='scale(1)';this.style.opacity='.7';this.style.background='rgba(99,102,241,.18)';this.style.color='var(--accent)';this.style.boxShadow='0 2px 12px rgba(0,0,0,.12)'">
     <svg width="20" height="20" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2">
         <path stroke-linecap="round" stroke-linejoin="round"
               d="M12 8v4m0 4h.01M21 12c0 4.97-4.03 9-9 9a8.96 8.96 0 01-5.657-2.007L3 21l2.007-3.343A8.96 8.96 0 013 12c0-4.97 4.03-9 9-9s9 4.03 9 9z"/>
@@ -1609,7 +1612,7 @@ document.addEventListener('turbo:load', () => {
 {# Overlay #}
 <div id="tf-feedback-overlay"
      onclick="TFFeedback.close()"
-     style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.45);z-index:1000;"></div>
+     style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.25);backdrop-filter:blur(4px);-webkit-backdrop-filter:blur(4px);z-index:1000;"></div>
 
 {# Modal #}
 <div id="tf-feedback-modal"
@@ -1624,11 +1627,13 @@ document.addEventListener('turbo:load', () => {
          transform:translate(-50%,-50%) scale(.95);
          z-index:1001;
          width:min(480px,calc(100vw - 32px));
-         background:var(--bg-card);
-         border:1px solid var(--border);
+         background:rgba(var(--bg-card-rgb,255,255,255),.82);
+         backdrop-filter:blur(20px) saturate(1.6);
+         -webkit-backdrop-filter:blur(20px) saturate(1.6);
+         border:1px solid rgba(255,255,255,.18);
          border-radius:var(--radius-lg,16px);
          padding:24px;
-         box-shadow:0 20px 60px rgba(0,0,0,.3);
+         box-shadow:0 8px 40px rgba(0,0,0,.18);
          transition:transform .2s,opacity .2s;
          opacity:0;
      ">
