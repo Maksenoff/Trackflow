@@ -339,27 +339,32 @@
                                     <span style="font-size:10px;font-weight:500;background:var(--bg-2);border:1px solid var(--border);color:var(--text-3);padding:2px 8px;border-radius:999px;flex-shrink:0;"
                                           x-text="disc.perfs.length + ' perf' + (disc.perfs.length > 1 ? 's' : '')"></span>
                                 </div>
-                                <div style="display:flex;align-items:center;gap:6px;flex-shrink:0;margin-left:12px;">
-                                    {# PB badge #}
-                                    <template x-if="disc.pb">
-                                        <div style="background:linear-gradient(135deg,rgba(255,215,0,.09) 0%,rgba(160,98,10,.05) 100%);border:1px solid rgba(255,215,0,.22);border-radius:8px;padding:5px 10px;text-align:center;min-width:68px;">
-                                            <div style="font-size:8px;font-weight:800;letter-spacing:.14em;text-transform:uppercase;background:linear-gradient(135deg,#A0620A 0%,#FFD700 60%);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;margin-bottom:2px;">PB</div>
-                                            <div class="pb-val" style="font-size:13px;font-family:monospace;font-weight:700;line-height:1;" x-text="disc.pb"></div>
-                                        </div>
-                                    </template>
-                                    {# SB badge #}
-                                    <template x-if="disc.sb">
-                                        <div style="background:linear-gradient(135deg,rgba(192,192,192,.08) 0%,rgba(96,96,96,.04) 100%);border:1px solid rgba(192,192,192,.2);border-radius:8px;padding:5px 10px;text-align:center;min-width:68px;">
-                                            <div style="font-size:8px;font-weight:800;letter-spacing:.14em;text-transform:uppercase;background:linear-gradient(135deg,#606060 0%,#C0C0C0 60%);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;margin-bottom:2px;">SB</div>
-                                            <div class="sb-val" style="font-size:13px;font-family:monospace;font-weight:700;line-height:1;" x-text="disc.sb"></div>
-                                        </div>
-                                    </template>
+                                <div style="display:flex;align-items:center;flex-shrink:0;margin-left:16px;">
+                                    {# PB #}
+                                    <div style="width:80px">
+                                        <template x-if="disc.pb">
+                                            <div style="border-left:2px solid rgba(255,215,0,.7);padding-left:10px;">
+                                                <div style="font-size:9px;font-weight:600;color:var(--text-2);text-transform:uppercase;letter-spacing:.12em;">PB</div>
+                                                <div class="pb-val" style="font-size:13px;font-family:monospace;font-weight:700;line-height:1.2;" x-text="disc.pb"></div>
+                                            </div>
+                                        </template>
+                                    </div>
+                                    {# SB #}
+                                    <div style="width:80px">
+                                        <template x-if="disc.sb">
+                                            <div style="border-left:2px solid rgba(192,192,192,.7);padding-left:10px;">
+                                                <div style="font-size:9px;font-weight:600;color:var(--text-2);text-transform:uppercase;letter-spacing:.12em;">SB</div>
+                                                <div class="sb-val" style="font-size:13px;font-family:monospace;font-weight:700;line-height:1.2;" x-text="disc.sb"></div>
+                                            </div>
+                                        </template>
+                                    </div>
                                 </div>
                             </button>
 
-                            {# Accordion body #}
-                            <div x-show="isDiscOpen(disc.name)" x-transition.duration.150ms
-                                 style="border-top:1px solid var(--border);">
+                            {# Accordion body — CSS grid slide animation #}
+                            <div class="disc-anim" :class="isDiscOpen(disc.name) ? 'disc-anim-open' : ''">
+                            <div style="overflow:hidden;min-height:0;">
+                            <div style="border-top:1px solid var(--border);">
 
                                 {# Chart — canvas present always so init can find it; hidden when < 2 perfs #}
                                 <div x-show="disc.hasChart" style="padding:12px 16px;">
@@ -456,7 +461,9 @@
                                         </template>
                                     </tbody>
                                 </table>
-                            </div>
+                            </div>{# end border-top #}
+                            </div>{# end overflow-hidden #}
+                            </div>{# end disc-anim #}
                         </div>{# end flex-1 #}
                         </div>{# end flex card #}
                     </template>
@@ -991,8 +998,34 @@ function goalDelete(id, url, token) {
 
             header.addEventListener('click', function () {
                 isOpen = !isOpen;
-                body.style.display = isOpen ? '' : 'none';
                 header.querySelector('.cat-arrow').style.transform = isOpen ? 'rotate(90deg)' : 'rotate(0deg)';
+                if (isOpen) {
+                    body.style.display = '';
+                    body.style.overflow = 'hidden';
+                    body.style.height = '0';
+                    requestAnimationFrame(function () {
+                        body.style.transition = 'height 0.28s cubic-bezier(.4,0,.2,1)';
+                        body.style.height = body.scrollHeight + 'px';
+                    });
+                    body.addEventListener('transitionend', function onEnd() {
+                        body.style.cssText = '';
+                        body.removeEventListener('transitionend', onEnd);
+                    });
+                } else {
+                    body.style.height = body.scrollHeight + 'px';
+                    body.style.overflow = 'hidden';
+                    requestAnimationFrame(function () {
+                        body.style.transition = 'height 0.25s cubic-bezier(.4,0,.2,1)';
+                        body.style.height = '0';
+                    });
+                    body.addEventListener('transitionend', function onEnd() {
+                        body.style.display = 'none';
+                        body.style.height = '';
+                        body.style.overflow = '';
+                        body.style.transition = '';
+                        body.removeEventListener('transitionend', onEnd);
+                    });
+                }
             });
 
             body.appendChild(searchWrap);

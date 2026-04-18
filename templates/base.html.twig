@@ -857,6 +857,14 @@
     .season-pill.active { background: var(--accent); color: #fff; border-color: transparent; box-shadow: 0 0 0 1px var(--accent); }
     .season-pill .pill-count { opacity: .65; font-size: 11px; }
 
+    /* ── Discipline accordion — smooth CSS-grid slide ── */
+    .disc-anim {
+        display: grid;
+        grid-template-rows: 0fr;
+        transition: grid-template-rows 0.28s cubic-bezier(.4, 0, .2, 1);
+    }
+    .disc-anim-open { grid-template-rows: 1fr; }
+
     /* ── Filter chips (cat / indoor) ── */
     .filter-chip {
         display: inline-flex; align-items: center;
@@ -1579,30 +1587,7 @@ document.addEventListener('turbo:load', () => {
 <button id="tf-feedback-btn"
         onclick="TFFeedback.open()"
         title="Signaler un bug ou une suggestion"
-        aria-label="Signaler un bug ou une suggestion"
-        style="
-            position:fixed;
-            bottom:80px;
-            right:18px;
-            z-index:900;
-            width:40px;
-            height:40px;
-            border-radius:50%;
-            background:rgba(var(--accent-rgb,99,102,241),.18);
-            backdrop-filter:blur(10px);
-            -webkit-backdrop-filter:blur(10px);
-            color:var(--accent);
-            border:1.5px solid rgba(var(--accent-rgb,99,102,241),.35);
-            cursor:pointer;
-            display:flex;
-            align-items:center;
-            justify-content:center;
-            box-shadow:0 2px 12px rgba(0,0,0,.12);
-            transition:transform .15s,box-shadow .15s,background .15s,opacity .15s;
-            opacity:.7;
-        "
-        onmouseenter="this.style.transform='scale(1.1)';this.style.opacity='1';this.style.background='var(--accent)';this.style.color='#fff';this.style.boxShadow='0 4px 18px rgba(0,0,0,.22)'"
-        onmouseleave="this.style.transform='scale(1)';this.style.opacity='.7';this.style.background='rgba(99,102,241,.18)';this.style.color='var(--accent)';this.style.boxShadow='0 2px 12px rgba(0,0,0,.12)'">
+        aria-label="Signaler un bug ou une suggestion">
     <svg width="20" height="20" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2">
         <path stroke-linecap="round" stroke-linejoin="round"
               d="M12 8v4m0 4h.01M21 12c0 4.97-4.03 9-9 9a8.96 8.96 0 01-5.657-2.007L3 21l2.007-3.343A8.96 8.96 0 013 12c0-4.97 4.03-9 9-9s9 4.03 9 9z"/>
@@ -1612,7 +1597,7 @@ document.addEventListener('turbo:load', () => {
 {# Overlay #}
 <div id="tf-feedback-overlay"
      onclick="TFFeedback.close()"
-     style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.25);backdrop-filter:blur(4px);-webkit-backdrop-filter:blur(4px);z-index:1000;"></div>
+     style="display:none;"></div>
 
 {# Modal #}
 <div id="tf-feedback-modal"
@@ -1627,13 +1612,8 @@ document.addEventListener('turbo:load', () => {
          transform:translate(-50%,-50%) scale(.95);
          z-index:1001;
          width:min(480px,calc(100vw - 32px));
-         background:rgba(var(--bg-card-rgb,255,255,255),.82);
-         backdrop-filter:blur(20px) saturate(1.6);
-         -webkit-backdrop-filter:blur(20px) saturate(1.6);
-         border:1px solid rgba(255,255,255,.18);
          border-radius:var(--radius-lg,16px);
          padding:24px;
-         box-shadow:0 8px 40px rgba(0,0,0,.18);
          transition:transform .2s,opacity .2s;
          opacity:0;
      ">
@@ -1716,6 +1696,89 @@ document.addEventListener('turbo:load', () => {
 </div>
 
 <style>
+/* Bouton feedback */
+#tf-feedback-btn {
+    position: fixed;
+    bottom: 80px;
+    right: 18px;
+    z-index: 900;
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: transform .15s, box-shadow .15s, background .15s, opacity .15s, color .15s;
+    opacity: .65;
+    /* dark */
+    background: rgba(99,102,241,.15);
+    backdrop-filter: blur(10px);
+    -webkit-backdrop-filter: blur(10px);
+    color: var(--accent);
+    border: 1.5px solid rgba(99,102,241,.3);
+    box-shadow: 0 2px 12px rgba(0,0,0,.18);
+}
+#tf-feedback-btn:hover {
+    opacity: 1;
+    transform: scale(1.1);
+    background: var(--accent);
+    color: #fff;
+    border-color: var(--accent);
+    box-shadow: 0 4px 18px rgba(0,0,0,.25);
+}
+[data-theme="light"] #tf-feedback-btn {
+    background: rgba(79,70,229,.12);
+    border-color: rgba(79,70,229,.28);
+    box-shadow: 0 2px 8px rgba(0,0,0,.10);
+}
+[data-theme="light"] #tf-feedback-btn:hover {
+    background: var(--accent);
+    border-color: var(--accent);
+    color: #fff;
+}
+
+/* Overlay */
+#tf-feedback-overlay {
+    display: none;
+    position: fixed;
+    inset: 0;
+    z-index: 1000;
+    backdrop-filter: blur(4px);
+    -webkit-backdrop-filter: blur(4px);
+    /* dark */
+    background: rgba(0,0,0,.35);
+}
+[data-theme="light"] #tf-feedback-overlay {
+    background: rgba(15,23,42,.2);
+}
+
+/* Modal */
+#tf-feedback-modal {
+    position: fixed;
+    display: none;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%,-50%) scale(.95);
+    z-index: 1001;
+    width: min(480px, calc(100vw - 32px));
+    padding: 24px;
+    border-radius: var(--radius-lg, 16px);
+    opacity: 0;
+    transition: transform .2s, opacity .2s;
+    backdrop-filter: blur(24px) saturate(1.5);
+    -webkit-backdrop-filter: blur(24px) saturate(1.5);
+    /* dark */
+    background: rgba(14,14,32,.88);
+    border: 1px solid rgba(255,255,255,.09);
+    box-shadow: 0 8px 40px rgba(0,0,0,.45);
+}
+[data-theme="light"] #tf-feedback-modal {
+    background: rgba(255,255,255,.9);
+    border: 1px solid rgba(0,0,0,.09);
+    box-shadow: 0 8px 40px rgba(0,0,0,.14);
+}
+
 @keyframes tf-spin { to { transform: rotate(360deg); } }
 </style>
 
