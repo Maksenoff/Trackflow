@@ -318,26 +318,33 @@
                 {# ── Discipline accordions ── #}
                 <div style="display:flex;flex-direction:column;gap:8px;">
                     <template x-for="disc in disciplineGroups" :key="disc.name">
-                        <div class="card" style="overflow:hidden;display:flex;">
+                        <div class="card disc-card"
+                             :class="specialties.includes(disc.name) ? 'disc-card-spec' : ''"
+                             style="overflow:hidden;display:flex;">
 
-                            {# Left accent bar for specialties #}
-                            <div style="width:4px;flex-shrink:0;border-radius:12px 0 0 12px;transition:background .2s;"
-                                 :style="specialties.includes(disc.name) ? 'background:var(--accent)' : 'background:var(--border-2)'"></div>
+                            {# Left accent bar #}
+                            <div class="disc-bar"
+                                 :class="specialties.includes(disc.name) ? 'disc-bar-spec' : ''"></div>
+
                             <div style="flex:1;min-width:0;">
                             {# Accordion header — always visible, shows PB & SB #}
                             <button type="button"
                                     @click="toggleDisc(disc.name)"
-                                    style="width:100%;display:flex;align-items:center;justify-content:space-between;padding:13px 16px;text-align:left;background:none;border:none;cursor:pointer;color:var(--text-1);transition:background .15s;"
-                                    onmouseover="this.style.background='var(--bg-hover)'" onmouseout="this.style.background='none'">
+                                    class="disc-header"
+                                    :class="specialties.includes(disc.name) ? 'disc-header-spec' : ''">
                                 <div style="display:flex;align-items:center;gap:10px;flex:1;min-width:0;">
                                     <svg :style="{ transform: isDiscOpen(disc.name) ? 'rotate(90deg)' : 'none' }"
                                          style="width:14px;height:14px;color:var(--text-3);transition:transform .2s cubic-bezier(.4,0,.2,1);flex-shrink:0;"
                                          fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M9 5l7 7-7 7"/>
                                     </svg>
-                                    <span style="font-size:14px;font-weight:600;color:var(--text-1);" x-text="disc.name"></span>
+                                    <span :style="specialties.includes(disc.name) ? 'font-size:14px;font-weight:700;color:var(--accent-hover)' : 'font-size:14px;font-weight:600;color:var(--text-1)'"
+                                          x-text="disc.name"></span>
                                     <span style="font-size:10px;font-weight:500;background:var(--bg-2);border:1px solid var(--border);color:var(--text-3);padding:2px 8px;border-radius:999px;flex-shrink:0;"
                                           x-text="disc.perfs.length + ' perf' + (disc.perfs.length > 1 ? 's' : '')"></span>
+                                    <template x-if="specialties.includes(disc.name)">
+                                        <span class="disc-spec-badge">★ Spécialité</span>
+                                    </template>
                                 </div>
                                 <div style="display:flex;align-items:center;flex-shrink:0;margin-left:16px;">
                                     {# PB #}
@@ -952,14 +959,21 @@ function goalDelete(id, url, token) {
             var isOpen  = idx === 0;
 
             var acc = document.createElement('div');
-            acc.style.cssText = 'background:var(--bg-card,var(--bg-2));border:1px solid var(--border);border-radius:12px;overflow:hidden;';
+            acc.className = 'card disc-card';
+            acc.style.cssText = 'overflow:hidden;display:flex;';
+
+            // ── Left accent bar ──
+            var bar = document.createElement('div');
+            bar.className = 'disc-bar';
+            acc.appendChild(bar);
+
+            var inner = document.createElement('div');
+            inner.style.cssText = 'flex:1;min-width:0;';
 
             // ── Header ──
             var header = document.createElement('button');
             header.type = 'button';
-            header.style.cssText = 'width:100%;display:flex;align-items:center;justify-content:space-between;padding:13px 16px;background:none;border:none;cursor:pointer;transition:background 0.15s;color:var(--text-1)';
-            header.onmouseenter = function(){ this.style.background='var(--bg-hover)'; };
-            header.onmouseleave = function(){ this.style.background='none'; };
+            header.className = 'disc-header';
             header.innerHTML =
                 '<div style="display:flex;align-items:center;gap:10px">'
                 + '<svg class="cat-arrow" style="width:14px;height:14px;color:var(--text-3);transition:transform 0.2s cubic-bezier(.4,0,.2,1);transform:rotate(' + (isOpen ? '90' : '0') + 'deg);flex-shrink:0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M9 5l7 7-7 7"/></svg>'
@@ -1030,8 +1044,9 @@ function goalDelete(id, url, token) {
 
             body.appendChild(searchWrap);
             body.appendChild(grid);
-            acc.appendChild(header);
-            acc.appendChild(body);
+            inner.appendChild(header);
+            inner.appendChild(body);
+            acc.appendChild(inner);
             wrap.appendChild(acc);
         });
 
