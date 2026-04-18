@@ -327,37 +327,33 @@
                             {# Accordion header — always visible, shows PB & SB #}
                             <button type="button"
                                     @click="toggleDisc(disc.name)"
-                                    style="width:100%;display:flex;align-items:center;justify-content:space-between;padding:12px 16px;text-align:left;background:none;border:none;cursor:pointer;color:var(--text-1);"
+                                    style="width:100%;display:flex;align-items:center;justify-content:space-between;padding:13px 16px;text-align:left;background:none;border:none;cursor:pointer;color:var(--text-1);transition:background .15s;"
                                     onmouseover="this.style.background='var(--bg-hover)'" onmouseout="this.style.background='none'">
-                                <div style="display:flex;align-items:center;gap:12px;flex:1;min-width:0;">
+                                <div style="display:flex;align-items:center;gap:10px;flex:1;min-width:0;">
                                     <svg :style="{ transform: isDiscOpen(disc.name) ? 'rotate(90deg)' : 'none' }"
-                                         style="width:16px;height:16px;color:var(--text-3);transition:transform .15s;flex-shrink:0;"
+                                         style="width:14px;height:14px;color:var(--text-3);transition:transform .2s cubic-bezier(.4,0,.2,1);flex-shrink:0;"
                                          fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/>
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M9 5l7 7-7 7"/>
                                     </svg>
-                                    <span style="font-weight:600;color:var(--text-1);" x-text="disc.name"></span>
-                                    <span style="font-size:11px;background:var(--bg-2);color:var(--text-3);padding:1px 8px;border-radius:999px;flex-shrink:0;"
+                                    <span style="font-size:14px;font-weight:600;color:var(--text-1);" x-text="disc.name"></span>
+                                    <span style="font-size:10px;font-weight:500;background:var(--bg-2);border:1px solid var(--border);color:var(--text-3);padding:2px 8px;border-radius:999px;flex-shrink:0;"
                                           x-text="disc.perfs.length + ' perf' + (disc.perfs.length > 1 ? 's' : '')"></span>
                                 </div>
-                                <div style="display:flex;align-items:center;flex-shrink:0;margin-left:16px;">
-                                    {# PB #}
-                                    <div style="width:80px">
-                                        <template x-if="disc.pb">
-                                            <div style="border-left:2px solid rgba(255,215,0,.7);padding-left:10px;">
-                                                <div style="font-size:9px;font-weight:600;color:var(--text-2);text-transform:uppercase;letter-spacing:.12em;">PB</div>
-                                                <div class="pb-val" style="font-size:13px;font-family:monospace;font-weight:700;line-height:1.2;" x-text="disc.pb"></div>
-                                            </div>
-                                        </template>
-                                    </div>
-                                    {# SB #}
-                                    <div style="width:80px">
-                                        <template x-if="disc.sb">
-                                            <div style="border-left:2px solid rgba(192,192,192,.7);padding-left:10px;">
-                                                <div style="font-size:9px;font-weight:600;color:var(--text-2);text-transform:uppercase;letter-spacing:.12em;">SB</div>
-                                                <div class="sb-val" style="font-size:13px;font-family:monospace;font-weight:700;line-height:1.2;" x-text="disc.sb"></div>
-                                            </div>
-                                        </template>
-                                    </div>
+                                <div style="display:flex;align-items:center;gap:6px;flex-shrink:0;margin-left:12px;">
+                                    {# PB badge #}
+                                    <template x-if="disc.pb">
+                                        <div style="background:linear-gradient(135deg,rgba(255,215,0,.09) 0%,rgba(160,98,10,.05) 100%);border:1px solid rgba(255,215,0,.22);border-radius:8px;padding:5px 10px;text-align:center;min-width:68px;">
+                                            <div style="font-size:8px;font-weight:800;letter-spacing:.14em;text-transform:uppercase;background:linear-gradient(135deg,#A0620A 0%,#FFD700 60%);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;margin-bottom:2px;">PB</div>
+                                            <div class="pb-val" style="font-size:13px;font-family:monospace;font-weight:700;line-height:1;" x-text="disc.pb"></div>
+                                        </div>
+                                    </template>
+                                    {# SB badge #}
+                                    <template x-if="disc.sb">
+                                        <div style="background:linear-gradient(135deg,rgba(192,192,192,.08) 0%,rgba(96,96,96,.04) 100%);border:1px solid rgba(192,192,192,.2);border-radius:8px;padding:5px 10px;text-align:center;min-width:68px;">
+                                            <div style="font-size:8px;font-weight:800;letter-spacing:.14em;text-transform:uppercase;background:linear-gradient(135deg,#606060 0%,#C0C0C0 60%);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;margin-bottom:2px;">SB</div>
+                                            <div class="sb-val" style="font-size:13px;font-family:monospace;font-weight:700;line-height:1;" x-text="disc.sb"></div>
+                                        </div>
+                                    </template>
                                 </div>
                             </button>
 
@@ -949,21 +945,20 @@ function goalDelete(id, url, token) {
             var isOpen  = idx === 0;
 
             var acc = document.createElement('div');
-            acc.style.cssText = 'background:var(--bg-2);border:1px solid var(--border);border-radius:12px;overflow:hidden;';
+            acc.style.cssText = 'background:var(--bg-card,var(--bg-2));border:1px solid var(--border);border-radius:12px;overflow:hidden;';
 
             // ── Header ──
             var header = document.createElement('button');
             header.type = 'button';
-            header.style.cssText = 'width:100%;display:flex;align-items:center;justify-content:space-between;padding:20px 24px;background:none;border:none;cursor:pointer;transition:background 0.15s';
-            header.onmouseenter = function(){ this.style.background='rgba(255,255,255,0.04)'; };
+            header.style.cssText = 'width:100%;display:flex;align-items:center;justify-content:space-between;padding:13px 16px;background:none;border:none;cursor:pointer;transition:background 0.15s;color:var(--text-1)';
+            header.onmouseenter = function(){ this.style.background='var(--bg-hover)'; };
             header.onmouseleave = function(){ this.style.background='none'; };
             header.innerHTML =
-                '<div style="display:flex;align-items:center;gap:12px">'
-                + '<span style="font-weight:600;color:white;font-size:15px">' + escHtml(label) + '</span>'
-                + '<span style="font-size:11px;background:#1f2937;color:#9ca3af;padding:3px 10px;border-radius:999px">' + catVids.length + '</span>'
-                + '</div>'
-                + '<svg class="cat-arrow" style="width:18px;height:18px;color:#6b7280;transition:transform 0.2s;transform:rotate(' + (isOpen ? '180' : '0') + 'deg);flex-shrink:0" fill="none" stroke="currentColor" viewBox="0 0 24 24">'
-                + '<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/></svg>';
+                '<div style="display:flex;align-items:center;gap:10px">'
+                + '<svg class="cat-arrow" style="width:14px;height:14px;color:var(--text-3);transition:transform 0.2s cubic-bezier(.4,0,.2,1);transform:rotate(' + (isOpen ? '90' : '0') + 'deg);flex-shrink:0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M9 5l7 7-7 7"/></svg>'
+                + '<span style="font-size:14px;font-weight:600;color:var(--text-1)">' + escHtml(label) + '</span>'
+                + '<span style="font-size:10px;font-weight:500;background:var(--bg-2);border:1px solid var(--border);color:var(--text-3);padding:2px 8px;border-radius:999px">' + catVids.length + ' vidéo' + (catVids.length > 1 ? 's' : '') + '</span>'
+                + '</div>';
 
             // ── Body ──
             var body = document.createElement('div');
@@ -972,13 +967,13 @@ function goalDelete(id, url, token) {
 
             // Search bar
             var searchWrap = document.createElement('div');
-            searchWrap.style.cssText = 'padding:14px 24px;border-bottom:1px solid rgba(255,255,255,0.06)';
+            searchWrap.style.cssText = 'padding:12px 16px;border-bottom:1px solid var(--border)';
             var searchInput = document.createElement('input');
             searchInput.type = 'text';
             searchInput.placeholder = 'Rechercher dans ' + label + '…';
-            searchInput.style.cssText = 'width:100%;background:#1f2937;border:1px solid #374151;border-radius:8px;padding:10px 14px;font-size:13px;color:white;outline:none;box-sizing:border-box';
-            searchInput.onfocus   = function(){ this.style.borderColor='#6366f1'; };
-            searchInput.onblur    = function(){ this.style.borderColor='#374151'; };
+            searchInput.style.cssText = 'width:100%;background:var(--bg);border:1px solid var(--border-strong);border-radius:8px;padding:9px 13px;font-size:13px;color:var(--text-1);outline:none;box-sizing:border-box;transition:border-color .15s';
+            searchInput.onfocus   = function(){ this.style.borderColor='var(--accent)'; this.style.boxShadow='0 0 0 3px var(--accent-subtle)'; };
+            searchInput.onblur    = function(){ this.style.borderColor='var(--border-strong)'; this.style.boxShadow='none'; };
             searchWrap.appendChild(searchInput);
 
             // Video grid
@@ -997,7 +992,7 @@ function goalDelete(id, url, token) {
             header.addEventListener('click', function () {
                 isOpen = !isOpen;
                 body.style.display = isOpen ? '' : 'none';
-                header.querySelector('.cat-arrow').style.transform = isOpen ? 'rotate(180deg)' : 'rotate(0deg)';
+                header.querySelector('.cat-arrow').style.transform = isOpen ? 'rotate(90deg)' : 'rotate(0deg)';
             });
 
             body.appendChild(searchWrap);
