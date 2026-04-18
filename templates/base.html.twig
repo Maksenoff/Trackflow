@@ -1790,7 +1790,7 @@ const TFFeedback = {
         });
 
         try {
-            const res = await fetch('{{ path('app_feedback_report') }}', {
+            const res = await fetch('{{ path("app_feedback_report") }}', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
                 body,
