@@ -865,6 +865,55 @@
     }
     .disc-anim-open { grid-template-rows: 1fr; }
 
+    /* ── Discipline accordion card ── */
+    .disc-card { transition: border-color .25s, box-shadow .25s; }
+    .disc-card-spec {
+        border-color: rgba(99,102,241,.4) !important;
+        box-shadow: 0 0 0 1px rgba(99,102,241,.12), 0 2px 16px rgba(99,102,241,.08);
+    }
+
+    /* ── Left accent bar ── */
+    .disc-bar {
+        width: 3px; flex-shrink: 0;
+        border-radius: 12px 0 0 12px;
+        background: var(--border-2);
+        transition: all .25s;
+    }
+    .disc-bar-spec {
+        width: 5px;
+        background: linear-gradient(180deg, var(--accent-hover) 0%, var(--accent) 100%);
+        box-shadow: 2px 0 14px rgba(99,102,241,.55);
+    }
+
+    /* ── Header button ── */
+    .disc-header {
+        width: 100%; display: flex; align-items: center;
+        justify-content: space-between;
+        padding: 13px 16px; text-align: left;
+        background: none; border: none; cursor: pointer;
+        color: var(--text-1); transition: background .18s;
+    }
+    .disc-header:hover { background: var(--bg-hover); }
+    .disc-header-spec {
+        background: linear-gradient(90deg, rgba(99,102,241,.1) 0%, transparent 68%);
+    }
+    .disc-header-spec:hover {
+        background: linear-gradient(90deg, rgba(99,102,241,.18) 0%, rgba(99,102,241,.02) 68%);
+    }
+
+    /* ── Specialty badge ── */
+    .disc-spec-badge {
+        display: inline-flex; align-items: center; gap: 3px;
+        font-size: 9px; font-weight: 700; letter-spacing: .06em;
+        text-transform: uppercase;
+        background: rgba(99,102,241,.15);
+        color: #a5b4fc;
+        border: 1px solid rgba(99,102,241,.35);
+        padding: 2px 7px;
+        border-radius: 999px;
+        flex-shrink: 0;
+    }
+
     /* ── Filter chips (cat / indoor) ── */
     .filter-chip {
         display: inline-flex; align-items: center;
@@ -1790,7 +1839,7 @@ const TFFeedback = {
         const form    = document.getElementById('tf-feedback-form');
         const success = document.getElementById('tf-feedback-success');
 
-        form.style.display    = '';
+        form.style.display    = 'block';
         success.style.display = 'none';
         document.getElementById('tf-feedback-desc').value = '';
         // reset radio tabs
@@ -1800,8 +1849,8 @@ const TFFeedback = {
             this._styleTab(tab, input && input.checked);
         });
 
-        overlay.style.display = '';
-        modal.style.display   = '';
+        overlay.style.display = 'block';
+        modal.style.display   = 'block';
         requestAnimationFrame(() => {
             modal.style.opacity   = '1';
             modal.style.transform = 'translate(-50%,-50%) scale(1)';
